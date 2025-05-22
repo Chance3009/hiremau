@@ -13,6 +13,7 @@ import QRRegistration from "./pages/QRRegistration";
 import Interview from "./pages/Interview";
 import InterviewSchedule from "./pages/InterviewSchedule";
 import FinalReview from "./pages/FinalReview";
+import CandidateView from "./pages/CandidateView";
 import Layout from "./components/layout/Layout";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/interview/schedule" element={<Layout><InterviewSchedule /></Layout>} />
           <Route path="/interview/schedule/:candidateId" element={<Layout><InterviewSchedule /></Layout>} />
           <Route path="/final-review" element={<Layout><FinalReview /></Layout>} />
+          <Route path="/candidate/:candidateId" element={<Layout><CandidateView /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
