@@ -11,24 +11,35 @@ import CandidateList from '@/components/candidate/CandidateList';
 import CandidateCard from '@/components/candidate/CandidateCard';
 import { useNavigate } from 'react-router-dom';
 
+// Define the Candidate type for better TypeScript support
+interface Candidate {
+  id: string;
+  name: string;
+  position: string;
+  status: 'shortlist' | 'kiv' | 'reject' | 'new';
+  event: string;
+  score: number;
+  timestamp: string;
+}
+
 const Interview = () => {
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({
     0: true,
   });
   const [notes, setNotes] = useState('');
   const [interviewComplete, setInterviewComplete] = useState(false);
-  const [activeCandidate, setActiveCandidate] = useState('1');
+  const [activeCandidateId, setActiveCandidateId] = useState('1');
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const [activeTab, setActiveTab] = useState('upcoming');
   const navigate = useNavigate();
 
   // Mock candidates that would come from a backend in a real app
-  const candidates = [
+  const candidates: Candidate[] = [
     {
       id: '1',
       name: 'Alex Johnson',
       position: 'Frontend Developer',
-      status: 'shortlist' as const,
+      status: 'shortlist',
       event: 'UPM Career Fair 2025',
       score: 85,
       timestamp: '2025-05-25 10:30 AM',
@@ -37,7 +48,7 @@ const Interview = () => {
       id: '2',
       name: 'Sam Taylor',
       position: 'UX Designer',
-      status: 'shortlist' as const,
+      status: 'shortlist',
       event: 'UPM Career Fair 2025',
       score: 82,
       timestamp: '2025-05-25 11:15 AM',
@@ -46,7 +57,7 @@ const Interview = () => {
       id: '3',
       name: 'Morgan Smith',
       position: 'Backend Developer',
-      status: 'shortlist' as const,
+      status: 'shortlist',
       event: 'Tech Recruit Summit',
       score: 78,
       timestamp: '2025-05-26 09:30 AM',
@@ -97,11 +108,12 @@ const Interview = () => {
   };
   
   const startInterview = (candidateId: string) => {
-    setActiveCandidate(candidateId);
+    setActiveCandidateId(candidateId);
     setActiveTab('conduct');
   };
 
-  const activeCandidate = candidates.find(c => c.id === activeCandidate);
+  // Find the selected candidate using the ID
+  const selectedCandidate = candidates.find(c => c.id === activeCandidateId);
 
   return (
     <div className="space-y-6">
@@ -215,16 +227,16 @@ const Interview = () => {
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle>Candidate Profile</CardTitle>
-                <CardDescription>{activeCandidate?.position}</CardDescription>
+                <CardDescription>{selectedCandidate?.position}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
                   <div className="flex flex-col items-center mb-4">
                     <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold mb-2">
-                      {activeCandidate?.name.charAt(0)}
+                      {selectedCandidate?.name.charAt(0)}
                     </div>
-                    <h2 className="font-semibold text-lg">{activeCandidate?.name}</h2>
-                    <p className="text-muted-foreground">{activeCandidate?.position}</p>
+                    <h2 className="font-semibold text-lg">{selectedCandidate?.name}</h2>
+                    <p className="text-muted-foreground">{selectedCandidate?.position}</p>
                   </div>
                   
                   <div className="space-y-3 pt-2 border-t">
@@ -242,11 +254,11 @@ const Interview = () => {
                     </div>
                     <div className="flex gap-2">
                       <span className="font-medium">Event:</span>
-                      <span>{activeCandidate?.event}</span>
+                      <span>{selectedCandidate?.event}</span>
                     </div>
                     <div className="flex gap-2">
                       <span className="font-medium">Fit Score:</span>
-                      <span className="text-green-600 font-medium">{activeCandidate?.score}%</span>
+                      <span className="text-green-600 font-medium">{selectedCandidate?.score}%</span>
                     </div>
                   </div>
                 </div>
