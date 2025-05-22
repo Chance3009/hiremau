@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ContextFilter from '@/components/layout/ContextFilter';
@@ -112,8 +112,8 @@ const CandidateComparison = () => {
         <h1 className="text-2xl font-bold tracking-tight">Candidate Comparison</h1>
         <p className="text-muted-foreground">Compare candidates side by side to make better decisions.</p>
       </div>
-      
-      <ContextFilter 
+
+      <ContextFilter
         events={mockEvents}
         positions={mockPositions}
         statuses={mockStatuses}
@@ -125,23 +125,22 @@ const CandidateComparison = () => {
         setActiveStatus={setActiveStatus}
         showViewToggle={false}
       />
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Select Candidates</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm mb-4">Select candidates to compare (up to 3):</p>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {mockCandidates.map(candidate => (
-              <div 
+              <div
                 key={candidate.id}
-                className={`p-3 border rounded-md cursor-pointer transition-colors ${
-                  selectedCandidates.includes(candidate.id) 
-                    ? 'bg-primary/10 border-primary' 
+                className={`p-3 border rounded-md cursor-pointer transition-colors ${selectedCandidates.includes(candidate.id)
+                    ? 'bg-primary/10 border-primary'
                     : 'hover:bg-muted'
-                }`}
+                  }`}
                 onClick={() => {
                   setSelectedCandidates(prev => {
                     if (prev.includes(candidate.id)) {
@@ -168,10 +167,10 @@ const CandidateComparison = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="flex justify-end mt-4">
-            <Button 
-              disabled={selectedCandidates.length < 2} 
+            <Button
+              disabled={selectedCandidates.length < 2}
               onClick={() => {
                 // Scrolling to the comparison section
                 window.scrollTo({
@@ -185,9 +184,9 @@ const CandidateComparison = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {selectedCandidates.length > 0 && (
-        <CandidateComparisonComponent 
+        <CandidateComparisonComponent
           candidates={mockCandidates.filter(c => selectedCandidates.includes(c.id))}
         />
       )}

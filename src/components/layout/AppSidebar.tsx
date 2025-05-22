@@ -1,4 +1,3 @@
-
 import { useLocation } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import {
@@ -9,7 +8,8 @@ import {
   CheckSquare,
   AlertTriangle,
   Briefcase,
-  Users
+  Users,
+  List
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,12 +30,12 @@ import {
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
-  
+
   const isActive = (path: string) => location.pathname === path;
-  
-  const getNavClass = ({ isActive }: { isActive: boolean }) => 
-    isActive 
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+
+  const getNavClass = ({ isActive }: { isActive: boolean }) =>
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
   return (
@@ -56,10 +56,10 @@ export function AppSidebar() {
         <div className="flex-1"></div>
         <SidebarTrigger />
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>Overview</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -70,16 +70,16 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Events">
-                  <NavLink to="/event-setup" className={getNavClass}>
+                  <NavLink to="/events" className={getNavClass}>
                     <Calendar size={20} />
                     <span>Events</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Job Openings">
                   <NavLink to="/job-openings" className={getNavClass}>
@@ -91,9 +91,9 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup>
-          <SidebarGroupLabel>Recruitment</SidebarGroupLabel>
+          <SidebarGroupLabel>Recruitment Process</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -104,7 +104,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Interviews">
                   <NavLink to="/interview" className={getNavClass}>
@@ -113,7 +113,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Final Review">
                   <NavLink to="/final-review" className={getNavClass}>
@@ -135,7 +135,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
