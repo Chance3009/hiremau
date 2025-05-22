@@ -46,6 +46,13 @@ const Dashboard = () => {
     { name: 'Java', count: 15 },
   ];
 
+  // Data for candidate status chart
+  const statusData = [
+    { name: 'Shortlisted', value: 28, color: '#4CAF50' },
+    { name: 'Keep in View', value: 31, color: '#FFC107' },
+    { name: 'Rejected', value: 15, color: '#F44336' },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -81,18 +88,14 @@ const Dashboard = () => {
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={[
-                    { name: 'Shortlisted', value: 28, color: '#4CAF50' },
-                    { name: 'Keep in View', value: 31, color: '#FFC107' },
-                    { name: 'Rejected', value: 15, color: '#F44336' },
-                  ]}
+                  data={statusData}
                   margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="value" fill={(entry) => entry.color} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill={(entry) => entry.color || "#8884d8"} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
