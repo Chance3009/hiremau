@@ -95,7 +95,11 @@ const Dashboard = () => {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="value" fill={(entry) => entry.color || "#8884d8"} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]}>
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

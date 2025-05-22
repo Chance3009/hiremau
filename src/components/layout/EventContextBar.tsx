@@ -43,12 +43,12 @@ const EventContextBar: React.FC<EventContextBarProps> = ({
     <div className="bg-muted/30 border-b px-4 py-2 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">Event:</span>
-        <Select onValueChange={(value) => setActiveEventId(value)} value={activeEventId || undefined}>
+        <Select onValueChange={(value) => setActiveEventId(value === "all" ? null : value)} value={activeEventId || "all"}>
           <SelectTrigger className="w-[180px] h-8">
             <SelectValue placeholder="All Events" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Events</SelectItem>
+            <SelectItem value="all">All Events</SelectItem>
             {events.map((event) => (
               <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
             ))}
@@ -58,12 +58,12 @@ const EventContextBar: React.FC<EventContextBarProps> = ({
       
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">Position:</span>
-        <Select onValueChange={(value) => setActivePositionId(value)} value={activePositionId || undefined}>
+        <Select onValueChange={(value) => setActivePositionId(value === "all" ? null : value)} value={activePositionId || "all"}>
           <SelectTrigger className="w-[180px] h-8">
             <SelectValue placeholder="All Positions" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Positions</SelectItem>
+            <SelectItem value="all">All Positions</SelectItem>
             {positions.map((position) => (
               <SelectItem key={position.id} value={position.id}>{position.name}</SelectItem>
             ))}
@@ -73,12 +73,12 @@ const EventContextBar: React.FC<EventContextBarProps> = ({
       
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">Status:</span>
-        <Select>
+        <Select defaultValue="all">
           <SelectTrigger className="w-[160px] h-8">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             {candidateStatuses.map((status) => (
               <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
             ))}
