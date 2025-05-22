@@ -7,7 +7,9 @@ import {
   UserPlus,
   MessageSquare,
   CheckSquare,
-  AlertTriangle
+  AlertTriangle,
+  Briefcase,
+  Users
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,7 +59,7 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -70,28 +72,44 @@ export function AppSidebar() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Event Setup">
+                <SidebarMenuButton asChild tooltip="Events">
                   <NavLink to="/event-setup" className={getNavClass}>
                     <Calendar size={20} />
-                    <span>Event Setup</span>
+                    <span>Events</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Candidate Intake">
+                <SidebarMenuButton asChild tooltip="Job Openings">
+                  <NavLink to="/job-openings" className={getNavClass}>
+                    <Briefcase size={20} />
+                    <span>Job Openings</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+          <SidebarGroupLabel>Recruitment</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Candidates">
                   <NavLink to="/candidate-intake" className={getNavClass}>
                     <UserPlus size={20} />
-                    <span>Candidate Intake</span>
+                    <span>Candidates</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Interview Assistant">
+                <SidebarMenuButton asChild tooltip="Interviews">
                   <NavLink to="/interview" className={getNavClass}>
                     <MessageSquare size={20} />
-                    <span>Interview</span>
+                    <span>Interviews</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -101,6 +119,15 @@ export function AppSidebar() {
                   <NavLink to="/final-review" className={getNavClass}>
                     <CheckSquare size={20} />
                     <span>Final Review</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Comparison">
+                  <NavLink to="/candidate-comparison" className={getNavClass}>
+                    <Users size={20} />
+                    <span>Comparison</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

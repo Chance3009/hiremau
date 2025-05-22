@@ -1,77 +1,107 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, X, Download, Send, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import CandidateComparison from '@/components/candidate/CandidateComparison';
+import CandidateComparison, { Candidate } from '@/components/candidate/CandidateComparison';
+import ContextFilter from '@/components/layout/ContextFilter';
+
+// Mock events and positions for filtering
+const mockEvents = [
+  { id: '1', name: 'UPM Career Fair 2025' },
+  { id: '2', name: 'Tech Recruit Summit' },
+  { id: '3', name: 'Engineering Talent Day' }
+];
+
+const mockPositions = [
+  { id: '1', name: 'Frontend Developer' },
+  { id: '2', name: 'UX Designer' },
+  { id: '3', name: 'Backend Developer' },
+  { id: '4', name: 'Product Manager' },
+];
+
+const mockStatuses = [
+  { id: 'shortlist', name: 'Shortlisted' },
+  { id: 'kiv', name: 'Keep in View' },
+  { id: 'reject', name: 'Rejected' }
+];
 
 const FinalReview = () => {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
+  const [activeEvent, setActiveEvent] = useState<string | null>(null);
+  const [activePosition, setActivePosition] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
 
   // Mock candidates data that would come from a backend in a real app
-  const candidates = [
+  const candidates: Candidate[] = [
     {
       id: '1',
       name: 'Alex Johnson',
       position: 'Frontend Developer',
-      status: 'shortlist',
-      interviewScore: 87,
-      interviewNotes: 'Strong technical skills, excellent cultural fit.',
-      fitScore: 85,
       skills: ["React", "TypeScript", "Node.js", "CSS"],
       experience: [
         "Senior Frontend Developer at TechCorp (3 years)",
         "Web Developer at StartupXYZ (2 years)"
       ],
-      education: ["B.S. Computer Science, State University (2019)"]
+      education: ["B.S. Computer Science, State University (2019)"],
+      score: 85,
+      interviewScore: 87,
+      interviewNotes: 'Strong technical skills, excellent cultural fit.'
     },
     {
       id: '2',
       name: 'Sam Taylor',
       position: 'UX Designer',
-      status: 'shortlist',
-      interviewScore: 82,
-      interviewNotes: 'Great portfolio, good communication skills.',
-      fitScore: 78,
       skills: ["Figma", "UI Design", "User Research", "HTML/CSS"],
       experience: [
         "UX Designer at DesignCo (2 years)",
         "UI Designer at CreativeLabs (1 year)"
       ],
-      education: ["B.F.A. Design, Art Institute (2020)"]
+      education: ["B.F.A. Design, Art Institute (2020)"],
+      score: 78,
+      interviewScore: 82,
+      interviewNotes: 'Great portfolio, good communication skills.'
     },
     {
       id: '3',
       name: 'Morgan Smith',
       position: 'Backend Developer',
-      status: 'kiv',
-      interviewScore: 73,
-      interviewNotes: 'Good technical knowledge but limited experience.',
-      fitScore: 68,
       skills: ["Node.js", "Express", "MongoDB", "AWS"],
       experience: [
         "Junior Backend Developer at TechStart (1 year)"
       ],
-      education: ["B.S. Computer Engineering, Tech University (2022)"]
+      education: ["B.S. Computer Engineering, Tech University (2022)"],
+      score: 68,
+      interviewScore: 73,
+      interviewNotes: 'Good technical knowledge but limited experience.'
     },
     {
       id: '4',
       name: 'Jordan Lee',
       position: 'Product Manager',
-      status: 'reject',
-      interviewScore: 62,
-      interviewNotes: 'Not enough relevant experience.',
-      fitScore: 55,
       skills: ["Product Strategy", "Agile", "User Stories", "Market Research"],
       experience: [
         "Assistant Product Manager at ProductCo (1 year)",
         "Business Analyst at CorpTech (1 year)"
       ],
-      education: ["MBA, Business School (2021)"]
+      education: ["MBA, Business School (2021)"],
+      score: 55,
+      interviewScore: 62,
+      interviewNotes: 'Not enough relevant experience.'
     },
   ];
+
+  // Mock candidate statuses
+  const candidateStatuses = {
+    '1': 'shortlist',
+    '2': 'shortlist',
+    '3': 'kiv',
+    '4': 'reject'
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -125,6 +155,20 @@ const FinalReview = () => {
         <h1 className="text-2xl font-bold tracking-tight">Final Review</h1>
         <p className="text-muted-foreground">Review candidate statuses and take final actions.</p>
       </div>
+
+      <ContextFilter 
+        events={mockEvents}
+        positions={mockPositions}
+        statuses={mockStatuses}
+        activeEvent={activeEvent}
+        setActiveEvent={setActiveEvent}
+        activePosition={activePosition}
+        setActivePosition={setActivePosition}
+        activeStatus={activeStatus}
+        setActiveStatus={setActiveStatus}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -225,12 +269,12 @@ const FinalReview = () => {
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium">{candidate.name}</h3>
                               <span 
-                                className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(candidate.status)}`}
+                                className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}`}
                               >
-                                {getStatusIcon(candidate.status)}
-                                {candidate.status === 'shortlist' 
+                                {getStatusIcon(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}
+                                {candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'shortlist' 
                                   ? 'Shortlisted' 
-                                  : candidate.status === 'kiv' 
+                                  : candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'kiv' 
                                     ? 'Keep in View' 
                                     : 'Rejected'
                                 }
@@ -251,7 +295,7 @@ const FinalReview = () => {
                           </div>
                           <div className="flex gap-2">
                             <span className="text-sm font-medium">Fit Score:</span>
-                            <span className="text-sm">{candidate.fitScore}%</span>
+                            <span className="text-sm">{candidate.score}%</span>
                           </div>
                           <div className="flex gap-2 pt-2">
                             <Button size="sm" variant="outline" onClick={() => window.location.href = `/candidate/${candidate.id}`}>View Details</Button>

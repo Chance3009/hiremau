@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface Candidate {
+export interface Candidate {
   id: string;
   name: string;
   position: string;

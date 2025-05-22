@@ -10,17 +10,22 @@ import { ChevronDown, ChevronUp, MessageSquare, Check, Calendar, Clock, Search }
 import CandidateList from '@/components/candidate/CandidateList';
 import CandidateCard from '@/components/candidate/CandidateCard';
 import { useNavigate } from 'react-router-dom';
+import ContextFilter from '@/components/layout/ContextFilter';
+import InterviewAssistant from '@/components/interview/InterviewAssistant';
 
-// Define the Candidate type for better TypeScript support
-interface Candidate {
-  id: string;
-  name: string;
-  position: string;
-  status: 'shortlist' | 'kiv' | 'reject' | 'new';
-  event: string;
-  score: number;
-  timestamp: string;
-}
+// Mock data for events and positions
+const mockEvents = [
+  { id: '1', name: 'UPM Career Fair 2025' },
+  { id: '2', name: 'Tech Recruit Summit' },
+  { id: '3', name: 'Engineering Talent Day' }
+];
+
+const mockPositions = [
+  { id: '1', name: 'Frontend Developer' },
+  { id: '2', name: 'UX Designer' },
+  { id: '3', name: 'Backend Developer' },
+  { id: '4', name: 'Product Manager' },
+];
 
 const Interview = () => {
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({
@@ -31,15 +36,17 @@ const Interview = () => {
   const [activeCandidateId, setActiveCandidateId] = useState('1');
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeEvent, setActiveEvent] = useState<string | null>(null);
+  const [activePosition, setActivePosition] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Mock candidates that would come from a backend in a real app
-  const candidates: Candidate[] = [
+  const candidates = [
     {
       id: '1',
       name: 'Alex Johnson',
       position: 'Frontend Developer',
-      status: 'shortlist',
+      status: 'shortlist' as const,
       event: 'UPM Career Fair 2025',
       score: 85,
       timestamp: '2025-05-25 10:30 AM',
@@ -48,7 +55,7 @@ const Interview = () => {
       id: '2',
       name: 'Sam Taylor',
       position: 'UX Designer',
-      status: 'shortlist',
+      status: 'shortlist' as const,
       event: 'UPM Career Fair 2025',
       score: 82,
       timestamp: '2025-05-25 11:15 AM',
@@ -57,7 +64,7 @@ const Interview = () => {
       id: '3',
       name: 'Morgan Smith',
       position: 'Backend Developer',
-      status: 'shortlist',
+      status: 'shortlist' as const,
       event: 'Tech Recruit Summit',
       score: 78,
       timestamp: '2025-05-26 09:30 AM',
@@ -112,8 +119,12 @@ const Interview = () => {
     setActiveTab('conduct');
   };
 
-  // Find the selected candidate using the ID
-  const selectedCandidate = candidates.find(c => c.id === activeCandidateId);
+  const activeCandidate = candidates.find(c => c.id === activeCandidateId);
+  
+  const handleSuggestionUse = (suggestion: string) => {
+    // Add the suggestion to notes
+    setNotes(prev => prev ? `${prev}\n\nQ: ${suggestion}` : `Q: ${suggestion}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -121,6 +132,18 @@ const Interview = () => {
         <h1 className="text-2xl font-bold tracking-tight">Interview Assistant</h1>
         <p className="text-muted-foreground">Conduct structured interviews with AI-suggested questions.</p>
       </div>
+
+      <ContextFilter 
+        events={mockEvents}
+        positions={mockPositions}
+        activeEvent={activeEvent}
+        setActiveEvent={setActiveEvent}
+        activePosition={activePosition}
+        setActivePosition={setActivePosition}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        showFilters={activeTab !== 'conduct'}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -136,19 +159,10 @@ const Interview = () => {
               <Input placeholder="Search interviews..." className="pl-8" />
             </div>
             
-            <div className="flex items-center gap-2">
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'card')}>
-                <TabsList>
-                  <TabsTrigger value="list">List</TabsTrigger>
-                  <TabsTrigger value="card">Cards</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <Button onClick={handleScheduleInterview}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule Interview
-              </Button>
-            </div>
+            <Button onClick={handleScheduleInterview}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Schedule Interview
+            </Button>
           </div>
           
           {viewMode === 'list' ? (
@@ -227,16 +241,16 @@ const Interview = () => {
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle>Candidate Profile</CardTitle>
-                <CardDescription>{selectedCandidate?.position}</CardDescription>
+                <CardDescription>{activeCandidate?.position}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
                   <div className="flex flex-col items-center mb-4">
                     <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold mb-2">
-                      {selectedCandidate?.name.charAt(0)}
+                      {activeCandidate?.name.charAt(0)}
                     </div>
-                    <h2 className="font-semibold text-lg">{selectedCandidate?.name}</h2>
-                    <p className="text-muted-foreground">{selectedCandidate?.position}</p>
+                    <h2 className="font-semibold text-lg">{activeCandidate?.name}</h2>
+                    <p className="text-muted-foreground">{activeCandidate?.position}</p>
                   </div>
                   
                   <div className="space-y-3 pt-2 border-t">
@@ -254,12 +268,22 @@ const Interview = () => {
                     </div>
                     <div className="flex gap-2">
                       <span className="font-medium">Event:</span>
-                      <span>{selectedCandidate?.event}</span>
+                      <span>{activeCandidate?.event}</span>
                     </div>
                     <div className="flex gap-2">
                       <span className="font-medium">Fit Score:</span>
-                      <span className="text-green-600 font-medium">{selectedCandidate?.score}%</span>
+                      <span className="text-green-600 font-medium">{activeCandidate?.score}%</span>
                     </div>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      className="w-full" 
+                      variant="outline" 
+                      onClick={() => window.location.href = `/candidate/${activeCandidateId}`}
+                    >
+                      View Full Profile
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -279,28 +303,24 @@ const Interview = () => {
                     {suggestedQuestions.map((q) => (
                       <div key={q.id} className="p-4">
                         <div 
-                          className="flex justify-between items-start cursor-pointer"
+                          className="flex justify-between cursor-pointer"
                           onClick={() => handleToggleQuestion(q.id)}
                         >
-                          <h3 className="font-medium">{q.question}</h3>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            {expandedQuestions[q.id] ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
+                          <div className="font-medium">{q.question}</div>
+                          <Button variant="ghost" size="sm" className="p-0 h-5 w-5">
+                            {expandedQuestions[q.id] ? 
+                              <ChevronUp className="h-4 w-4" /> : 
+                              <ChevronDown className="h-4 w-4" />}
                           </Button>
                         </div>
                         
                         {expandedQuestions[q.id] && (
-                          <div className="mt-3 space-y-2 text-sm border-l-2 border-primary/20 pl-3">
-                            <div>
-                              <span className="font-medium text-xs">Context: </span>
-                              <span className="text-muted-foreground">{q.context}</span>
+                          <div className="mt-2 space-y-2">
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Context:</span> {q.context}
                             </div>
-                            <div>
-                              <span className="font-medium text-xs">Follow-up: </span>
-                              <span className="text-muted-foreground">{q.followUp}</span>
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Follow-up:</span> {q.followUp}
                             </div>
                           </div>
                         )}
@@ -309,31 +329,37 @@ const Interview = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Interview Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="interview-notes">Notes</Label>
+              
+              <div className="grid grid-cols-1 gap-6">
+                <InterviewAssistant 
+                  candidateName={activeCandidate?.name || ''}
+                  position={activeCandidate?.position || ''}
+                  onSuggestionUse={handleSuggestionUse}
+                />
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Interview Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <Textarea 
-                      id="interview-notes" 
-                      placeholder="Record your observations, answers to questions, and overall impressions..."
-                      className="min-h-[200px]"
+                      className="min-h-[150px]" 
+                      placeholder="Take notes during the interview..." 
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" disabled={interviewComplete}>Save Draft</Button>
+                    <div className="mt-4 flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setNotes('')}>
+                        Clear
+                      </Button>
                       <Button onClick={handleComplete} disabled={interviewComplete}>
                         <Check className="mr-2 h-4 w-4" />
-                        Complete Interview
+                        {interviewComplete ? 'Interview Completed' : 'Complete Interview'}
                       </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -342,10 +368,12 @@ const Interview = () => {
           <Card>
             <CardHeader>
               <CardTitle>Completed Interviews</CardTitle>
-              <CardDescription>Review past interview notes and evaluations</CardDescription>
+              <CardDescription>View and manage interview results</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">No completed interviews yet</p>
+              <div className="text-center py-8 text-muted-foreground">
+                No completed interviews yet
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

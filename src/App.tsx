@@ -14,6 +14,8 @@ import Interview from "./pages/Interview";
 import InterviewSchedule from "./pages/InterviewSchedule";
 import FinalReview from "./pages/FinalReview";
 import CandidateView from "./pages/CandidateView";
+import JobOpenings from "./pages/JobOpenings";
+import CandidateComparison from "./pages/CandidateComparison";
 import Layout from "./components/layout/Layout";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,7 @@ const App = () => (
           <Route path="/" element={<Layout><Index /></Layout>} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/event-setup" element={<Layout><EventSetup /></Layout>} />
+          <Route path="/job-openings" element={<Layout><JobOpenings /></Layout>} />
           <Route path="/candidate-intake" element={<Layout><CandidateIntake /></Layout>} />
           <Route path="/candidate-intake/qr-registration" element={<Layout><QRRegistration /></Layout>} />
           <Route path="/interview" element={<Layout><Interview /></Layout>} />
@@ -35,6 +38,7 @@ const App = () => (
           <Route path="/interview/schedule/:candidateId" element={<Layout><InterviewSchedule /></Layout>} />
           <Route path="/final-review" element={<Layout><FinalReview /></Layout>} />
           <Route path="/candidate/:candidateId" element={<Layout><CandidateView /></Layout>} />
+          <Route path="/candidate-comparison" element={<Layout><CandidateComparison /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
