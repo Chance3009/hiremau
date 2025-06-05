@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, Download, Send, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, X, Download, Send, Clock, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import CandidateComparison, { Candidate } from '@/components/candidate/CandidateComparison';
 import ContextFilter from '@/components/layout/ContextFilter';
@@ -35,6 +34,7 @@ const FinalReview = () => {
   const [activePosition, setActivePosition] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+  const navigate = useNavigate();
 
   // Mock candidates data that would come from a backend in a real app
   const candidates: Candidate[] = [
@@ -131,7 +131,7 @@ const FinalReview = () => {
 
   const handleSendEmails = () => {
     setSendingEmails(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setSendingEmails(false);
@@ -151,12 +151,22 @@ const FinalReview = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Final Review</h1>
-        <p className="text-muted-foreground">Review candidate statuses and take final actions.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Final Review</h1>
+          <p className="text-muted-foreground">Review candidate statuses and take final actions.</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/candidate-comparison')}
+          className="flex items-center gap-2"
+        >
+          <Users size={20} />
+          Compare Candidates
+        </Button>
       </div>
 
-      <ContextFilter 
+      <ContextFilter
         events={mockEvents}
         positions={mockPositions}
         statuses={mockStatuses}
@@ -170,153 +180,60 @@ const FinalReview = () => {
         setViewMode={setViewMode}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="list">Candidate List</TabsTrigger>
-          <TabsTrigger value="compare">Compare Candidates</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Event Summary</CardTitle>
-                  <CardDescription>Tech Career Fair 2025</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground">CANDIDATE BREAKDOWN</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Total Candidates</span>
-                          <span className="font-medium">74</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Shortlisted</span>
-                          <span className="font-medium text-green-600">28 (38%)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Keep in View</span>
-                          <span className="font-medium text-amber-600">31 (42%)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Rejected</span>
-                          <span className="font-medium text-red-600">15 (20%)</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground">POSITION BREAKDOWN</h3>
-                      <div className="space-y-1">
-                        <div className="flex justify-between">
-                          <span>Frontend Developer</span>
-                          <span className="font-medium">24</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Backend Developer</span>
-                          <span className="font-medium">18</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>UX Designer</span>
-                          <span className="font-medium">12</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Product Manager</span>
-                          <span className="font-medium">11</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>QA Engineer</span>
-                          <span className="font-medium">9</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4 pt-2">
-                      <Button className="w-full" onClick={handleExport}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Export All Data (CSV)
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full" 
-                        disabled={sendingEmails}
-                        onClick={handleSendEmails}
+      <Card>
+        <CardHeader>
+          <CardTitle>Candidates Review</CardTitle>
+          <CardDescription>Review and finalize candidate statuses</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {candidates.map((candidate) => (
+              <div key={candidate.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">{candidate.name}</h3>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}`}
                       >
-                        <Send className="mr-2 h-4 w-4" />
-                        {sendingEmails ? 'Sending...' : 'Send Status Emails'}
-                      </Button>
+                        {getStatusIcon(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}
+                        {candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'shortlist'
+                          ? 'Shortlisted'
+                          : candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'kiv'
+                            ? 'Keep in View'
+                            : 'Rejected'
+                        }
+                      </span>
                     </div>
+                    <p className="text-sm text-muted-foreground">{candidate.position}</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">Interview Score</div>
+                    <div className="text-lg font-bold">{candidate.interviewScore}%</div>
+                  </div>
+                </div>
 
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Candidate Review</CardTitle>
-                  <CardDescription>Review and finalize candidate statuses</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {candidates.map((candidate) => (
-                      <div key={candidate.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{candidate.name}</h3>
-                              <span 
-                                className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}`}
-                              >
-                                {getStatusIcon(candidateStatuses[candidate.id as keyof typeof candidateStatuses])}
-                                {candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'shortlist' 
-                                  ? 'Shortlisted' 
-                                  : candidateStatuses[candidate.id as keyof typeof candidateStatuses] === 'kiv' 
-                                    ? 'Keep in View' 
-                                    : 'Rejected'
-                                }
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{candidate.position}</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">Interview Score</div>
-                            <div className="text-lg font-bold">{candidate.interviewScore}%</div>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 space-y-2">
-                          <div className="text-sm">
-                            <span className="font-medium">Interview Notes: </span>
-                            <span className="text-muted-foreground">{candidate.interviewNotes}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="text-sm font-medium">Fit Score:</span>
-                            <span className="text-sm">{candidate.score}%</span>
-                          </div>
-                          <div className="flex gap-2 pt-2">
-                            <Button size="sm" variant="outline" onClick={() => window.location.href = `/candidate/${candidate.id}`}>View Details</Button>
-                            <Button size="sm">
-                              Change Status
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="mt-3 space-y-2">
+                  <div className="text-sm">
+                    <span className="font-medium">Interview Notes: </span>
+                    <span className="text-muted-foreground">{candidate.interviewNotes}</span>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div className="flex gap-2">
+                    <span className="text-sm font-medium">Fit Score:</span>
+                    <span className="text-sm">{candidate.score}%</span>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button size="sm" variant="outline" onClick={() => window.location.href = `/candidate/${candidate.id}`}>View Details</Button>
+                    <Button size="sm">
+                      Change Status
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </TabsContent>
-        
-        <TabsContent value="compare">
-          <CandidateComparison candidates={candidates} />
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

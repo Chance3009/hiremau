@@ -34,21 +34,17 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-muted: 220 14% 96%;
+    --sidebar-muted-foreground: 215.4 16.3% 46.9%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 0 72% 51%;
+    --sidebar-hover: 0 0% 96%;
+    --sidebar-hover-foreground: 0 72% 51%;
+    --sidebar-active: 0 72% 51%;
+    --sidebar-active-foreground: 0 0% 100%;
+    --sidebar-border: 214.3 31.8% 91.4%;
   }
 
   .dark {
@@ -79,14 +75,18 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --sidebar: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-muted: 217.2 32.6% 17.5%;
+    --sidebar-muted-foreground: 215 20.2% 65.1%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-hover: 0 72% 15%;
+    --sidebar-hover-foreground: 0 72% 51%;
+    --sidebar-active: 0 72% 51%;
+    --sidebar-active-foreground: 0 0% 100%;
+    --sidebar-border: 217.2 32.6% 17.5%;
   }
 }
 
@@ -97,5 +97,80 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+
+  /* Page Layout */
+  .section-spacing {
+    @apply space-y-6;
+  }
+
+  /* Page Header */
+  .page-header {
+    @apply flex justify-between items-center mb-6;
+  }
+
+  .page-title {
+    @apply text-xl font-bold tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-muted-foreground mt-1;
+  }
+
+  /* Card Styles */
+  .card-padding {
+    @apply p-4 sm:p-6;
+  }
+
+  .card-header-lg {
+    @apply text-lg font-semibold;
+  }
+
+  .card-header-md {
+    @apply text-base font-semibold;
+  }
+
+  .card-title {
+    @apply text-base font-semibold;
+  }
+
+  .card-description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Section Headers */
+  .section-title {
+    @apply text-base font-semibold tracking-tight;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Stats and Metrics */
+  .stat-value {
+    @apply text-lg font-bold;
+  }
+
+  .stat-label {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* List Items */
+  .list-item-title {
+    @apply text-sm font-medium;
+  }
+
+  .list-item-description {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* Form Elements */
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
   }
 }

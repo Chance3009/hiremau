@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronDown, X, Grid, Columns } from 'lucide-react';
+import { Check, ChevronDown, X, Grid, Columns, Star, Clock, GraduationCap, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 
 export interface Candidate {
   id: string;
@@ -25,81 +26,70 @@ interface CandidateComparisonProps {
 }
 
 const CandidateComparison: React.FC<CandidateComparisonProps> = ({
-  candidates,
-  onSelect
+  candidates
 }) => {
-  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [comparisonMode, setComparisonMode] = useState<'resume' | 'interview'>('resume');
   const [viewMode, setViewMode] = useState<'grid' | 'split'>('grid');
-  const [showResume, setShowResume] = useState<string | null>(null);
 
-  const toggleCandidate = (candidateId: string) => {
-    setSelectedCandidates(prev => {
-      if (prev.includes(candidateId)) {
-        return prev.filter(id => id !== candidateId);
-      } else {
-        // Limit to 3 candidates max for side-by-side comparison
-        if (prev.length >= 3) {
-          return [...prev.slice(1), candidateId];
-        }
-        return [...prev, candidateId];
-      }
-    });
-  };
-
-  const selectedCandidateData = candidates.filter(c =>
-    selectedCandidates.includes(c.id)
-  );
-
-  // Determine common skills among selected candidates
-  const commonSkills = selectedCandidateData.length > 1
-    ? selectedCandidateData.reduce((acc, candidate, index) => {
+  // Memoize common skills computation
+  const commonSkills = useMemo(() => {
+    if (candidates.length <= 1) return [];
+    return candidates.reduce((acc, candidate, index) => {
       if (index === 0) return candidate.skills;
       return acc.filter(skill => candidate.skills.includes(skill));
-    }, selectedCandidateData[0]?.skills || [])
-    : [];
+    }, candidates[0]?.skills || []);
+  }, [candidates]);
+
+  const renderSkillBadge = (skill: string) => (
+    <span
+      key={skill}
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        commonSkills.includes(skill)
+          ? "bg-green-100 text-green-800 border border-green-200"
+          : "bg-secondary text-secondary-foreground"
+      )}
+    >
+      {skill}
+    </span>
+  );
+
+  if (candidates.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold">No Candidates Selected</h3>
+            <p className="text-sm text-muted-foreground">
+              Select candidates above to compare their qualifications side by side
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Candidate Comparison</h2>
-        <div className="flex gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                Select Candidates
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="space-y-2">
-                {candidates.map(candidate => (
-                  <div
-                    key={candidate.id}
-                    className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer"
-                    onClick={() => toggleCandidate(candidate.id)}
-                  >
-                    <span>{candidate.name}</span>
-                    {selectedCandidates.includes(candidate.id) && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">Comparing {candidates.length} Candidates</h2>
+          <p className="text-sm text-muted-foreground">
+            {commonSkills.length > 0 && `${commonSkills.length} common skills found`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="border rounded-md overflow-hidden">
             <Button
               variant={comparisonMode === 'resume' ? 'default' : 'ghost'}
-              className="rounded-none"
+              className="rounded-none px-3"
               onClick={() => setComparisonMode('resume')}
             >
               Resume
             </Button>
             <Button
               variant={comparisonMode === 'interview' ? 'default' : 'ghost'}
-              className="rounded-none"
+              className="rounded-none px-3"
               onClick={() => setComparisonMode('interview')}
             >
               Interview
@@ -109,14 +99,14 @@ const CandidateComparison: React.FC<CandidateComparisonProps> = ({
           <div className="border rounded-md overflow-hidden">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              className="rounded-none"
+              className="rounded-none px-3"
               onClick={() => setViewMode('grid')}
             >
               <Grid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'split' ? 'default' : 'ghost'}
-              className="rounded-none"
+              className="rounded-none px-3"
               onClick={() => setViewMode('split')}
             >
               <Columns className="h-4 w-4" />
@@ -125,134 +115,103 @@ const CandidateComparison: React.FC<CandidateComparisonProps> = ({
         </div>
       </div>
 
-      {selectedCandidateData.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            Select candidates to compare their qualifications side by side
-          </CardContent>
-        </Card>
-      ) : (
-        <div className={cn(
-          "grid gap-4",
-          viewMode === 'grid'
-            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            : "grid-cols-1 lg:grid-cols-2"
-        )}>
-          {selectedCandidateData.map(candidate => (
-            <Card key={candidate.id} className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2"
-                onClick={() => toggleCandidate(candidate.id)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+      <div className={cn(
+        "grid gap-6",
+        viewMode === 'grid'
+          ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 lg:grid-cols-2"
+      )}>
+        {candidates.map(candidate => (
+          <Card key={candidate.id} className="relative overflow-hidden">
+            <div className="absolute top-6 right-6">
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-semibold tracking-tight">{candidate.score}%</div>
+                <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+              </div>
+            </div>
 
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{candidate.name}</CardTitle>
-                <div className="text-sm text-muted-foreground">{candidate.position}</div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {comparisonMode === 'resume' ? (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Skills</h3>
-                      <div className="flex flex-wrap gap-1">
-                        {candidate.skills.map((skill, i) => (
-                          <span
-                            key={i}
-                            className={cn(
-                              "px-2 py-0.5 rounded-md text-xs",
-                              commonSkills.includes(skill)
-                                ? "bg-green-100 text-green-800"
-                                : "bg-secondary text-secondary-foreground"
-                            )}
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Experience</h3>
-                      <ul className="text-xs space-y-1">
-                        {candidate.experience.map((exp, i) => (
-                          <li key={i}>{exp}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Education</h3>
-                      <ul className="text-xs space-y-1">
-                        {candidate.education.map((edu, i) => (
-                          <li key={i}>{edu}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Fit Score</h3>
-                      <div className="text-lg font-bold">{candidate.score}%</div>
-                    </div>
-
-                    {candidate.resumeUrl && (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setShowResume(candidate.id)}
-                      >
-                        View Full Resume
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Interview Score</h3>
-                      <div className="text-lg font-bold">
-                        {candidate.interviewScore ? `${candidate.interviewScore}%` : 'Not interviewed'}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Interview Notes</h3>
-                      <div className="text-xs">
-                        {candidate.interviewNotes || 'No interview notes available'}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {showResume && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-4xl h-[90vh]">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Resume Viewer</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowResume(null)}>
-                <X className="h-4 w-4" />
-              </Button>
+            <CardHeader className="p-6">
+              <CardTitle className="text-lg font-semibold">{candidate.name}</CardTitle>
+              <CardDescription>{candidate.position}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[calc(90vh-8rem)]">
-                <iframe
-                  src={selectedCandidateData.find(c => c.id === showResume)?.resumeUrl}
-                  className="w-full h-full"
-                  title="Resume Viewer"
-                />
-              </ScrollArea>
+
+            <CardContent className="p-6 pt-0 space-y-6">
+              {comparisonMode === 'resume' ? (
+                <>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Briefcase className="h-4 w-4" />
+                        Experience
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        {candidate.experience.map((exp, i) => (
+                          <li key={i} className="text-muted-foreground">{exp}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <GraduationCap className="h-4 w-4" />
+                        Education
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        {candidate.education.map((edu, i) => (
+                          <li key={i} className="text-muted-foreground">{edu}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Star className="h-4 w-4" />
+                        Skills
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {candidate.skills.map(skill => renderSkillBadge(skill))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {candidate.resumeUrl && (
+                    <Button variant="outline" className="w-full">
+                      View Full Resume
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Star className="h-4 w-4" />
+                        Interview Score
+                      </div>
+                      <span className="text-xl font-bold">
+                        {candidate.interviewScore ? `${candidate.interviewScore}%` : 'N/A'}
+                      </span>
+                    </div>
+                    {candidate.interviewScore && (
+                      <Progress value={candidate.interviewScore} className="h-2" />
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Clock className="h-4 w-4" />
+                      Interview Notes
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">
+                      {candidate.interviewNotes || 'No interview notes available'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 };

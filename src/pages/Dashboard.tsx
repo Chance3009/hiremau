@@ -1,76 +1,112 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Check, Clock, X, Users } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, PieChart, Pie, Legend } from 'recharts';
+import { Check, Clock, X, Users, Briefcase, TrendingUp, Calendar, Target, ArrowUp, ArrowDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 const Dashboard = () => {
-  // Mock data for the dashboard
   const candidateStats = [
     {
-      title: "Total Candidates",
+      title: "Active Jobs",
+      value: 12,
+      icon: <Briefcase className="h-4 w-4" />,
+      color: "text-purple-500",
+      bgColor: "bg-purple-50",
+      trend: "+2",
+      trendLabel: "this month",
+      trendUp: true
+    },
+    {
+      title: "Applications",
       value: 74,
-      icon: <Users className="h-5 w-5" />,
+      icon: <Users className="h-4 w-4" />,
       color: "text-blue-500",
-      bgColor: "bg-blue-50"
+      bgColor: "bg-blue-50",
+      trend: "+15",
+      trendLabel: "this week",
+      trendUp: true
     },
     {
-      title: "Shortlisted",
-      value: 28,
-      icon: <Check className="h-5 w-5" />,
-      color: "text-green-500",
-      bgColor: "bg-green-50"
-    },
-    {
-      title: "Keep in View",
-      value: 31,
-      icon: <Clock className="h-5 w-5" />,
+      title: "Time to Hire",
+      value: "21d",
+      icon: <TrendingUp className="h-4 w-4" />,
       color: "text-amber-500",
-      bgColor: "bg-amber-50"
+      bgColor: "bg-amber-50",
+      trend: "-3d",
+      trendLabel: "vs last month",
+      trendUp: false
     },
     {
-      title: "Rejected",
-      value: 15,
-      icon: <X className="h-5 w-5" />,
-      color: "text-red-500",
-      bgColor: "bg-red-50"
+      title: "Success Rate",
+      value: "68%",
+      icon: <Target className="h-4 w-4" />,
+      color: "text-green-500",
+      bgColor: "bg-green-50",
+      trend: "+5%",
+      trendLabel: "vs target",
+      trendUp: true
     }
   ];
 
-  const skillsData = [
-    { name: 'JavaScript', count: 45 },
-    { name: 'React', count: 35 },
-    { name: 'TypeScript', count: 30 },
-    { name: 'Node.js', count: 25 },
-    { name: 'Python', count: 20 },
-    { name: 'Java', count: 15 },
+  const departmentHiring = [
+    { name: 'Engineering', openings: 5, applications: 35, fillRate: 85 },
+    { name: 'Sales', openings: 3, applications: 22, fillRate: 65 },
+    { name: 'Marketing', openings: 2, applications: 18, fillRate: 75 },
+    { name: 'Product', openings: 2, applications: 15, fillRate: 90 },
   ];
 
-  // Data for candidate status chart
-  const statusData = [
-    { name: 'Shortlisted', value: 28, color: '#4CAF50' },
-    { name: 'Keep in View', value: 31, color: '#FFC107' },
-    { name: 'Rejected', value: 15, color: '#F44336' },
+  const hiringTrends = [
+    { month: 'Jan', applications: 45, hires: 5, efficiency: 11.1 },
+    { month: 'Feb', applications: 52, hires: 6, efficiency: 11.5 },
+    { month: 'Mar', applications: 48, hires: 4, efficiency: 8.3 },
+    { month: 'Apr', applications: 70, hires: 8, efficiency: 11.4 },
+    { month: 'May', applications: 74, hires: 7, efficiency: 9.5 },
+  ];
+
+  const skillDemand = [
+    { name: 'JavaScript', value: 25, growth: '+15%' },
+    { name: 'React', value: 20, growth: '+25%' },
+    { name: 'Python', value: 15, growth: '+10%' },
+    { name: 'Java', value: 12, growth: '-5%' },
+    { name: 'DevOps', value: 10, growth: '+30%' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your recruitment activities and candidate metrics.</p>
+    <div className="section-spacing">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">HR Dashboard</h1>
+          <p className="page-subtitle">Recruitment metrics & insights</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground">
+            Last updated: <span className="font-medium">Just now</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {candidateStats.map((stat, index) => (
           <Card key={index}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-3xl font-bold">{stat.value}</p>
-                </div>
-                <div className={`${stat.bgColor} ${stat.color} p-3 rounded-full`}>
+            <CardContent className="card-padding">
+              <div className="flex items-center gap-2">
+                <div className={cn("p-2 rounded-md", stat.bgColor)}>
                   {stat.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{stat.title}</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-lg font-bold">{stat.value}</p>
+                    <div className={cn(
+                      "flex items-center text-xs",
+                      stat.trendUp ? "text-green-500" : "text-red-500"
+                    )}>
+                      {stat.trendUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                      {stat.trend}
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{stat.trendLabel}</p>
                 </div>
               </div>
             </CardContent>
@@ -78,54 +114,86 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Candidate Status Distribution</CardTitle>
-            <CardDescription>Breakdown of candidates by status</CardDescription>
+          <CardHeader className="card-padding">
+            <CardTitle className="card-header-md">Department Overview</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-[300px] w-full">
+          <CardContent className="card-padding pt-0">
+            <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={statusData}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                >
+                <BarChart data={departmentHiring} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]}>
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="openings" fill="#8884d8" name="Open Positions" />
+                  <Bar dataKey="applications" fill="#82ca9d" name="Applications" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span>Highest Fill Rate</span>
+                <span className="font-medium">Product (90%)</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span>Most Active</span>
+                <span className="font-medium">Engineering</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Most Common Skills</CardTitle>
-            <CardDescription>Top skills among candidates</CardDescription>
+          <CardHeader className="card-padding">
+            <CardTitle className="card-header-md">Hiring Efficiency</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-[300px] w-full">
+          <CardContent className="card-padding pt-0">
+            <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={skillsData}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                  layout="vertical"
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={80} />
+                <LineChart data={hiringTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#6366F1" radius={[0, 4, 4, 0]} />
-                </BarChart>
+                  <Line type="monotone" dataKey="efficiency" stroke="#8884d8" name="Hire Rate %" />
+                </LineChart>
               </ResponsiveContainer>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span>Best Month</span>
+                <span className="font-medium">February (11.5%)</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                <span>Current Trend</span>
+                <span className="font-medium text-amber-500">↘ Declining</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader className="card-padding">
+            <CardTitle className="card-header-md">Skills Demand & Growth</CardTitle>
+          </CardHeader>
+          <CardContent className="card-padding pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {skillDemand.map((skill, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                  <div>
+                    <div className="font-medium">{skill.name}</div>
+                    <div className="text-sm text-muted-foreground">Demand: {skill.value}%</div>
+                  </div>
+                  <div className={cn(
+                    "text-sm font-medium",
+                    skill.growth.startsWith('+') ? "text-green-500" : "text-red-500"
+                  )}>
+                    {skill.growth}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

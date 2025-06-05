@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Check } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import ContextFilter from '@/components/layout/ContextFilter';
 import CandidateComparisonComponent from '@/components/candidate/CandidateComparison';
+import { cn } from '@/lib/utils';
 
 // Mock data for events and positions
 const mockEvents = [
@@ -106,11 +108,30 @@ const CandidateComparison = () => {
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
 
+  // Filter candidates based on context filters
+  const filteredCandidates = useMemo(() => {
+    let filtered = [...mockCandidates];
+
+    if (activePosition) {
+      filtered = filtered.filter(c => c.position === activePosition);
+    }
+
+    return filtered;
+  }, [activePosition]);
+
+  // Get selected candidates data
+  const selectedCandidatesData = useMemo(() =>
+    filteredCandidates.filter(c => selectedCandidates.includes(c.id)),
+    [filteredCandidates, selectedCandidates]
+  );
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Candidate Comparison</h1>
-        <p className="text-muted-foreground">Compare candidates side by side to make better decisions.</p>
+    <div className="section-spacing">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Candidate Comparison</h1>
+          <p className="page-subtitle">Compare candidates side by side to make better decisions.</p>
+        </div>
       </div>
 
       <ContextFilter
@@ -127,67 +148,78 @@ const CandidateComparison = () => {
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Select Candidates</CardTitle>
+        <CardHeader className="card-padding">
+          <CardTitle className="card-header-lg">Select Candidates</CardTitle>
+          <CardDescription>Select up to 3 candidates to compare their qualifications</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm mb-4">Select candidates to compare (up to 3):</p>
+          <p className="text-sm text-muted-foreground mb-4">Select candidates to compare (up to 3):</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {mockCandidates.map(candidate => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredCandidates.map(candidate => (
               <div
                 key={candidate.id}
-                className={`p-3 border rounded-md cursor-pointer transition-colors ${selectedCandidates.includes(candidate.id)
-                    ? 'bg-primary/10 border-primary'
-                    : 'hover:bg-muted'
-                  }`}
+                className={cn(
+                  "group relative p-4 border rounded-lg cursor-pointer transition-all",
+                  selectedCandidates.includes(candidate.id)
+                    ? "bg-primary/5 border-primary shadow-sm"
+                    : "hover:bg-muted/50"
+                )}
                 onClick={() => {
                   setSelectedCandidates(prev => {
                     if (prev.includes(candidate.id)) {
                       return prev.filter(id => id !== candidate.id);
                     } else {
-                      // Limit to 3 candidates
                       if (prev.length >= 3) return prev;
                       return [...prev, candidate.id];
                     }
                   });
                 }}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium">{candidate.name}</h3>
-                    <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0">
+                    <h3 className="font-medium truncate">{candidate.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">{candidate.position}</p>
                   </div>
                   {selectedCandidates.includes(candidate.id) && (
-                    <div className="rounded-full bg-primary h-5 w-5 flex items-center justify-center">
-                      <Check className="h-3 w-3 text-white" />
+                    <div className="shrink-0 rounded-full bg-primary h-5 w-5 flex items-center justify-center">
+                      <Check className="h-3 w-3 text-primary-foreground" />
                     </div>
                   )}
+                </div>
+                <div className="mt-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="text-muted-foreground">Score:</div>
+                    <div className="font-medium">{candidate.score}%</div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-between items-center mt-6">
+            <p className="text-sm text-muted-foreground">
+              {selectedCandidates.length} of 3 candidates selected
+            </p>
             <Button
               disabled={selectedCandidates.length < 2}
               onClick={() => {
-                // Scrolling to the comparison section
+                // Scroll to comparison section
                 window.scrollTo({
                   top: window.innerHeight,
                   behavior: 'smooth'
                 });
               }}
             >
-              Compare Selected ({selectedCandidates.length}/3)
+              Compare Selected
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {selectedCandidates.length > 0 && (
+      {selectedCandidates.length >= 2 && (
         <CandidateComparisonComponent
-          candidates={mockCandidates.filter(c => selectedCandidates.includes(c.id))}
+          candidates={selectedCandidatesData}
         />
       )}
     </div>

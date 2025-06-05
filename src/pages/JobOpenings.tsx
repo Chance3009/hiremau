@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Edit, File, Plus, Search, Trash } from 'lucide-react';
 import ContextFilter from '@/components/layout/ContextFilter';
 import { toast } from '@/hooks/use-toast';
+import JobOpeningForm from '@/components/job/JobOpeningForm';
 
 // Mock data for job openings
 const mockJobOpenings = [
@@ -90,29 +90,42 @@ const JobOpenings = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [jobDescription, setJobDescription] = useState('');
 
   // Filter jobs based on search query and active tab
   const filteredJobs = mockJobOpenings.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          job.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.description.toLowerCase().includes(searchQuery.toLowerCase());
+
     if (activeTab === 'all') return matchesSearch;
     if (activeTab === 'active' && job.events.length > 0) return matchesSearch;
     if (activeTab === 'inactive' && job.events.length === 0) return matchesSearch;
-    
+
     return false;
   });
 
-  const handleImportJobDescription = () => {
-    // Simulate processing the job description
-    setTimeout(() => {
-      toast({
-        title: "Job Description Processed",
-        description: "Key requirements extracted from the job description.",
-      });
-      setIsDialogOpen(false);
-    }, 1000);
+  const handleCreateJob = (data: {
+    title: string;
+    department: string;
+    location: string;
+    description: string;
+    requirements: string[];
+  }) => {
+    // In a real app, this would make an API call
+    const newJob = {
+      ...data,
+      id: String(mockJobOpenings.length + 1),
+      events: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    // Add to mock data
+    mockJobOpenings.push(newJob);
+
+    toast({
+      title: "Job Opening Created",
+      description: `Successfully created ${data.title} position.`,
+    });
+    setIsDialogOpen(false);
   };
 
   return (
@@ -121,31 +134,47 @@ const JobOpenings = () => {
         <h1 className="text-2xl font-bold tracking-tight">Job Openings</h1>
         <p className="text-muted-foreground">Create and manage job positions that can be used across multiple events.</p>
       </div>
-      
+
       <div className="flex items-center justify-between">
         <div className="relative w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search job openings..." 
-            className="pl-8" 
+          <Input
+            placeholder="Search job openings..."
+            className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <Button onClick={() => toast({ title: "Feature Coming Soon" })}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Job Opening
-        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Job Opening
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>Create New Job Opening</DialogTitle>
+              <DialogDescription>
+                Add a new job position manually or extract details from an existing job description.
+              </DialogDescription>
+            </DialogHeader>
+            <JobOpeningForm
+              onSubmit={handleCreateJob}
+              onCancel={() => setIsDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">All Positions</TabsTrigger>
           <TabsTrigger value="active">Active in Events</TabsTrigger>
           <TabsTrigger value="inactive">Not Used</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value={activeTab} className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredJobs.map(job => (
@@ -159,7 +188,7 @@ const JobOpenings = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {job.description}
                     </p>
-                    
+
                     {job.requirements.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-1">Key Requirements:</h4>
@@ -173,18 +202,18 @@ const JobOpenings = () => {
                         </ul>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium">Events: </span>
                       <span>
-                        {job.events.length > 0 
-                          ? job.events.length === 1 
-                            ? mockEvents.find(e => e.id === job.events[0])?.name 
+                        {job.events.length > 0
+                          ? job.events.length === 1
+                            ? mockEvents.find(e => e.id === job.events[0])?.name
                             : `${job.events.length} events`
                           : 'Not used in any event'}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between pt-2">
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-1" />
@@ -204,38 +233,6 @@ const JobOpenings = () => {
           </div>
         </TabsContent>
       </Tabs>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Import Job Description</DialogTitle>
-            <DialogDescription>
-              Paste a job description to automatically extract requirements and create a new job opening.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="job-description">Job Description</Label>
-            <Textarea
-              id="job-description"
-              className="min-h-[200px]"
-              placeholder="Paste job description here..."
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleImportJobDescription} disabled={!jobDescription}>
-              <File className="mr-2 h-4 w-4" />
-              Process Description
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

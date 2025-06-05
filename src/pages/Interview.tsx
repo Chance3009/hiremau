@@ -1,17 +1,36 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, MessageSquare, Check, Calendar, Clock, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  Check,
+  Calendar,
+  Clock,
+  Search,
+  Bot,
+  Building2,
+  Users,
+  Briefcase,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import CandidateList from '@/components/candidate/CandidateList';
 import CandidateCard from '@/components/candidate/CandidateCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import ContextFilter from '@/components/layout/ContextFilter';
 import InterviewAssistant from '@/components/interview/InterviewAssistant';
+import InterviewTranscript from '@/components/interview/InterviewTranscript';
+import InterviewChatbot from '@/components/interview/InterviewChatbot';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // Mock data for events and positions
 const mockEvents = [
@@ -28,17 +47,70 @@ const mockPositions = [
 ];
 
 const Interview = () => {
+  const { candidateId } = useParams();
+  const location = useLocation();
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({
     0: true,
   });
   const [notes, setNotes] = useState('');
   const [interviewComplete, setInterviewComplete] = useState(false);
-  const [activeCandidateId, setActiveCandidateId] = useState('1');
+  const [activeCandidateId, setActiveCandidateId] = useState(candidateId || '1');
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState(candidateId ? 'conduct' : 'upcoming');
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
   const [activePosition, setActivePosition] = useState<string | null>(null);
+  const [showSuggestedQuestions, setShowSuggestedQuestions] = useState(true);
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState('recruitment');
+
+  // Mock transcript messages
+  const [messages, setMessages] = useState([
+    {
+      id: '1',
+      type: 'question' as const,
+      content: 'Can you explain your experience with React and TypeScript?',
+      timestamp: '10:30 AM',
+      comment: 'Good technical depth'
+    },
+    {
+      id: '2',
+      type: 'answer' as const,
+      content: 'I have 3 years of experience with React, primarily working on large-scale applications. I\'ve been using TypeScript for the past 2 years and have implemented several complex type systems.',
+      timestamp: '10:31 AM',
+      aiAnalysis: {
+        authenticity: 95,
+        contradictions: [],
+        keyInsights: [
+          'Demonstrated experience with React',
+          'TypeScript proficiency',
+          'Focus on large-scale applications'
+        ]
+      }
+    }
+  ]);
+
+  // Mock suggested questions
+  const suggestedQuestions = [
+    {
+      id: '1',
+      question: "How do you approach state management in large applications?",
+      context: "Position requires experience with complex state management",
+      relevance: 95
+    },
+    {
+      id: '2',
+      question: "Can you describe a challenging technical problem you solved?",
+      context: "Testing problem-solving abilities",
+      relevance: 90
+    },
+    {
+      id: '3',
+      question: "How do you handle API error states in React applications?",
+      context: "Frontend error handling experience required",
+      relevance: 85
+    }
+  ];
 
   // Mock candidates that would come from a backend in a real app
   const candidates = [
@@ -71,33 +143,13 @@ const Interview = () => {
     },
   ];
 
-  // Mock suggested questions
-  const suggestedQuestions = [
-    {
-      id: '0',
-      question: "Can you explain your experience with React and TypeScript?",
-      context: "Candidate listed 3 years of React experience but didn't specify TypeScript proficiency level.",
-      followUp: "Ask about specific projects where they used TypeScript with React."
-    },
-    {
-      id: '1',
-      question: "How do you approach state management in large applications?",
-      context: "Position requires experience with complex state management.",
-      followUp: "Listen for mentions of Redux, Context API, or other state management libraries."
-    },
-    {
-      id: '2',
-      question: "Describe a challenging bug you encountered and how you solved it.",
-      context: "Tests problem-solving abilities and technical debugging skills.",
-      followUp: "Note their debugging methodology and tools used."
-    },
-    {
-      id: '3',
-      question: "How do you stay updated with frontend technologies?",
-      context: "The team values continuous learning and technology awareness.",
-      followUp: "Look for specific learning resources they mention."
-    },
-  ];
+  // Effect to handle route changes
+  useEffect(() => {
+    if (candidateId) {
+      setActiveCandidateId(candidateId);
+      setActiveTab('conduct');
+    }
+  }, [candidateId]);
 
   const handleToggleQuestion = (id: string) => {
     setExpandedQuestions(prev => ({
@@ -109,31 +161,71 @@ const Interview = () => {
   const handleComplete = () => {
     setInterviewComplete(true);
   };
-  
+
   const handleScheduleInterview = () => {
     navigate('/interview/schedule');
   };
-  
+
   const startInterview = (candidateId: string) => {
     setActiveCandidateId(candidateId);
     setActiveTab('conduct');
   };
 
   const activeCandidate = candidates.find(c => c.id === activeCandidateId);
-  
+
   const handleSuggestionUse = (suggestion: string) => {
     // Add the suggestion to notes
     setNotes(prev => prev ? `${prev}\n\nQ: ${suggestion}` : `Q: ${suggestion}`);
   };
 
+  const handleAddComment = (messageId: string, comment: string) => {
+    setMessages(prev => prev.map(msg =>
+      msg.id === messageId ? { ...msg, comment } : msg
+    ));
+  };
+
+  const handleRequestAiAnalysis = async (messageId: string) => {
+    // In a real implementation, this would call your backend API
+    console.log('Requesting AI analysis for message:', messageId);
+  };
+
+  const handleAskAssistant = async (message: string) => {
+    // In a real implementation, this would call your RAG-based backend
+    console.log('Asking assistant:', message);
+  };
+
+  const handleAddQuestion = (question: string) => {
+    const newMessage = {
+      id: Date.now().toString(),
+      type: 'question' as const,
+      content: question,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Interview Assistant</h1>
-        <p className="text-muted-foreground">Conduct structured interviews with AI-suggested questions.</p>
+    <div className="section-spacing">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            {candidateId ? 'Interview Schedule' : 'Interview Assistant'}
+          </h1>
+          <p className="page-subtitle">
+            {candidateId
+              ? 'Schedule an interview with the candidate'
+              : 'Conduct structured interviews with AI assistance'
+            }
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
 
-      <ContextFilter 
+      <ContextFilter
         events={mockEvents}
         positions={mockPositions}
         activeEvent={activeEvent}
@@ -145,232 +237,232 @@ const Interview = () => {
         showFilters={activeTab !== 'conduct'}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <TabsList className="shrink-0">
           <TabsTrigger value="upcoming">Upcoming Interviews</TabsTrigger>
           <TabsTrigger value="conduct">Conduct Interview</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="upcoming" className="pt-4">
-          <div className="flex justify-between items-center mb-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search interviews..." className="pl-8" />
-            </div>
-            
-            <Button onClick={handleScheduleInterview}>
-              <Calendar className="mr-2 h-4 w-4" />
-              Schedule Interview
-            </Button>
-          </div>
-          
-          {viewMode === 'list' ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Interviews</CardTitle>
-                <CardDescription>Interviews scheduled for the next 7 days</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {candidates.map((candidate) => (
-                    <div 
-                      key={candidate.id} 
-                      className="p-4 hover:bg-muted transition-colors cursor-pointer"
-                      onClick={() => startInterview(candidate.id)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{candidate.name}</h3>
-                          <p className="text-sm text-muted-foreground">{candidate.position}</p>
-                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5 mr-0.5" />
-                            <span>{candidate.timestamp}</span>
-                          </div>
-                        </div>
-                        <Button size="sm" onClick={(e) => { 
-                          e.stopPropagation(); 
-                          startInterview(candidate.id);
-                        }}>
-                          Start Interview
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {candidates.map((candidate) => (
-                <div key={candidate.id} onClick={() => startInterview(candidate.id)} className="cursor-pointer">
-                  <Card className="h-full hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-semibold">
-                          {candidate.name.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{candidate.name}</h3>
-                          <p className="text-sm text-muted-foreground">{candidate.position}</p>
-                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5 mr-0.5" />
-                            <span>{candidate.timestamp}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 flex justify-end">
-                        <Button size="sm" onClick={(e) => {
-                          e.stopPropagation();
-                          startInterview(candidate.id);
-                        }}>
-                          Start Interview
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="conduct" className="pt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Candidate Profile</CardTitle>
-                <CardDescription>{activeCandidate?.position}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex flex-col items-center mb-4">
-                    <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold mb-2">
-                      {activeCandidate?.name.charAt(0)}
-                    </div>
-                    <h2 className="font-semibold text-lg">{activeCandidate?.name}</h2>
-                    <p className="text-muted-foreground">{activeCandidate?.position}</p>
-                  </div>
-                  
-                  <div className="space-y-3 pt-2 border-t">
-                    <div className="flex gap-2">
-                      <span className="font-medium">Experience:</span>
-                      <span>5 years</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="font-medium">Key Skills:</span>
-                      <span>React, TypeScript, Node.js, CSS</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="font-medium">Education:</span>
-                      <span>B.S. Computer Science, State University</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="font-medium">Event:</span>
-                      <span>{activeCandidate?.event}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="font-medium">Fit Score:</span>
-                      <span className="text-green-600 font-medium">{activeCandidate?.score}%</span>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4">
-                    <Button 
-                      className="w-full" 
-                      variant="outline" 
-                      onClick={() => window.location.href = `/candidate/${activeCandidateId}`}
-                    >
-                      View Full Profile
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    Suggested Questions
-                  </CardTitle>
-                  <CardDescription>AI-recommended questions based on candidate resume and job requirements</CardDescription>
+        <TabsContent value="upcoming" className="flex-1 pt-4 min-h-0">
+          <div className="flex flex-col h-full gap-4">
+            <div className="flex justify-between items-center shrink-0">
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search interviews..." className="pl-8" />
+              </div>
+            </div>
+
+            {viewMode === 'list' ? (
+              <Card className="flex-1 min-h-0">
+                <CardHeader className="shrink-0">
+                  <CardTitle>Upcoming Interviews</CardTitle>
+                  <CardDescription>Interviews scheduled for the next 7 days</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-auto">
                   <div className="divide-y">
-                    {suggestedQuestions.map((q) => (
-                      <div key={q.id} className="p-4">
-                        <div 
-                          className="flex justify-between cursor-pointer"
-                          onClick={() => handleToggleQuestion(q.id)}
-                        >
-                          <div className="font-medium">{q.question}</div>
-                          <Button variant="ghost" size="sm" className="p-0 h-5 w-5">
-                            {expandedQuestions[q.id] ? 
-                              <ChevronUp className="h-4 w-4" /> : 
-                              <ChevronDown className="h-4 w-4" />}
+                    {candidates.map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        className="p-4 hover:bg-muted transition-colors cursor-pointer"
+                        onClick={() => startInterview(candidate.id)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{candidate.name}</h3>
+                            <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5 mr-0.5" />
+                              <span>{candidate.timestamp}</span>
+                            </div>
+                          </div>
+                          <Button size="sm" onClick={(e) => {
+                            e.stopPropagation();
+                            startInterview(candidate.id);
+                          }}>
+                            Start Interview
                           </Button>
                         </div>
-                        
-                        {expandedQuestions[q.id] && (
-                          <div className="mt-2 space-y-2">
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Context:</span> {q.context}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Follow-up:</span> {q.followUp}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-              
-              <div className="grid grid-cols-1 gap-6">
-                <InterviewAssistant 
-                  candidateName={activeCandidate?.name || ''}
-                  position={activeCandidate?.position || ''}
-                  onSuggestionUse={handleSuggestionUse}
-                />
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Interview Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea 
-                      className="min-h-[150px]" 
-                      placeholder="Take notes during the interview..." 
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                    <div className="mt-4 flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setNotes('')}>
-                        Clear
-                      </Button>
-                      <Button onClick={handleComplete} disabled={interviewComplete}>
-                        <Check className="mr-2 h-4 w-4" />
-                        {interviewComplete ? 'Interview Completed' : 'Complete Interview'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-auto">
+                {candidates.map((candidate) => (
+                  <div key={candidate.id} onClick={() => startInterview(candidate.id)} className="cursor-pointer">
+                    <Card className="h-full hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex gap-3">
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-semibold">
+                            {candidate.name.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium">{candidate.name}</h3>
+                            <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5 mr-0.5" />
+                              <span>{candidate.timestamp}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-end">
+                          <Button size="sm" onClick={(e) => {
+                            e.stopPropagation();
+                            startInterview(candidate.id);
+                          }}>
+                            Start Interview
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="conduct" className="flex-1 pt-4 min-h-0">
+          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-14rem)]">
+            {/* Left Panel - Candidate Info & Assistant */}
+            <div className="col-span-12 lg:col-span-3 flex flex-col gap-4">
+              {/* Candidate Quick Profile */}
+              <Card className="flex-[0_0_auto]">
+                <CardHeader className="card-padding pb-2">
+                  <CardTitle className="card-header-md">Candidate</CardTitle>
+                </CardHeader>
+                <CardContent className="card-padding pt-0">
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-xl font-semibold mb-2">
+                      {activeCandidate?.name.charAt(0)}
+                    </div>
+                    <h2 className="font-semibold">{activeCandidate?.name}</h2>
+                    <p className="text-sm text-muted-foreground">{activeCandidate?.position}</p>
+                    <div className="mt-2 text-sm">
+                      <span className="text-green-600 font-medium">{activeCandidate?.score}% </span>
+                      <span className="text-muted-foreground">match</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => window.location.href = `/candidate/${activeCandidateId}`}
+                    >
+                      View Full Profile
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Interview Assistant */}
+              <Card className="flex-1 min-h-0 flex flex-col">
+                <CardHeader className="card-padding pb-2 flex-[0_0_auto]">
+                  <CardTitle className="card-header-md flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    Assistant
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 flex-1 min-h-0">
+                  <InterviewChatbot onSendMessage={handleAskAssistant} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Center Panel - Interview Transcript */}
+            <div className="col-span-12 lg:col-span-6">
+              <Card className="h-full flex flex-col">
+                <CardHeader className="card-padding pb-2 border-b flex-[0_0_auto]">
+                  <CardTitle className="card-header-md">Interview Transcript</CardTitle>
+                  <CardDescription>Real-time conversation with AI analysis</CardDescription>
+                </CardHeader>
+                <CardContent className="card-padding pt-4 flex-1 overflow-auto">
+                  <InterviewTranscript
+                    messages={messages}
+                    onAddComment={handleAddComment}
+                    onRequestAiAnalysis={handleRequestAiAnalysis}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Panel - Questions & Notes */}
+            <div className="col-span-12 lg:col-span-3 flex flex-col gap-4">
+              {/* Suggested Questions */}
+              <Card className="flex-[3_3_0%] flex flex-col min-h-0">
+                <CardHeader className="card-padding pb-2 flex-[0_0_auto] flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="card-header-md">Suggested Questions</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSuggestedQuestions(!showSuggestedQuestions)}
+                  >
+                    {showSuggestedQuestions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-0 flex-1 min-h-0">
+                  <ScrollArea className="h-full px-4">
+                    <div className="space-y-4 py-2">
+                      {suggestedQuestions.map((suggestion) => (
+                        <div key={suggestion.id} className="p-3 bg-muted rounded-lg space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-medium">{suggestion.question}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleAddQuestion(suggestion.question)}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{suggestion.context}</span>
+                            <span className="font-medium text-primary">
+                              {suggestion.relevance}% match
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Quick Notes */}
+              <Card className="flex-[2_2_0%] flex flex-col min-h-0">
+                <CardHeader className="card-padding pb-2 flex-[0_0_auto]">
+                  <CardTitle className="card-header-md">Quick Notes</CardTitle>
+                </CardHeader>
+                <CardContent className="card-padding pt-0 flex-1 flex flex-col min-h-0">
+                  <Textarea
+                    className="flex-1 min-h-0 resize-none"
+                    placeholder="Take quick notes during the interview..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-2 mt-2 shrink-0">
+                    <Button variant="outline" size="sm" onClick={() => setNotes('')}>
+                      Clear
+                    </Button>
+                    <Button size="sm" onClick={handleComplete}>
+                      {interviewComplete ? 'Completed' : 'Complete Interview'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
-        
-        <TabsContent value="completed" className="pt-4">
-          <Card>
-            <CardHeader>
+
+        <TabsContent value="completed" className="flex-1 pt-4 min-h-0">
+          <Card className="h-full">
+            <CardHeader className="shrink-0">
               <CardTitle>Completed Interviews</CardTitle>
               <CardDescription>View and manage interview results</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-[calc(100%-5rem)] overflow-auto">
               <div className="text-center py-8 text-muted-foreground">
                 No completed interviews yet
               </div>
