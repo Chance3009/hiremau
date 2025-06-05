@@ -43,5 +43,6 @@ export const RECRUITMENT_PATHS = [
     "/recruitment",
     "/candidates",
     "/interviews",
+    "/interview",
     "/offers"
 ]; 

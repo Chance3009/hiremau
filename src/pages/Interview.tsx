@@ -50,24 +50,24 @@ const mockCandidate = {
 };
 
 const mockInterviewContent = [
-  {
-    id: '1',
-    type: 'question' as const,
+    {
+      id: '1',
+      type: 'question' as const,
     content: 'Can you walk me through your experience with large-scale React applications?',
-    timestamp: '10:30 AM',
+      timestamp: '10:30 AM',
     category: 'technical-experience',
     color: 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900',
     aiAnalysis: {
       type: 'baseline',
       summary: 'Question targets core technical experience mentioned in resume'
     }
-  },
-  {
-    id: '2',
-    type: 'answer' as const,
+    },
+    {
+      id: '2',
+      type: 'answer' as const,
     content: 'In my current role at TechCorp, I led the development of our customer dashboard that serves over 50,000 daily users. We used React with TypeScript, and I implemented a micro-frontend architecture to handle the scale.',
-    timestamp: '10:31 AM',
-    rating: 4,
+      timestamp: '10:31 AM',
+      rating: 4,
     color: 'bg-white dark:bg-gray-800 border-gray-200',
     aiAnalysis: {
       type: 'excellent',
@@ -77,9 +77,9 @@ const mockInterviewContent = [
       resumeMatch: true
     },
     quickLabels: ['Technical Leadership', 'Scale Experience']
-  },
-  {
-    id: '3',
+    },
+    {
+      id: '3',
     type: 'answer' as const,
     content: 'We mainly used basic unit tests, but I haven\'t worked much with integration testing.',
     timestamp: '10:32 AM',
@@ -93,12 +93,12 @@ const mockInterviewContent = [
       resumeMatch: false
     },
     quickLabels: ['Limited Testing Experience']
-  },
-  {
-    id: '4',
-    type: 'answer' as const,
+    },
+    {
+      id: '4',
+      type: 'answer' as const,
     content: 'I have 8 years of experience with cloud architecture.',
-    timestamp: '10:33 AM',
+      timestamp: '10:33 AM',
     rating: 1,
     color: 'bg-white dark:bg-gray-800 border-gray-200',
     aiAnalysis: {
@@ -348,11 +348,11 @@ const Interview: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                     <User className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
+              </div>
+              <div>
                     <CardTitle className="text-base">{mockCandidate.name}</CardTitle>
-                    <CardDescription>{mockCandidate.position}</CardDescription>
-                  </div>
+                <CardDescription>{mockCandidate.position}</CardDescription>
+              </div>
                 </div>
                 <HoverCard>
                   <HoverCardTrigger>
@@ -363,48 +363,48 @@ const Interview: React.FC = () => {
                   <HoverCardContent className="w-80">
                     <ScrollArea className="h-80">
                       <div className="space-y-4">
-                        <div>
+              <div>
                           <h4 className="font-medium">Experience</h4>
-                          <p className="text-sm text-muted-foreground">{mockCandidate.experience}</p>
-                        </div>
-                        <Separator />
-                        <div>
+                <p className="text-sm text-muted-foreground">{mockCandidate.experience}</p>
+              </div>
+              <Separator />
+              <div>
                           <h4 className="font-medium">Education</h4>
-                          <p className="text-sm text-muted-foreground">{mockCandidate.education}</p>
-                        </div>
-                        <Separator />
-                        <div>
+                <p className="text-sm text-muted-foreground">{mockCandidate.education}</p>
+              </div>
+              <Separator />
+              <div>
                           <h4 className="font-medium">Skills</h4>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {mockCandidate.skills.map((skill, index) => (
+                  {mockCandidate.skills.map((skill, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <Separator />
-                        <div>
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+              <div>
                           <h4 className="font-medium">AI Summary</h4>
                           <div className="space-y-2 mt-1">
-                            <div>
-                              <p className="text-sm font-medium text-green-600">Strengths</p>
+                  <div>
+                    <p className="text-sm font-medium text-green-600">Strengths</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {mockCandidate.aiSummary.strengths.map((strength, index) => (
-                                  <li key={index}>{strength}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-yellow-600">Considerations</p>
+                      {mockCandidate.aiSummary.strengths.map((strength, index) => (
+                        <li key={index}>{strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600">Considerations</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {mockCandidate.aiSummary.considerations.map((consideration, index) => (
-                                  <li key={index}>{consideration}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
+                      {mockCandidate.aiSummary.considerations.map((consideration, index) => (
+                        <li key={index}>{consideration}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
                       </div>
                     </ScrollArea>
                   </HoverCardContent>
@@ -441,7 +441,7 @@ const Interview: React.FC = () => {
                         <Textarea placeholder="Ask AI assistant..." className="h-8 text-xs" />
                         <Button size="sm" className="h-8">
                           <Bot className="h-3 w-3" />
-                        </Button>
+              </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -457,13 +457,13 @@ const Interview: React.FC = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Interview Transcript</CardTitle>
-                <Button
-                  variant={isRecording ? "destructive" : "default"}
-                  size="sm"
-                  onClick={() => setIsRecording(!isRecording)}
-                >
+              <Button
+                variant={isRecording ? "destructive" : "default"}
+                size="sm"
+                onClick={() => setIsRecording(!isRecording)}
+              >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
+              </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -616,36 +616,36 @@ const Interview: React.FC = () => {
             {/* Suggested Questions */}
             <Card className="h-[40%]">
               <CardHeader className="py-2">
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Suggested Questions</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                     onClick={refreshSuggestedQuestions}
-                    disabled={isRefreshingQuestions}
+                  disabled={isRefreshingQuestions}
                     className="h-8 px-2"
-                  >
+                >
                     <RefreshCw className={cn(
                       "h-4 w-4",
                       isRefreshingQuestions && "animate-spin"
                     )} />
-                  </Button>
-                </div>
-              </CardHeader>
+                </Button>
+              </div>
+            </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   <div className="grid grid-cols-1 gap-1">
                     {suggestedQuestions.map((question) => (
                       <HoverCard key={question.id}>
                         <HoverCardTrigger asChild>
-                          <Button
-                            variant="ghost"
+                    <Button
+                      variant="ghost"
                             className="w-full justify-start text-left h-auto py-1.5 px-2 text-xs font-normal whitespace-normal"
-                          >
+                    >
                             <div className="line-clamp-2">
                               {question.question}
                             </div>
-                          </Button>
+                    </Button>
                         </HoverCardTrigger>
                         <HoverCardContent side="left" className="w-80">
                           <div className="space-y-2">
@@ -662,11 +662,11 @@ const Interview: React.FC = () => {
                           </div>
                         </HoverCardContent>
                       </HoverCard>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
 
             {/* Quick Notes Section */}
             <Card className="h-[60%]">

@@ -59,36 +59,21 @@ const menuGroups: MenuGroup[] = [
         title: "Job Openings",
         path: "/job-openings",
         icon: <Briefcase size={18} />
+      },
+      {
+        title: "Recruitment Pipeline",
+        path: "/applied",
+        icon: <Users size={18} />
       }
     ]
   },
   {
-    label: "Recruitment Pipeline",
+    label: "Interview",
     items: [
       {
-        title: "Applied",
-        path: "/applied",
-        icon: <UserPlus size={18} />
-      },
-      {
-        title: "Screening",
-        path: "/screened",
-        icon: <FileCheck size={18} />
-      },
-      {
-        title: "Interviews",
-        path: "/interviewed",
+        title: "Interview Lobby",
+        path: "/interview",
         icon: <MessageSquare size={18} />
-      },
-      {
-        title: "Final Review",
-        path: "/final-review",
-        icon: <CheckSquare size={18} />
-      },
-      {
-        title: "Hired",
-        path: "/hired",
-        icon: <UserCheck size={18} />
       }
     ]
   },
@@ -116,25 +101,27 @@ export function AppSidebar() {
       <SidebarHeader className="border-b shrink-0">
         <div className={cn(
           "flex items-center transition-all duration-200 ease-in-out",
-          state === "expanded" ? "px-6 py-4 justify-between" : "p-2 justify-center"
+          state === "expanded" ? "px-4 py-4 justify-between" : "p-2 justify-center"
         )}>
           <div
             className={cn(
-              "transition-all duration-200 ease-in-out cursor-pointer",
-              state === "expanded" ? "h-8 w-[120px]" : "h-8 w-8"
+              "flex items-center gap-1 transition-all duration-200 ease-in-out cursor-pointer",
+              state === "expanded" ? "w-full" : ""
             )}
             onClick={() => state === "collapsed" && setOpen(true)}
           >
-            <img
-              src="/HireMau.png"
-              alt="HireMau Logo"
-              className={cn(
-                "transition-all duration-200",
-                state === "expanded"
-                  ? "w-full h-full object-contain"
-                  : "w-8 h-8 object-cover rounded-md"
-              )}
-            />
+            <div className="h-9 w-9 shrink-0">
+              <img
+                src="/icon.png"
+                alt="HireMau Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            {state === "expanded" && (
+              <span className="text-lg font-semibold tracking-tight" style={{ fontFamily: 'Arial, sans-serif', color: '#e0362e' }}>
+                HireMau
+              </span>
+            )}
           </div>
           {state === "expanded" && (
             <SidebarTrigger
@@ -143,11 +130,6 @@ export function AppSidebar() {
             />
           )}
         </div>
-        {state === "expanded" && (
-          <div className="px-6 pb-3">
-            <span className="text-sm font-medium text-muted-foreground/80">AI Recruitment Assistant</span>
-          </div>
-        )}
       </SidebarHeader>
 
       <SidebarContent

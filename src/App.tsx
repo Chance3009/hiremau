@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import Layout from '@/components/layout/Layout';
 import Interview from '@/pages/Interview';
+import InterviewLobby from '@/pages/InterviewLobby';
 import CandidateIntake from '@/pages/CandidateIntake';
 import AppliedCandidates from '@/pages/AppliedCandidates';
 import Screening from '@/pages/Screening';
@@ -46,7 +47,12 @@ function App() {
                     <Route path="qr-registration" element={<QRRegistration />} />
                     <Route path="applied" element={<AppliedCandidates />} />
                     <Route path="screened" element={<Screening />} />
-                    <Route path="interviewed" element={<Interview />} />
+                    <Route path="interviewed" element={<InterviewLobby />} />
+                    <Route path="interview">
+                      <Route index element={<InterviewLobby />} />
+                      <Route path="new" element={<Interview />} />
+                      <Route path=":id" element={<Interview />} />
+                    </Route>
                     <Route path="final-review" element={<FinalReview />} />
                     <Route path="shortlisted" element={<ShortlistedCandidates />} />
                     <Route path="candidate/:id" element={<CandidateView />} />
