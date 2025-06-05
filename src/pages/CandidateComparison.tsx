@@ -1,101 +1,67 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Star, 
-  Award, 
-  Briefcase, 
-  GraduationCap,
-  Check,
-  X,
-  ArrowLeft,
-  Users
-} from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeft, Check, Mail, MapPin, Phone, User } from 'lucide-react';
 
-interface Candidate {
-  id: string;
-  name: string;
-  title: string;
-  email: string;
-  phone: string;
-  location: string;
-  experience: number;
-  education: string;
-  skills: string[];
-  resume: string;
-  interviewNotes: string;
-  rating: number;
-}
-
-const mockCandidates: Candidate[] = [
+// Mock data
+const mockCandidates = [
   {
     id: '1',
-    name: 'Alice Johnson',
-    title: 'Software Engineer',
-    email: 'alice.j@example.com',
-    phone: '123-456-7890',
-    location: 'New York, NY',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 234 567 8900',
+    location: 'New York, USA',
+    skills: ['React', 'TypeScript', 'Node.js'],
     experience: 5,
-    education: 'Master of Science in Computer Science',
-    skills: ['JavaScript', 'React', 'Node.js', 'HTML', 'CSS'],
-    resume: 'alice_resume.pdf',
-    interviewNotes: 'Strong technical skills, good communication.',
-    rating: 4.5,
+    education: 'BS Computer Science',
+    interviewNotes: 'Strong technical skills, good communication. Shows leadership potential.'
   },
   {
     id: '2',
-    name: 'Bob Williams',
-    title: 'Frontend Developer',
-    email: 'bob.w@example.com',
-    phone: '987-654-3210',
-    location: 'Los Angeles, CA',
-    experience: 3,
-    education: 'Bachelor of Arts in Web Development',
-    skills: ['JavaScript', 'React', 'Redux', 'HTML', 'CSS'],
-    resume: 'bob_resume.pdf',
-    interviewNotes: 'Passionate about UI, needs more experience with backend.',
-    rating: 4.0,
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    phone: '+1 234 567 8901',
+    location: 'San Francisco, USA',
+    skills: ['Angular', 'Python', 'AWS'],
+    experience: 7,
+    education: 'MS Software Engineering',
+    interviewNotes: 'Excellent problem-solving abilities. Great team player with strong architectural background.'
   },
   {
     id: '3',
-    name: 'Charlie Brown',
-    title: 'Backend Developer',
-    email: 'charlie.b@example.com',
-    phone: '555-123-4567',
-    location: 'Chicago, IL',
-    experience: 7,
-    education: 'PhD in Computer Engineering',
-    skills: ['Python', 'Django', 'SQL', 'Docker', 'AWS'],
-    resume: 'charlie_resume.pdf',
-    interviewNotes: 'Expert in backend systems, excellent problem-solver.',
-    rating: 5.0,
-  },
+    name: 'Mike Johnson',
+    email: 'mike.j@example.com',
+    phone: '+1 234 567 8902',
+    location: 'Austin, USA',
+    skills: ['Vue.js', 'Java', 'Docker'],
+    experience: 4,
+    education: 'BS Information Technology',
+    interviewNotes: 'Good technical foundation. Enthusiastic about learning new technologies.'
+  }
 ];
+
+const getCandidate = (id: string) => mockCandidates.find(c => c.id === id);
 
 const CandidateComparison = () => {
   const navigate = useNavigate();
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>(['1', '2']);
-  const [viewMode, setViewMode<'resume' | 'interview'>('resume');
+  const [viewMode, setViewMode] = useState<'resume' | 'interview'>('resume');
 
   const handleCandidateToggle = (candidateId: string) => {
-    setSelectedCandidates((prev) =>
-      prev.includes(candidateId)
-        ? prev.filter((id) => id !== candidateId)
-        : [...prev, candidateId]
-    );
+    setSelectedCandidates((prev) => {
+      if (prev.includes(candidateId)) {
+        return prev.filter(id => id !== candidateId);
+      }
+      if (prev.length < 2) {
+        return [...prev, candidateId];
+      }
+      return [prev[1], candidateId];
+    });
   };
-
-  const getCandidate = (id: string) =>
-    mockCandidates.find((candidate) => candidate.id === id);
 
   const isSelected = (candidateId: string) =>
     selectedCandidates.includes(candidateId);
@@ -150,7 +116,7 @@ const CandidateComparison = () => {
       </Card>
 
       {/* View Mode Toggle */}
-      <Tabs defaultValue={viewMode} className="w-full">
+      <Tabs value={viewMode} className="w-full">
         <TabsList>
           <TabsTrigger value="resume" onClick={() => setViewMode('resume')}>
             Resume View

@@ -49,6 +49,13 @@ const Dashboard = () => {
     }
   ];
 
+  const positionMetrics = [
+    { position: "Software Engineer", total: 45, shortlisted: 15, interviewed: 8, offered: 3 },
+    { position: "Product Manager", total: 38, shortlisted: 12, interviewed: 6, offered: 2 },
+    { position: "UX Designer", total: 32, shortlisted: 10, interviewed: 5, offered: 1 },
+    { position: "Data Scientist", total: 28, shortlisted: 8, interviewed: 4, offered: 2 },
+  ];
+
   const departmentHiring = [
     { name: 'Engineering', openings: 5, applications: 35, fillRate: 85 },
     { name: 'Sales', openings: 3, applications: 22, fillRate: 65 },
@@ -73,11 +80,11 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="section-spacing">
-      <div className="page-header">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="page-title">HR Dashboard</h1>
-          <p className="page-subtitle">Recruitment metrics & insights</p>
+          <h1 className="text-2xl font-bold">HR Dashboard</h1>
+          <p className="text-muted-foreground">Recruitment metrics & insights</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-sm text-muted-foreground">
@@ -86,27 +93,27 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {candidateStats.map((stat, index) => (
           <Card key={index}>
-            <CardContent className="card-padding">
-              <div className="flex items-center gap-2">
-                <div className={cn("p-2 rounded-md", stat.bgColor)}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={cn("p-2.5 rounded-lg", stat.bgColor)}>
                   {stat.icon}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{stat.title}</p>
-                  <div className="flex items-baseline gap-1">
-                    <p className="text-lg font-bold">{stat.value}</p>
+                  <p className="text-sm font-medium text-muted-foreground truncate">{stat.title}</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{stat.value}</p>
                     <div className={cn(
-                      "flex items-center text-xs",
-                      stat.trendUp ? "text-green-500" : "text-red-500"
+                      "flex items-center text-xs font-medium",
+                      stat.trendUp ? "text-green-600" : "text-red-600"
                     )}>
                       {stat.trendUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                       {stat.trend}
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">{stat.trendLabel}</p>
+                  <p className="text-xs text-muted-foreground">{stat.trendLabel}</p>
                 </div>
               </div>
             </CardContent>
@@ -114,13 +121,56 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Card>
+        <CardHeader className="p-6">
+          <CardTitle>Position Overview</CardTitle>
+          <CardDescription>Recruitment pipeline by position</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="space-y-4">
+            {positionMetrics.map((position, index) => (
+              <div key={index} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">{position.position}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {position.total} total applications
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="text-sm font-medium">{position.shortlisted}</p>
+                      <p className="text-xs text-muted-foreground">Shortlisted</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">{position.interviewed}</p>
+                      <p className="text-xs text-muted-foreground">Interviewed</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">{position.offered}</p>
+                      <p className="text-xs text-muted-foreground">Offered</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="bg-blue-100 h-2 rounded-full" style={{ width: `${(position.shortlisted / position.total) * 100}%` }} />
+                  <div className="bg-green-100 h-2 rounded-full" style={{ width: `${(position.interviewed / position.total) * 100}%` }} />
+                  <div className="bg-purple-100 h-2 rounded-full" style={{ width: `${(position.offered / position.total) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
-          <CardHeader className="card-padding">
-            <CardTitle className="card-header-md">Department Overview</CardTitle>
+          <CardHeader className="p-6">
+            <CardTitle>Department Overview</CardTitle>
+            <CardDescription>Hiring progress by department</CardDescription>
           </CardHeader>
-          <CardContent className="card-padding pt-0">
-            <div className="h-[200px]">
+          <CardContent className="p-6 pt-0">
+            <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={departmentHiring} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -132,25 +182,26 @@ const Dashboard = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span>Highest Fill Rate</span>
-                <span className="font-medium">Product (90%)</span>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">Highest Fill Rate</span>
+                <span className="text-sm font-semibold">Product (90%)</span>
               </div>
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span>Most Active</span>
-                <span className="font-medium">Engineering</span>
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">Most Active</span>
+                <span className="text-sm font-semibold">Engineering</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="col-span-1">
-          <CardHeader className="card-padding">
-            <CardTitle className="card-header-md">Hiring Efficiency</CardTitle>
+          <CardHeader className="p-6">
+            <CardTitle>Hiring Efficiency</CardTitle>
+            <CardDescription>Monthly hiring trends and efficiency</CardDescription>
           </CardHeader>
-          <CardContent className="card-padding pt-0">
-            <div className="h-[200px]">
+          <CardContent className="p-6 pt-0">
+            <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={hiringTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -161,34 +212,35 @@ const Dashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span>Best Month</span>
-                <span className="font-medium">February (11.5%)</span>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">Best Month</span>
+                <span className="text-sm font-semibold">February (11.5%)</span>
               </div>
-              <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                <span>Current Trend</span>
-                <span className="font-medium text-amber-500">↘ Declining</span>
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium">Current Trend</span>
+                <span className="text-sm font-semibold text-amber-500">↘ Declining</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="col-span-1 lg:col-span-2">
-          <CardHeader className="card-padding">
-            <CardTitle className="card-header-md">Skills Demand & Growth</CardTitle>
+          <CardHeader className="p-6">
+            <CardTitle>Skills Demand & Growth</CardTitle>
+            <CardDescription>Current skill requirements and trends</CardDescription>
           </CardHeader>
-          <CardContent className="card-padding pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <CardContent className="p-6 pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {skillDemand.map((skill, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div>
                     <div className="font-medium">{skill.name}</div>
                     <div className="text-sm text-muted-foreground">Demand: {skill.value}%</div>
                   </div>
                   <div className={cn(
                     "text-sm font-medium",
-                    skill.growth.startsWith('+') ? "text-green-500" : "text-red-500"
+                    skill.growth.startsWith('+') ? "text-green-600" : "text-red-600"
                   )}>
                     {skill.growth}
                   </div>

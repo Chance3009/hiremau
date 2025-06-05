@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Users, Brain, FileSearch, MessageSquare, Calendar, Briefcase } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 const HRDashboard = () => {
     const navigate = useNavigate();
@@ -13,22 +14,34 @@ const HRDashboard = () => {
             title: "Active Screening Sessions",
             value: "12",
             change: "+3 from last week",
-            icon: <Brain className="h-5 w-5" />,
-            color: "text-blue-500 bg-blue-50"
+            icon: <Brain className="h-4 w-4" />,
+            color: "text-blue-500",
+            bgColor: "bg-blue-50",
+            trend: "+3",
+            trendLabel: "from last week",
+            trendUp: true
         },
         {
             title: "AI-Verified Candidates",
             value: "45",
             change: "98% accuracy rate",
-            icon: <FileSearch className="h-5 w-5" />,
-            color: "text-green-500 bg-green-50"
+            icon: <FileSearch className="h-4 w-4" />,
+            color: "text-green-500",
+            bgColor: "bg-green-50",
+            trend: "98%",
+            trendLabel: "accuracy rate",
+            trendUp: true
         },
         {
             title: "Interview Assistance",
             value: "28",
             change: "4.8/5 feedback score",
-            icon: <MessageSquare className="h-5 w-5" />,
-            color: "text-purple-500 bg-purple-50"
+            icon: <MessageSquare className="h-4 w-4" />,
+            color: "text-purple-500",
+            bgColor: "bg-purple-50",
+            trend: "4.8",
+            trendLabel: "feedback score",
+            trendUp: true
         }
     ];
 
@@ -66,7 +79,7 @@ const HRDashboard = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">HR Dashboard</h1>
+                    <h1 className="text-2xl font-bold">HR Dashboard</h1>
                     <p className="text-muted-foreground">AI-powered recruitment insights and activities</p>
                 </div>
                 <Button onClick={() => navigate('/candidate-intake')}>
@@ -74,18 +87,26 @@ const HRDashboard = () => {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {aiInsights.map((insight, index) => (
                     <Card key={index}>
                         <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">{insight.title}</p>
-                                    <p className="text-2xl font-bold mt-1">{insight.value}</p>
-                                    <p className="text-sm text-muted-foreground mt-1">{insight.change}</p>
-                                </div>
-                                <div className={`p-3 rounded-full ${insight.color}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={cn("p-2.5 rounded-lg", insight.bgColor)}>
                                     {insight.icon}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium text-muted-foreground truncate">{insight.title}</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-2xl font-bold">{insight.value}</p>
+                                        <div className={cn(
+                                            "flex items-center text-xs font-medium",
+                                            insight.trendUp ? "text-green-600" : "text-red-600"
+                                        )}>
+                                            {insight.trend}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{insight.trendLabel}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -93,19 +114,16 @@ const HRDashboard = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">Upcoming Events</CardTitle>
-                            <Calendar className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                    <CardHeader className="p-6">
+                        <CardTitle>Upcoming Events</CardTitle>
                         <CardDescription>Scheduled recruitment events and progress</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6 pt-0">
                         <div className="space-y-4">
                             {upcomingEvents.map((event, index) => (
-                                <div key={index} className="space-y-2">
+                                <div key={index} className="space-y-3">
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <p className="font-medium">{event.title}</p>
@@ -123,26 +141,29 @@ const HRDashboard = () => {
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">Active Positions</CardTitle>
-                            <Briefcase className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                    <CardHeader className="p-6">
+                        <CardTitle>Active Positions</CardTitle>
                         <CardDescription>Current openings and candidate matches</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6 pt-0">
                         <div className="space-y-4">
                             {activePositions.map((position, index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <div>
-                                        <p className="font-medium">{position.title}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {position.candidates} candidates, {position.matches} matches
-                                        </p>
+                                <div key={index} className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">{position.title}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {position.candidates} candidates, {position.matches} matches
+                                            </p>
+                                        </div>
+                                        <Button variant="outline" size="sm">
+                                            {position.deadline} left
+                                        </Button>
                                     </div>
-                                    <Button variant="outline" size="sm">
-                                        {position.deadline} left
-                                    </Button>
+                                    <Progress
+                                        value={(position.matches / position.candidates) * 100}
+                                        className="h-2"
+                                    />
                                 </div>
                             ))}
                         </div>

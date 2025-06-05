@@ -14,74 +14,94 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const EventDashboard: React.FC = () => {
     const eventStats = [
         {
-            title: "Check-ins",
-            value: 45,
-            trend: "+12",
-            trendLabel: "last hour",
+            title: "Total Registrations",
+            value: "248",
             icon: <Users className="h-4 w-4" />,
             color: "text-blue-500",
+            trend: "+12",
+            trendLabel: "vs last event",
             trendUp: true
         },
         {
-            title: "Wait Time",
-            value: "25m",
-            trend: "-5m",
-            trendLabel: "vs morning",
-            icon: <Clock className="h-4 w-4" />,
-            color: "text-amber-500",
-            trendUp: false
-        },
-        {
-            title: "Completed",
-            value: "65%",
-            trend: "+5%",
-            trendLabel: "vs target",
+            title: "Check-ins",
+            value: "186",
             icon: <CheckCircle2 className="h-4 w-4" />,
             color: "text-green-500",
+            trend: "75%",
+            trendLabel: "attendance rate",
             trendUp: true
         },
         {
-            title: "No Shows",
-            value: "7%",
-            trend: "-2%",
-            trendLabel: "vs avg",
-            icon: <AlertTriangle className="h-4 w-4" />,
-            color: "text-red-500",
-            trendUp: false
+            title: "Avg Wait Time",
+            value: "12m",
+            icon: <Clock className="h-4 w-4" />,
+            color: "text-amber-500",
+            trend: "-3m",
+            trendLabel: "vs target",
+            trendUp: true
+        },
+        {
+            title: "Interviews Done",
+            value: "142",
+            icon: <MessageSquare className="h-4 w-4" />,
+            color: "text-purple-500",
+            trend: "76%",
+            trendLabel: "completion rate",
+            trendUp: true
+        }
+    ];
+
+    const positionStats = [
+        {
+            position: "Software Engineer",
+            slots: 15,
+            registered: 45,
+            interviewed: 32,
+            shortlisted: 12
+        },
+        {
+            position: "Product Manager",
+            slots: 8,
+            registered: 28,
+            interviewed: 22,
+            shortlisted: 6
+        },
+        {
+            position: "UX Designer",
+            slots: 5,
+            registered: 18,
+            interviewed: 15,
+            shortlisted: 4
         }
     ];
 
     const timelineData = [
-        { time: '9:00', interviews: 5, waitTime: 15, satisfaction: 90 },
-        { time: '10:00', interviews: 8, waitTime: 20, satisfaction: 85 },
-        { time: '11:00', interviews: 12, waitTime: 25, satisfaction: 82 },
-        { time: '12:00', interviews: 7, waitTime: 30, satisfaction: 78 },
-        { time: '13:00', interviews: 10, waitTime: 22, satisfaction: 88 },
-        { time: '14:00', interviews: 15, waitTime: 18, satisfaction: 92 },
-    ];
-
-    const upcomingInterviews = [
-        { time: '14:30', candidate: 'John Doe', interviewer: 'Sarah Smith', room: 'Room A', status: 'Ready' },
-        { time: '14:45', candidate: 'Jane Smith', interviewer: 'Mike Johnson', room: 'Room B', status: 'Waiting' },
-        { time: '15:00', candidate: 'Alex Brown', interviewer: 'Lisa Davis', room: 'Room C', status: 'Preparing' },
+        { time: '9:00', interviews: 0, satisfaction: 0 },
+        { time: '10:00', interviews: 15, satisfaction: 85 },
+        { time: '11:00', interviews: 25, satisfaction: 88 },
+        { time: '12:00', interviews: 18, satisfaction: 82 },
+        { time: '13:00', interviews: 12, satisfaction: 85 },
+        { time: '14:00', interviews: 28, satisfaction: 90 },
+        { time: '15:00', interviews: 20, satisfaction: 87 },
+        { time: '16:00', interviews: 15, satisfaction: 86 }
     ];
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div className="space-y-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">UPM Career Fair 2025</h1>
-                    <p className="text-sm text-muted-foreground">Real-time event monitoring and management</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Tech Career Fair</h1>
+                    <p className="text-muted-foreground">March 15, 2024 • Ongoing</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="h-7 px-3">
-                        <Timer className="w-4 h-4 mr-2" />
-                        5h 23m Remaining
-                    </Badge>
-                    <Badge variant="default" className="h-7 px-3 bg-green-600">
-                        <Activity className="w-4 h-4 mr-2" />
-                        Live
-                    </Badge>
+                    <Button variant="outline" size="sm">
+                        <Clock className="h-4 w-4 mr-2" />
+                        Event Schedule
+                    </Button>
+                    <Button size="sm">
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Check-in
+                    </Button>
                 </div>
             </div>
 
@@ -96,7 +116,7 @@ const EventDashboard: React.FC = () => {
                                 <div className="space-y-0.5">
                                     <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
                                     <div className="flex items-baseline gap-2">
-                                        <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
+                                        <p className="text-2xl font-bold">{stat.value}</p>
                                         <div className={cn(
                                             "flex items-center text-xs font-medium",
                                             stat.trendUp ? "text-green-600" : "text-red-600"
@@ -113,109 +133,68 @@ const EventDashboard: React.FC = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card className="col-span-1">
-                    <CardHeader className="p-6 pb-2">
-                        <CardTitle className="text-lg font-semibold">Real-time Queue</CardTitle>
-                        <CardDescription>Current check-in and interview queue status</CardDescription>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="lg:col-span-2">
+                    <CardHeader className="p-6">
+                        <CardTitle>Position Overview</CardTitle>
+                        <CardDescription>Registration and interview progress by position</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <h3 className="text-lg font-semibold">Check-in & Queue</h3>
-                                    <p className="text-sm text-muted-foreground">Manage candidate check-ins and interview queue</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <Users className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-xl font-semibold">2</span>
-                                        <span className="text-sm text-muted-foreground">in queue</span>
-                                    </div>
-                                    <Button variant="default" size="sm" className="gap-2">
-                                        <Users className="h-4 w-4" />
-                                        Check-in Candidate
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h4 className="text-sm font-medium">Current Queue</h4>
-                                        <p className="text-sm text-muted-foreground">Candidates waiting for interviews</p>
-                                    </div>
-                                    <div className="relative">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input placeholder="Search candidates..." className="pl-8" />
-                                    </div>
-                                    <ScrollArea className="h-[240px] pr-4">
-                                        <div className="space-y-2">
-                                            {/* Queue items */}
-                                            <Card>
-                                                <CardContent className="p-4">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="space-y-1">
-                                                            <p className="font-medium">Alex Johnson</p>
-                                                            <p className="text-sm text-muted-foreground">Frontend Developer</p>
-                                                        </div>
-                                                        <Badge variant="secondary">interviewing</Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                                        <Clock className="h-4 w-4" />
-                                                        <span>Checked in at 09:30 AM</span>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                            <Card>
-                                                <CardContent className="p-4">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="space-y-1">
-                                                            <p className="font-medium">Sarah Wilson</p>
-                                                            <p className="text-sm text-muted-foreground">UX Designer</p>
-                                                        </div>
-                                                        <div className="text-sm text-muted-foreground">~30 min wait</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                                        <Clock className="h-4 w-4" />
-                                                        <span>Checked in at 09:45 AM</span>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
+                    <CardContent className="p-6 pt-0">
+                        <div className="space-y-4">
+                            {positionStats.map((position, index) => (
+                                <div key={index} className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-medium">{position.position}</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                {position.slots} open positions • {position.registered} registered
+                                            </p>
                                         </div>
-                                    </ScrollArea>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h4 className="text-sm font-medium">Queue Statistics</h4>
-                                        <p className="text-sm text-muted-foreground">Real-time queue metrics</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-center">
+                                                <p className="text-sm font-medium">{position.interviewed}</p>
+                                                <p className="text-xs text-muted-foreground">Interviewed</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-medium">{position.shortlisted}</p>
+                                                <p className="text-xs text-muted-foreground">Shortlisted</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-4">
-                                        <Card>
-                                            <CardContent className="p-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium">Average Wait Time</span>
-                                                    <span className="text-2xl font-bold">25m</span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardContent className="p-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium">Active Interviews</span>
-                                                    <span className="text-2xl font-bold">3</span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardContent className="p-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium">Completed Today</span>
-                                                    <span className="text-2xl font-bold">12</span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                    <div className="flex gap-2">
+                                        <div className="bg-blue-100 h-2 rounded-full" style={{ width: `${(position.interviewed / position.registered) * 100}%` }} />
+                                        <div className="bg-green-100 h-2 rounded-full" style={{ width: `${(position.shortlisted / position.registered) * 100}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="lg:col-span-1">
+                    <CardHeader className="p-6">
+                        <CardTitle>Queue Status</CardTitle>
+                        <CardDescription>Current waiting times and interview queue</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4">
+                                <div className="p-4 bg-muted/50 rounded-lg">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">Average Wait</span>
+                                        <span className="text-2xl font-bold">25m</span>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-muted/50 rounded-lg">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">Active Interviews</span>
+                                        <span className="text-2xl font-bold">3</span>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-muted/50 rounded-lg">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">In Queue</span>
+                                        <span className="text-2xl font-bold">8</span>
                                     </div>
                                 </div>
                             </div>
@@ -223,13 +202,13 @@ const EventDashboard: React.FC = () => {
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-1">
-                    <CardHeader className="p-6 pb-2">
-                        <CardTitle className="text-lg font-semibold">Event Timeline</CardTitle>
+                <Card className="lg:col-span-3">
+                    <CardHeader className="p-6">
+                        <CardTitle>Event Timeline</CardTitle>
                         <CardDescription>Interview and satisfaction trends over time</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="h-[300px]">
+                    <CardContent className="p-6 pt-0">
+                        <div className="h-[240px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={timelineData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" opacity={0.1} />
@@ -276,46 +255,15 @@ const EventDashboard: React.FC = () => {
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
-                        <div className="mt-6 grid grid-cols-2 gap-4">
-                            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                                 <span className="text-sm font-medium">Peak Time</span>
-                                <span className="text-sm font-semibold">14:00 (15)</span>
+                                <span className="text-sm font-semibold">14:00 (28)</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                                 <span className="text-sm font-medium">Avg Satisfaction</span>
-                                <span className="text-sm font-semibold text-green-600">85.8%</span>
+                                <span className="text-sm font-semibold text-green-600">86.2%</span>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-1 lg:col-span-2">
-                    <CardHeader className="p-6">
-                        <CardTitle className="text-lg font-semibold">Upcoming Interviews</CardTitle>
-                        <CardDescription>Next scheduled interviews and their status</CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-6 pb-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {upcomingInterviews.map((interview, index) => (
-                                <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-primary/10 p-2.5 rounded-full">
-                                            <UserCheck className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium">{interview.candidate}</p>
-                                            <p className="text-sm text-muted-foreground">{interview.interviewer}</p>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="text-xs px-2">{interview.time}</Badge>
-                                                <Badge variant="outline" className="text-xs px-2">{interview.room}</Badge>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <Badge variant="secondary" className="ml-4">
-                                        {interview.status}
-                                    </Badge>
-                                </div>
-                            ))}
                         </div>
                     </CardContent>
                 </Card>

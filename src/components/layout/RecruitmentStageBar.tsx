@@ -1,100 +1,101 @@
-
 import React from 'react';
 import { cn } from "@/lib/utils";
 import { useRecruitment } from "@/contexts/RecruitmentContext";
-import { RECRUITMENT_STAGES } from "@/config/constants";
+import { RECRUITMENT_STAGES, STAGE_CONFIG, RecruitmentStage } from "@/config/constants";
 import { useNavigate } from 'react-router-dom';
+import { Users, ChevronRight } from "lucide-react";
 
 interface StageData {
-  stage: string;
+  stage: RecruitmentStage;
   count: number;
   label: string;
   route: string;
 }
 
-const stageRoutes = {
-  'job-posting': '/job-openings',
-  'application-review': '/applied', 
-  'screening': '/screened',
-  'interviews': '/interviewed',
-  'offer': '/final-review',
-  'onboarding': '/hired'
+const stageRoutes: Record<RecruitmentStage, string> = {
+  'applied': '/applied',
+  'screened': '/screened',
+  'interviewed': '/interviewed',
+  'final-review': '/final-review',
+  'hired': '/hired'
 };
 
-const stageLabels = {
-  'job-posting': 'Applied',
-  'application-review': 'Applied',
-  'screening': 'Screened', 
-  'interviews': 'Interviewed',
-  'offer': 'Final Review',
-  'onboarding': 'Hired'
+const stageLabels: Record<RecruitmentStage, string> = {
+  'applied': 'Applied',
+  'screened': 'Screened',
+  'interviewed': 'Interviewed',
+  'final-review': 'Final Review',
+  'hired': 'Hired'
+};
+
+// Mock data for candidate counts in each stage - will come from context in real app
+const stageCounts: Record<RecruitmentStage, number> = {
+  "applied": 24,
+  "screened": 12,
+  "interviewed": 8,
+  "final-review": 3,
+  "hired": 1,
 };
 
 export const RecruitmentStageBar = () => {
-  const { currentStage } = useRecruitment();
+  const { currentStage, setCurrentStage } = useRecruitment();
   const navigate = useNavigate();
-  
-  // Mock counts - in real app this would come from recruitment store
-  const stageCounts = {
-    'job-posting': 24,
-    'application-review': 24,
-    'screening': 12,
-    'interviews': 8,
-    'offer': 3,
-    'onboarding': 1
+
+  const handleStageClick = (stage: RecruitmentStage) => {
+    setCurrentStage(stage);
+    navigate(stageRoutes[stage]);
   };
 
-  const stageData: StageData[] = RECRUITMENT_STAGES.map(stage => ({
-    stage,
-    count: stageCounts[stage] || 0,
-    label: stageLabels[stage],
-    route: stageRoutes[stage]
-  }));
-
-  const currentIndex = RECRUITMENT_STAGES.indexOf(currentStage);
-
   return (
-    <div className="bg-background border-b">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-center">
+    <div className="w-full bg-background">
+      {/* Main stage bar */}
+      <div className="w-full px-4 py-1">
+        <div className="max-w-[1400px] mx-auto">
           <div className="flex items-center">
-            {stageData.map((item, index) => (
-              <div key={item.stage} className="flex items-center">
-                {/* Stage Arrow Shape */}
+            {RECRUITMENT_STAGES.map((stage, index) => (
+              <button
+                key={stage}
+                onClick={() => handleStageClick(stage)}
+                className={cn(
+                  "group relative flex-1 min-w-[180px] focus:outline-none",
+                  "transition-all duration-200",
+                  currentStage === stage ? "z-10" : "hover:z-10",
+                )}
+              >
                 <div
                   className={cn(
-                    "relative flex items-center justify-center cursor-pointer group",
-                    "h-12 px-4 transition-all duration-200",
-                    index === currentIndex 
-                      ? "bg-primary text-primary-foreground" 
-                      : index < currentIndex
-                        ? "bg-primary/20 text-primary hover:bg-primary/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    "relative flex w-full h-12 transition-all duration-200",
+                    currentStage === stage
+                      ? "bg-primary text-primary-foreground"
+                      : index < RECRUITMENT_STAGES.indexOf(currentStage)
+                        ? "bg-primary/60 text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    "group-hover:shadow-md"
                   )}
                   style={{
-                    clipPath: index === stageData.length - 1 
-                      ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)'
-                      : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
-                    marginRight: index === stageData.length - 1 ? '0' : '-12px',
-                    zIndex: stageData.length - index
+                    clipPath: index === RECRUITMENT_STAGES.length - 1
+                      ? "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
+                      : "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%)",
+                    marginRight: index === RECRUITMENT_STAGES.length - 1 ? "0" : "-20px",
+                    paddingRight: index === RECRUITMENT_STAGES.length - 1 ? "0" : "20px",
                   }}
-                  onClick={() => navigate(item.route)}
                 >
-                  <div className="flex flex-col items-center gap-1 px-2">
-                    <span className="text-xs font-medium">{item.label}</span>
-                    <div className={cn(
-                      "flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
-                      index === currentIndex 
-                        ? "bg-primary-foreground text-primary" 
-                        : index < currentIndex
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-background text-foreground"
-                    )}>
-                      {item.count}
+                  <div className="flex items-center w-full px-4 gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-medium truncate">
+                        {stageLabels[stage]}
+                      </span>
+                      <div className="flex items-center shrink-0 gap-1 bg-background/10 px-1.5 py-0.5 rounded-full text-xs">
+                        <Users className="w-3 h-3" />
+                        <span>{stageCounts[stage]}</span>
+                      </div>
                     </div>
+                    {index < RECRUITMENT_STAGES.length - 1 && (
+                      <ChevronRight className="w-4 h-4 shrink-0 opacity-50 group-hover:opacity-100" />
+                    )}
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import Layout from '@/components/layout/Layout';
 import Interview from '@/pages/Interview';
 import CandidateIntake from '@/pages/CandidateIntake';
+import AppliedCandidates from '@/pages/AppliedCandidates';
 import QRRegistration from '@/pages/QRRegistration';
 import EventSetup from '@/pages/EventSetup';
 import EventList from '@/pages/EventList';
@@ -43,7 +43,8 @@ function App() {
                     <Route path="/event-dashboard/:eventId" element={<EventDashboard />} />
 
                     {/* Recruitment Pipeline Routes */}
-                    <Route path="/applied" element={<CandidateIntake />} />
+                    <Route path="/applied" element={<AppliedCandidates />} />
+                    <Route path="/candidate-intake" element={<CandidateIntake />} />
                     <Route path="/screened" element={<CandidateComparison />} />
                     <Route path="/interviewed" element={<Interview />} />
                     <Route path="/final-review" element={<FinalReview />} />

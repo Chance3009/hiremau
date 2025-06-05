@@ -1,10 +1,11 @@
 import React from 'react';
-import { Bell, Settings, Search, User, ChevronLeft, History } from 'lucide-react';
+import { Bell, Settings, Search, User, ChevronLeft, History, Globe, Briefcase, ChevronDown } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useRecruitment } from '@/contexts/RecruitmentContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +15,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Mock data for events and positions (replace with your actual data source)
+const events = [
+  { id: '1', name: 'UPM Career Fair 2025' },
+  { id: '2', name: 'Tech Recruit Summit' },
+  { id: '3', name: 'Engineering Talent Day' }
+];
+
+const positions = [
+  { id: '1', name: 'Frontend Developer' },
+  { id: '2', name: 'UX Designer' },
+  { id: '3', name: 'Backend Developer' },
+  { id: '4', name: 'Product Manager' },
+];
+
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { canNavigateBack, navigateBack, recentPages } = useNavigation();
+  const { activeEventId, setActiveEventId, activePositionId, setActivePositionId } = useRecruitment();
+
+  const activeEvent = events.find(e => e.id === activeEventId);
+  const activePosition = positions.find(p => p.id === activePositionId);
 
   const routeLabels: Record<string, string> = {
     'dashboard': 'Dashboard',
@@ -57,13 +76,76 @@ const Header: React.FC = () => {
           )}
         </div>
 
-        <div className="hidden sm:block flex-1 max-w-lg">
-          <div className="relative">
-            <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search candidates, jobs, or events..."
-              className="h-8 pl-8 bg-muted/50"
-            />
+        {/* Event and Position Dropdowns */}
+        <div className="hidden md:flex items-center gap-3 flex-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 gap-2 min-w-[200px] justify-start">
+                <Globe className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {activeEvent ? activeEvent.name : 'All Events'}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-auto" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[300px]">
+              <DropdownMenuLabel>Select Event</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setActiveEventId("")}>
+                All Events
+              </DropdownMenuItem>
+              {events.map((event) => (
+                <DropdownMenuItem
+                  key={event.id}
+                  onClick={() => setActiveEventId(event.id)}
+                >
+                  {event.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 gap-2 min-w-[180px] justify-start">
+                <Briefcase className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {activePosition ? activePosition.name : 'All Positions'}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-auto" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[250px]">
+              <DropdownMenuLabel>Select Position</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setActivePositionId("")}>
+                All Positions
+              </DropdownMenuItem>
+              {positions.map((position) => (
+                <DropdownMenuItem
+                  key={position.id}
+                  onClick={() => setActivePositionId(position.id)}
+                >
+                  {position.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Context Labels */}
+          <div className="flex items-center gap-2 ml-2">
+            {activeEvent && (
+              <div className="bg-muted/50 text-muted-foreground px-2 py-1 rounded text-xs flex items-center gap-1">
+                <span className="text-foreground">Scoped to:</span>
+                {activeEvent.name}
+              </div>
+            )}
+            {activePosition && (
+              <div className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs flex items-center gap-1">
+                <span className="text-blue-700">Position:</span>
+                {activePosition.name}
+              </div>
+            )}
           </div>
         </div>
 
@@ -76,6 +158,14 @@ const Header: React.FC = () => {
           >
             <Search className="h-4 w-4" />
           </Button>
+
+          <div className="hidden sm:block relative max-w-[200px]">
+            <Search className="absolute left-2 top-1.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search..."
+              className="h-7 pl-8 text-sm bg-muted/50"
+            />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -102,28 +192,6 @@ const Header: React.FC = () => {
             <Bell size={16} />
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
           </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                <User size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </header>

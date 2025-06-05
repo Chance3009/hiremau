@@ -1,4 +1,3 @@
-
 import { useLocation } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import {
@@ -67,7 +66,7 @@ const menuGroups: MenuGroup[] = [
     label: "Recruitment Pipeline",
     items: [
       {
-        title: "Applications",
+        title: "Applied",
         path: "/applied",
         icon: <UserPlus size={18} />
       },
@@ -85,11 +84,6 @@ const menuGroups: MenuGroup[] = [
         title: "Final Review",
         path: "/final-review",
         icon: <CheckSquare size={18} />
-      },
-      {
-        title: "Comparison",
-        path: "/candidate-comparison",
-        icon: <GitCompare size={18} />
       },
       {
         title: "Hired",

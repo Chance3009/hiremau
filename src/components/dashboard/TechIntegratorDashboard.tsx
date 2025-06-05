@@ -13,6 +13,7 @@ import {
     Shield
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 const TechIntegratorDashboard = () => {
     const navigate = useNavigate();
@@ -21,23 +22,42 @@ const TechIntegratorDashboard = () => {
         {
             title: "System Health",
             value: "98.5%",
-            change: "Optimal",
-            icon: <Activity className="h-5 w-5" />,
-            color: "text-green-500 bg-green-50"
+            icon: <Activity className="h-4 w-4" />,
+            color: "text-green-500",
+            bgColor: "bg-green-50",
+            trend: "Optimal",
+            trendLabel: "all systems",
+            trendUp: true
         },
         {
             title: "Active Integrations",
             value: "8",
-            change: "All systems operational",
-            icon: <Link className="h-5 w-5" />,
-            color: "text-blue-500 bg-blue-50"
+            icon: <Link className="h-4 w-4" />,
+            color: "text-blue-500",
+            bgColor: "bg-blue-50",
+            trend: "100%",
+            trendLabel: "operational",
+            trendUp: true
         },
         {
             title: "AI Processing",
             value: "2.1s",
-            change: "Avg. response time",
-            icon: <Cpu className="h-5 w-5" />,
-            color: "text-purple-500 bg-purple-50"
+            icon: <Cpu className="h-4 w-4" />,
+            color: "text-purple-500",
+            bgColor: "bg-purple-50",
+            trend: "-0.3s",
+            trendLabel: "vs last hour",
+            trendUp: true
+        },
+        {
+            title: "API Usage",
+            value: "76%",
+            icon: <Database className="h-4 w-4" />,
+            color: "text-amber-500",
+            bgColor: "bg-amber-50",
+            trend: "24%",
+            trendLabel: "remaining",
+            trendUp: false
         }
     ];
 
@@ -46,19 +66,22 @@ const TechIntegratorDashboard = () => {
             name: "ATS Integration",
             status: "operational",
             latency: "45ms",
-            lastSync: "2 min ago"
+            lastSync: "2 min ago",
+            uptime: 99.9
         },
         {
             name: "OpenAI API",
             status: "operational",
             latency: "280ms",
-            lastSync: "1 min ago"
+            lastSync: "1 min ago",
+            uptime: 99.5
         },
         {
             name: "Document Parser",
             status: "warning",
             latency: "890ms",
-            lastSync: "5 min ago"
+            lastSync: "5 min ago",
+            uptime: 98.2
         }
     ];
 
@@ -81,7 +104,7 @@ const TechIntegratorDashboard = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">System Dashboard</h1>
+                    <h1 className="text-2xl font-bold">System Dashboard</h1>
                     <p className="text-muted-foreground">Integration and system health monitoring</p>
                 </div>
                 <Button onClick={() => navigate('/settings/integrations')}>
@@ -89,18 +112,26 @@ const TechIntegratorDashboard = () => {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {systemMetrics.map((metric, index) => (
                     <Card key={index}>
                         <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
-                                    <p className="text-2xl font-bold mt-1">{metric.value}</p>
-                                    <p className="text-sm text-muted-foreground mt-1">{metric.change}</p>
-                                </div>
-                                <div className={`p-3 rounded-full ${metric.color}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={cn("p-2.5 rounded-lg", metric.bgColor)}>
                                     {metric.icon}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium text-muted-foreground truncate">{metric.title}</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-2xl font-bold">{metric.value}</p>
+                                        <div className={cn(
+                                            "flex items-center text-xs font-medium",
+                                            metric.trendUp ? "text-green-600" : "text-amber-600"
+                                        )}>
+                                            {metric.trend}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{metric.trendLabel}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -108,39 +139,40 @@ const TechIntegratorDashboard = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="lg:col-span-2">
+                    <CardHeader className="p-6">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">Integration Status</CardTitle>
-                            <RefreshCw className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                                <CardTitle>Integration Status</CardTitle>
+                                <CardDescription>Real-time integration health and metrics</CardDescription>
+                            </div>
+                            <RefreshCw className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <CardDescription>Real-time integration health and metrics</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6 pt-0">
                         <div className="space-y-4">
                             {integrationStatus.map((integration, index) => (
-                                <div key={index} className="p-4 border rounded-lg">
-                                    <div className="flex justify-between items-start mb-2">
+                                <div key={index} className="space-y-3">
+                                    <div className="flex justify-between items-start">
                                         <div>
                                             <p className="font-medium">{integration.name}</p>
                                             <p className="text-sm text-muted-foreground">Last sync: {integration.lastSync}</p>
                                         </div>
-                                        <div className={`px-2 py-1 rounded text-xs font-medium ${integration.status === 'operational'
+                                        <div className={cn(
+                                            "px-2 py-1 rounded text-xs font-medium",
+                                            integration.status === 'operational'
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-amber-100 text-amber-700'
-                                            }`}>
+                                        )}>
                                             {integration.status}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 mt-2">
-                                        <div className="flex items-center gap-1">
-                                            <Activity className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm">{integration.latency}</span>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1">
+                                            <Progress value={integration.uptime} className="h-2" />
                                         </div>
-                                        <Button variant="outline" size="sm">
-                                            Configure
-                                        </Button>
+                                        <div className="text-sm font-medium">{integration.latency}</div>
                                     </div>
                                 </div>
                             ))}
@@ -148,28 +180,36 @@ const TechIntegratorDashboard = () => {
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
+                <Card className="lg:col-span-1">
+                    <CardHeader className="p-6">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">System Alerts</CardTitle>
-                            <Shield className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                                <CardTitle>System Alerts</CardTitle>
+                                <CardDescription>Recent notifications and updates</CardDescription>
+                            </div>
+                            <Shield className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <CardDescription>Recent system notifications and alerts</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6 pt-0">
                         <div className="space-y-4">
                             {systemAlerts.map((alert, index) => (
-                                <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
-                                    <div className={`p-2 rounded-full ${alert.type === 'warning'
-                                            ? 'bg-amber-100 text-amber-700'
-                                            : 'bg-blue-100 text-blue-700'
-                                        }`}>
-                                        {alert.type === 'warning' ? <AlertTriangle className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{alert.title}</p>
-                                        <p className="text-sm text-muted-foreground">{alert.description}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{alert.time}</p>
+                                <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                                    <div className="flex items-start gap-3">
+                                        <div className={cn(
+                                            "p-1.5 rounded-full",
+                                            alert.type === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
+                                        )}>
+                                            {alert.type === 'warning' ? (
+                                                <AlertTriangle className="h-3 w-3 text-amber-600" />
+                                            ) : (
+                                                <Settings className="h-3 w-3 text-blue-600" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm">{alert.title}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{alert.time}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
