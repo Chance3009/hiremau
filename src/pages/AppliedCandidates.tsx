@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle } from 'lucide-react';
+import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle, Upload, ClipboardPaste, ArrowLeft, Download, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CandidateIntakeForm from '@/components/candidate/CandidateIntakeForm';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from '@/components/ui/use-toast';
 
 // Enhanced mock data with AI analysis fields
 interface SkillMatch {
@@ -134,15 +136,119 @@ const mockCandidates: Candidate[] = [
 
 type DetailLevel = 'minimal' | 'standard' | 'detailed';
 
-const AIInsightCard = ({ analysis }: { analysis: AIAnalysis }) => {
+const AIInsightCard = ({ analysis, detailLevel }: { analysis: AIAnalysis; detailLevel: DetailLevel }) => {
+    // Helper function to get AI summary
+    const getAISummary = () => {
+        const strengths = analysis.insights.filter(i => i.type === 'strength');
+        const opportunities = analysis.insights.filter(i => i.type === 'opportunity');
+        return `${strengths[0]?.description || ''}. ${opportunities[0]?.description || ''}`;
+    };
+
+    if (detailLevel === 'minimal') {
+        return (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">AI Match</h3>
+                </div>
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium">Overall Match</span>
+                        <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
+                    </div>
+                    <Progress value={analysis.overallMatch} className="h-2" />
+                    <p className="text-sm text-muted-foreground mt-2">{getAISummary()}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (detailLevel === 'standard') {
+        return (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">AI Analysis</h3>
+                </div>
+
+                <div className="space-y-4">
+                    {/* Overall Match */}
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Overall Match</span>
+                            <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
+                        </div>
+                        <Progress value={analysis.overallMatch} className="h-2" />
+                    </div>
+
+                    {/* Culture & Growth */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Target className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">Culture Fit</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Progress value={analysis.cultureFit} className="h-2" />
+                                <span className="text-sm font-medium">{analysis.cultureFit}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <LineChart className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">Growth Potential</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Progress value={analysis.growthPotential} className="h-2" />
+                                <span className="text-sm font-medium">{analysis.growthPotential}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* AI Summary */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-2">AI Summary</h4>
+                        <div className="space-y-2">
+                            {analysis.insights.map((insight, index) => (
+                                <div key={index} className="flex items-start gap-2">
+                                    <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                    <span className="text-sm">{insight.description}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Risk Factors */}
+                    {analysis.riskFactors.length > 0 && (
+                        <div>
+                            <h4 className="text-sm font-medium mb-2">Potential Concerns</h4>
+                            <div className="space-y-2">
+                                {analysis.riskFactors.map((risk, index) => (
+                                    <div key={index} className="flex items-start gap-2">
+                                        <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
+                                            risk.severity === 'medium' ? 'text-yellow-500' :
+                                                'text-muted-foreground'
+                                            }`} />
+                                        <span className="text-sm">{risk.description}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Detailed view
     return (
         <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
             <div className="flex items-center gap-2 mb-2">
                 <Brain className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">AI Screening Insights</h3>
+                <h3 className="font-semibold">Detailed Skills Analysis</h3>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
                 {/* Overall Match */}
                 <div>
                     <div className="flex justify-between items-center mb-1">
@@ -152,100 +258,46 @@ const AIInsightCard = ({ analysis }: { analysis: AIAnalysis }) => {
                     <Progress value={analysis.overallMatch} className="h-2" />
                 </div>
 
-                {/* Skill Matches */}
+                {/* Detailed Skill Matches */}
                 <div>
-                    <h4 className="text-sm font-medium mb-2">Key Skills Analysis</h4>
-                    <div className="space-y-2">
+                    <h4 className="text-sm font-medium mb-2">Skills Breakdown</h4>
+                    <div className="space-y-3">
                         {analysis.skillMatches.map((skill) => (
-                            <div key={skill.skill} className="flex items-center gap-2">
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm">
-                                            {skill.skill}
-                                            {skill.required && (
-                                                <Badge variant="secondary" className="ml-2 text-xs">Required</Badge>
-                                            )}
-                                        </span>
-                                        <span className="text-sm font-medium">{skill.score}%</span>
+                            <div key={skill.skill} className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">{skill.skill}</span>
+                                        {skill.required && (
+                                            <Badge variant="secondary" className="text-xs">Required</Badge>
+                                        )}
                                     </div>
-                                    <Progress value={skill.score} className="h-1.5" />
+                                    <span className="text-sm font-medium">{skill.score}%</span>
+                                </div>
+                                <Progress value={skill.score} className="h-1.5" />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>{skill.experience} experience</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Culture & Growth */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Target className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Culture Fit</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Progress value={analysis.cultureFit} className="h-2" />
-                            <span className="text-sm font-medium">{analysis.cultureFit}%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <LineChart className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Growth Potential</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Progress value={analysis.growthPotential} className="h-2" />
-                            <span className="text-sm font-medium">{analysis.growthPotential}%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Key Insights */}
+                {/* Development Areas */}
                 <div>
-                    <h4 className="text-sm font-medium mb-2">Key Insights</h4>
+                    <h4 className="text-sm font-medium mb-2">Recommended Development</h4>
                     <div className="space-y-2">
-                        {analysis.insights.map((insight, index) => (
+                        {analysis.learningPath.map((item, index) => (
                             <div key={index} className="flex items-start gap-2">
-                                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                <span className="text-sm">{insight.description}</span>
+                                <GraduationCap className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="text-sm font-medium">{item.skill}</span>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">{item.priority} priority</Badge>
+                                        <span className="text-xs text-muted-foreground">Est. {item.estimatedTimeToAcquire}</span>
+                                    </div>
+                                </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-
-                {/* Risk Factors */}
-                {analysis.riskFactors.length > 0 && (
-                    <div>
-                        <h4 className="text-sm font-medium mb-2">Risk Assessment</h4>
-                        <div className="space-y-2">
-                            {analysis.riskFactors.map((risk, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                    <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
-                                            risk.severity === 'medium' ? 'text-yellow-500' :
-                                                'text-muted-foreground'
-                                        }`} />
-                                    <span className="text-sm">{risk.description}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Career Path */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Career Development</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Recommended Role:</span>
-                            <Badge variant="outline">{analysis.recommendedRole}</Badge>
-                        </div>
-                        <div>
-                            <span className="text-sm text-muted-foreground">Similar Roles:</span>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                                {analysis.similarRoles.map((role) => (
-                                    <Badge key={role} variant="secondary">{role}</Badge>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -289,7 +341,7 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                     ))}
                 </div>
 
-                <AIInsightCard analysis={candidate.aiAnalysis} />
+                <AIInsightCard analysis={candidate.aiAnalysis} detailLevel={detailLevel} />
             </div>
         );
 
@@ -432,16 +484,26 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
                 </TableHeader>
                 <TableBody>
                     {candidates.map((candidate) => (
-                        <TableRow key={candidate.id}>
-                            <TableCell>
+                        <TableRow
+                            key={candidate.id}
+                            className="group relative"
+                        >
+                            <TableCell className="relative">
                                 <HoverCard>
                                     <HoverCardTrigger asChild>
-                                        <div className="space-y-1 cursor-pointer">
+                                        <div className="cursor-pointer group-hover:text-primary transition-colors">
                                             <div className="font-medium">{candidate.name}</div>
-                                            <div className="text-sm text-muted-foreground">{candidate.email}</div>
+                                            <div className="text-sm text-muted-foreground group-hover:text-primary/80">{candidate.email}</div>
+                                            {/* Invisible extended hit area */}
+                                            <div className="absolute inset-0" />
                                         </div>
                                     </HoverCardTrigger>
-                                    <HoverCardContent className="w-[400px]">
+                                    <HoverCardContent
+                                        side="right"
+                                        align="start"
+                                        className="w-[400px] shadow-lg"
+                                        sideOffset={-50}
+                                    >
                                         <CandidateCard
                                             candidate={candidate}
                                             onMove={onMove}
@@ -499,7 +561,24 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
 };
 
 const RegisterDialog = () => {
-    const [showQR, setShowQR] = useState(false);
+    const [mode, setMode] = useState<'form' | 'qr'>('form');
+    const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+
+    const handleCopyLink = () => {
+        // In a real app, this would copy the registration link
+        toast({
+            title: "Link Copied",
+            description: "Registration link copied to clipboard",
+        });
+    };
+
+    const handleDownloadQR = () => {
+        // In a real app, this would download the QR code image
+        toast({
+            title: "QR Code Downloaded",
+            description: "QR code image saved to your device",
+        });
+    };
 
     return (
         <Dialog>
@@ -509,31 +588,85 @@ const RegisterDialog = () => {
                     Register Candidate
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="flex justify-between items-center">
-                        Register New Candidate
-                        <Button variant="outline" onClick={() => setShowQR(!showQR)}>
-                            <QrCode className="h-4 w-4 mr-2" />
-                            {showQR ? 'Manual Entry' : 'QR Code'}
-                        </Button>
-                    </DialogTitle>
+            <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogHeader className="pb-2">
+                    <DialogTitle>Register New Candidate</DialogTitle>
+                    <Tabs value={mode} onValueChange={(value) => setMode(value as 'form' | 'qr')} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="form">
+                                <Mail className="h-4 w-4 mr-2" />
+                                Manual Form
+                            </TabsTrigger>
+                            <TabsTrigger value="qr">
+                                <QrCode className="h-4 w-4 mr-2" />
+                                QR Code
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </DialogHeader>
-                {showQR ? (
-                    <div className="flex flex-col items-center justify-center p-6">
-                        <div className="bg-secondary p-8 rounded-lg mb-4">
-                            {/* Replace with actual QR code component */}
-                            <div className="w-48 h-48 bg-primary/10 flex items-center justify-center">
-                                QR Code Placeholder
+
+                <div className="flex-1 overflow-y-auto py-2">
+                    {mode === 'qr' ? (
+                        <div className="flex flex-col gap-4">
+                            <div className="space-y-3">
+                                <Label className="text-sm">Event (Optional)</Label>
+                                <Select value={selectedEvent || undefined} onValueChange={setSelectedEvent}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select event or leave empty for general application" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="general">General Application</SelectItem>
+                                        <SelectItem value="tech-meetup">Tech Meetup 2024</SelectItem>
+                                        <SelectItem value="career-fair">Career Fair 2024</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">
+                                    Select an event to generate a specific QR code for that event, or leave empty for a general application
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                <div className="h-64 w-64 border rounded-md flex items-center justify-center bg-muted/50">
+                                    {selectedEvent ? (
+                                        <div className="text-center p-4">
+                                            <QrCode className="h-40 w-40 mx-auto mb-2" />
+                                            <p className="text-sm font-medium">
+                                                {selectedEvent === 'general' ? 'General Application' : selectedEvent}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center p-4">
+                                            <p className="text-sm text-muted-foreground">Select an event to generate a QR code</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium text-sm">Quick Application Process</h4>
+                                        <ul className="text-sm text-muted-foreground space-y-1">
+                                            <li>• Scan QR code with your phone</li>
+                                            <li>• Fill out the mobile-friendly form</li>
+                                            <li>• Submit your application instantly</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" onClick={handleCopyLink} disabled={!selectedEvent}>
+                                            <Copy className="h-4 w-4 mr-2" />
+                                            Copy Link
+                                        </Button>
+                                        <Button size="sm" onClick={handleDownloadQR} disabled={!selectedEvent}>
+                                            <Download className="h-4 w-4 mr-2" />
+                                            Download QR
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-center text-muted-foreground">
-                            Scan this QR code to fill out the candidate registration form
-                        </p>
-                    </div>
-                ) : (
-                    <CandidateIntakeForm />
-                )}
+                    ) : (
+                        <CandidateIntakeForm />
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );

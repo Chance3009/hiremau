@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './FileUpload';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, ClipboardPaste } from "lucide-react";
 
 interface CandidateIntakeFormProps {
   onSubmit: (data: any) => void;
@@ -20,7 +21,7 @@ const CandidateIntakeForm: React.FC<CandidateIntakeFormProps> = ({ onSubmit }) =
   const [notes, setNotes] = React.useState('');
   const [resumeFile, setResumeFile] = React.useState<File | null>(null);
   const [resumeText, setResumeText] = React.useState('');
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const candidateData = {
@@ -35,91 +36,86 @@ const CandidateIntakeForm: React.FC<CandidateIntakeFormProps> = ({ onSubmit }) =
     };
     onSubmit(candidateData);
   };
-  
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Candidate Information</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first-name">First Name</Label>
-              <Input 
-                id="first-name" 
-                placeholder="First Name" 
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="name" className="text-xs">Name</Label>
+                <Input id="name" placeholder="John Doe" className="h-8" />
+              </div>
+
+              <div>
+                <Label htmlFor="email" className="text-xs">Email</Label>
+                <Input id="email" type="email" placeholder="john@example.com" className="h-8" />
+              </div>
+
+              <div>
+                <Label htmlFor="phone" className="text-xs">Phone</Label>
+                <Input id="phone" placeholder="+1 (555) 000-0000" className="h-8" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="last-name">Last Name</Label>
-              <Input 
-                id="last-name" 
-                placeholder="Last Name" 
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
+
+            {/* Middle Column - Professional Info */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="position" className="text-xs">Position</Label>
+                <Select>
+                  <SelectTrigger id="position" className="h-8">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="frontend-dev">Frontend Developer</SelectItem>
+                    <SelectItem value="backend-dev">Backend Developer</SelectItem>
+                    <SelectItem value="fullstack-dev">Full Stack Developer</SelectItem>
+                    <SelectItem value="devops-eng">DevOps Engineer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="experience" className="text-xs">Experience (Years)</Label>
+                <Input id="experience" type="number" placeholder="5" className="h-8" />
+              </div>
+
+              <div>
+                <Label htmlFor="salary" className="text-xs">Expected Salary</Label>
+                <Input id="salary" placeholder="$100,000" className="h-8" />
+              </div>
+            </div>
+
+            {/* Right Column - Resume Upload */}
+            <div className="space-y-3">
+              <Label className="text-xs">Resume</Label>
+              <div className="grid grid-rows-2 gap-2">
+                <Button className="h-[72px] bg-muted hover:bg-muted/80" variant="ghost">
+                  <div className="space-y-1">
+                    <Upload className="h-4 w-4 mx-auto" />
+                    <p className="text-xs font-medium">Upload Resume</p>
+                    <p className="text-[10px] text-muted-foreground">PDF, DOC, DOCX (Max 5MB)</p>
+                  </div>
+                </Button>
+                <Button className="h-[72px] bg-muted hover:bg-muted/80" variant="ghost">
+                  <div className="space-y-1">
+                    <ClipboardPaste className="h-4 w-4 mx-auto" />
+                    <p className="text-xs font-medium">Paste Resume</p>
+                    <p className="text-[10px] text-muted-foreground">Paste formatted text</p>
+                  </div>
+                </Button>
+              </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone" 
-                type="tel" 
-                placeholder="Phone" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
+
+          <div className="flex justify-end pt-2">
+            <Button type="submit" size="sm">Register Candidate</Button>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="position">Position Applied For</Label>
-            <Input 
-              id="position" 
-              placeholder="Position" 
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Resume</Label>
-            <FileUpload 
-              onFileSelect={setResumeFile} 
-              onTextInput={setResumeText}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Initial Notes</Label>
-            <Textarea 
-              id="notes" 
-              placeholder="Add any initial observations or notes" 
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-          
-          <Button type="submit" className="w-full">Process Candidate</Button>
         </form>
       </CardContent>
     </Card>
