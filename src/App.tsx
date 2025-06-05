@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/interviewed" element={<Interview />} />
                     <Route path="/final-review" element={<FinalReview />} />
                     <Route path="/hired" element={<CandidateView />} />
+                    <Route path="/candidate-comparison" element={<CandidateComparison />} />
 
                     {/* Additional Routes */}
                     <Route path="/candidate/:candidateId" element={<CandidateView />} />

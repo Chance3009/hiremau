@@ -1,3 +1,4 @@
+
 import { useLocation } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import {
@@ -9,9 +10,9 @@ import {
   Settings,
   Briefcase,
   Users,
-  GraduationCap,
   FileCheck,
-  UserCheck
+  UserCheck,
+  GitCompare
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,14 +52,14 @@ const menuGroups: MenuGroup[] = [
         icon: <LayoutDashboard size={18} />
       },
       {
-        title: "Job Openings",
-        path: "/job-openings",
-        icon: <Briefcase size={18} />
-      },
-      {
         title: "Events",
         path: "/events",
         icon: <Calendar size={18} />
+      },
+      {
+        title: "Job Openings",
+        path: "/job-openings",
+        icon: <Briefcase size={18} />
       }
     ]
   },
@@ -66,17 +67,17 @@ const menuGroups: MenuGroup[] = [
     label: "Recruitment Pipeline",
     items: [
       {
-        title: "Applied",
+        title: "Applications",
         path: "/applied",
         icon: <UserPlus size={18} />
       },
       {
-        title: "Screened",
+        title: "Screening",
         path: "/screened",
         icon: <FileCheck size={18} />
       },
       {
-        title: "Interviewed",
+        title: "Interviews",
         path: "/interviewed",
         icon: <MessageSquare size={18} />
       },
@@ -84,6 +85,11 @@ const menuGroups: MenuGroup[] = [
         title: "Final Review",
         path: "/final-review",
         icon: <CheckSquare size={18} />
+      },
+      {
+        title: "Comparison",
+        path: "/candidate-comparison",
+        icon: <GitCompare size={18} />
       },
       {
         title: "Hired",
@@ -96,7 +102,7 @@ const menuGroups: MenuGroup[] = [
     label: "Settings",
     items: [
       {
-        title: "Settings",
+        title: "Admin & Config",
         path: "/settings",
         icon: <Settings size={18} />
       }
@@ -145,7 +151,7 @@ export function AppSidebar() {
         </div>
         {state === "expanded" && (
           <div className="px-6 pb-3">
-            <span className="text-xs font-medium text-muted-foreground/80">AI Recruitment Assistant</span>
+            <span className="text-sm font-medium text-muted-foreground/80">AI Recruitment Assistant</span>
           </div>
         )}
       </SidebarHeader>
@@ -158,7 +164,7 @@ export function AppSidebar() {
         onClick={() => state === "collapsed" && setOpen(true)}
       >
         {state === "collapsed" && (
-          <div className="absolute left-full ml-2 rounded-md px-2 py-1 bg-popover text-popover-foreground border shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-xs z-50">
+          <div className="absolute left-full ml-2 rounded-md px-2 py-1 bg-popover text-popover-foreground border shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-sm z-50">
             Click to expand sidebar
           </div>
         )}
@@ -167,7 +173,7 @@ export function AppSidebar() {
             state === "collapsed" && "!p-0"
           )}>
             <SidebarGroupLabel className={cn(
-              "px-2 text-xs text-muted-foreground font-medium",
+              "px-2 text-sm text-muted-foreground font-medium",
               state === "collapsed" && "hidden"
             )}>
               {group.label}
@@ -200,7 +206,7 @@ export function AppSidebar() {
                       >
                         {item.icon}
                         {state === "expanded" && (
-                          <span className="truncate">{item.title}</span>
+                          <span className="truncate text-sm">{item.title}</span>
                         )}
                       </NavLink>
                     </SidebarMenuButton>

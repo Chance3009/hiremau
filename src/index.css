@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -108,69 +109,78 @@
     @apply space-y-6;
   }
 
-  /* Page Header */
+  /* Page Header - Consistent font sizes */
   .page-header {
     @apply flex justify-between items-center mb-6;
   }
 
   .page-title {
-    @apply text-xl font-bold tracking-tight;
+    @apply text-2xl font-bold tracking-tight;
   }
 
   .page-subtitle {
     @apply text-sm text-muted-foreground mt-1;
   }
 
-  /* Card Styles */
+  /* Card Styles - Consistent typography */
   .card-padding {
     @apply p-4 sm:p-6;
   }
 
   .card-header-lg {
-    @apply text-lg font-semibold;
+    @apply text-xl font-semibold;
   }
 
   .card-header-md {
-    @apply text-base font-semibold;
+    @apply text-lg font-semibold;
   }
 
   .card-title {
-    @apply text-base font-semibold;
+    @apply text-lg font-semibold;
   }
 
   .card-description {
     @apply text-sm text-muted-foreground;
   }
 
-  /* Section Headers */
+  /* Section Headers - Consistent sizing */
   .section-title {
-    @apply text-base font-semibold tracking-tight;
+    @apply text-lg font-semibold tracking-tight;
   }
 
   .section-subtitle {
     @apply text-sm text-muted-foreground;
   }
 
-  /* Stats and Metrics */
+  /* Stats and Metrics - Balanced typography */
   .stat-value {
-    @apply text-lg font-bold;
+    @apply text-2xl font-bold;
   }
 
   .stat-label {
-    @apply text-xs text-muted-foreground;
+    @apply text-sm text-muted-foreground;
   }
 
-  /* List Items */
+  /* List Items - Consistent text hierarchy */
   .list-item-title {
-    @apply text-sm font-medium;
+    @apply text-base font-medium;
   }
 
   .list-item-description {
-    @apply text-xs text-muted-foreground;
+    @apply text-sm text-muted-foreground;
   }
 
   /* Form Elements */
   .form-label {
     @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  /* Navigation consistency */
+  .nav-item {
+    @apply text-sm font-medium;
+  }
+
+  .nav-label {
+    @apply text-sm font-medium text-muted-foreground;
   }
 }

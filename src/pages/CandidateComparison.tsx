@@ -1,227 +1,242 @@
-import React, { useState, useMemo } from 'react';
-import { Check } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import ContextFilter from '@/components/layout/ContextFilter';
-import CandidateComparisonComponent from '@/components/candidate/CandidateComparison';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  Star, 
+  Award, 
+  Briefcase, 
+  GraduationCap,
+  Check,
+  X,
+  ArrowLeft,
+  Users
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// Mock data for events and positions
-const mockEvents = [
-  { id: '1', name: 'UPM Career Fair 2025' },
-  { id: '2', name: 'Tech Recruit Summit' },
-  { id: '3', name: 'Engineering Talent Day' }
-];
+interface Candidate {
+  id: string;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  location: string;
+  experience: number;
+  education: string;
+  skills: string[];
+  resume: string;
+  interviewNotes: string;
+  rating: number;
+}
 
-const mockPositions = [
-  { id: '1', name: 'Frontend Developer' },
-  { id: '2', name: 'UX Designer' },
-  { id: '3', name: 'Backend Developer' },
-  { id: '4', name: 'Product Manager' },
-];
-
-const mockStatuses = [
-  { id: 'new', name: 'New' },
-  { id: 'screened', name: 'Screened' },
-  { id: 'shortlisted', name: 'Shortlisted' },
-  { id: 'interviewed', name: 'Interviewed' },
-  { id: 'rejected', name: 'Rejected' }
-];
-
-// Mock candidate data
-const mockCandidates = [
+const mockCandidates: Candidate[] = [
   {
     id: '1',
-    name: 'Alex Johnson',
-    position: 'Frontend Developer',
-    skills: ["React", "TypeScript", "Node.js", "CSS"],
-    experience: [
-      "Senior Frontend Developer at TechCorp (3 years)",
-      "Web Developer at StartupXYZ (2 years)"
-    ],
-    education: ["B.S. Computer Science, State University (2019)"],
-    score: 85,
-    interviewScore: 87,
-    interviewNotes: 'Strong technical skills, excellent cultural fit.'
+    name: 'Alice Johnson',
+    title: 'Software Engineer',
+    email: 'alice.j@example.com',
+    phone: '123-456-7890',
+    location: 'New York, NY',
+    experience: 5,
+    education: 'Master of Science in Computer Science',
+    skills: ['JavaScript', 'React', 'Node.js', 'HTML', 'CSS'],
+    resume: 'alice_resume.pdf',
+    interviewNotes: 'Strong technical skills, good communication.',
+    rating: 4.5,
   },
   {
     id: '2',
-    name: 'Sam Taylor',
-    position: 'UX Designer',
-    skills: ["Figma", "UI Design", "User Research", "HTML/CSS"],
-    experience: [
-      "UX Designer at DesignCo (2 years)",
-      "UI Designer at CreativeLabs (1 year)"
-    ],
-    education: ["B.F.A. Design, Art Institute (2020)"],
-    score: 78,
-    interviewScore: 82,
-    interviewNotes: 'Great portfolio, good communication skills.'
+    name: 'Bob Williams',
+    title: 'Frontend Developer',
+    email: 'bob.w@example.com',
+    phone: '987-654-3210',
+    location: 'Los Angeles, CA',
+    experience: 3,
+    education: 'Bachelor of Arts in Web Development',
+    skills: ['JavaScript', 'React', 'Redux', 'HTML', 'CSS'],
+    resume: 'bob_resume.pdf',
+    interviewNotes: 'Passionate about UI, needs more experience with backend.',
+    rating: 4.0,
   },
   {
     id: '3',
-    name: 'Morgan Smith',
-    position: 'Backend Developer',
-    skills: ["Node.js", "Express", "MongoDB", "AWS"],
-    experience: [
-      "Junior Backend Developer at TechStart (1 year)"
-    ],
-    education: ["B.S. Computer Engineering, Tech University (2022)"],
-    score: 68,
-    interviewScore: 73,
-    interviewNotes: 'Good technical knowledge but limited experience.'
-  },
-  {
-    id: '4',
-    name: 'Jordan Lee',
-    position: 'Product Manager',
-    skills: ["Product Strategy", "Agile", "User Stories", "Market Research"],
-    experience: [
-      "Assistant Product Manager at ProductCo (1 year)",
-      "Business Analyst at CorpTech (1 year)"
-    ],
-    education: ["MBA, Business School (2021)"],
-    score: 55,
-    interviewScore: 62,
-    interviewNotes: 'Not enough relevant experience.'
-  },
-  {
-    id: '5',
-    name: 'Riley Zhang',
-    position: 'Frontend Developer',
-    skills: ["React", "JavaScript", "CSS", "Redux"],
-    experience: [
-      "Frontend Developer at WebSolutions (2 years)",
-      "Junior Developer at TechInc (1 year)"
-    ],
-    education: ["B.S. Information Technology, Tech University (2020)"],
-    score: 72,
-    interviewScore: 76,
-    interviewNotes: 'Good technical skills, shows potential for growth.'
+    name: 'Charlie Brown',
+    title: 'Backend Developer',
+    email: 'charlie.b@example.com',
+    phone: '555-123-4567',
+    location: 'Chicago, IL',
+    experience: 7,
+    education: 'PhD in Computer Engineering',
+    skills: ['Python', 'Django', 'SQL', 'Docker', 'AWS'],
+    resume: 'charlie_resume.pdf',
+    interviewNotes: 'Expert in backend systems, excellent problem-solver.',
+    rating: 5.0,
   },
 ];
 
 const CandidateComparison = () => {
-  const [activeEvent, setActiveEvent] = useState<string | null>(null);
-  const [activePosition, setActivePosition] = useState<string | null>(null);
-  const [activeStatus, setActiveStatus] = useState<string | null>(null);
-  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const [selectedCandidates, setSelectedCandidates] = useState<string[]>(['1', '2']);
+  const [viewMode, setViewMode<'resume' | 'interview'>('resume');
 
-  // Filter candidates based on context filters
-  const filteredCandidates = useMemo(() => {
-    let filtered = [...mockCandidates];
+  const handleCandidateToggle = (candidateId: string) => {
+    setSelectedCandidates((prev) =>
+      prev.includes(candidateId)
+        ? prev.filter((id) => id !== candidateId)
+        : [...prev, candidateId]
+    );
+  };
 
-    if (activePosition) {
-      filtered = filtered.filter(c => c.position === activePosition);
-    }
+  const getCandidate = (id: string) =>
+    mockCandidates.find((candidate) => candidate.id === id);
 
-    return filtered;
-  }, [activePosition]);
-
-  // Get selected candidates data
-  const selectedCandidatesData = useMemo(() =>
-    filteredCandidates.filter(c => selectedCandidates.includes(c.id)),
-    [filteredCandidates, selectedCandidates]
-  );
+  const isSelected = (candidateId: string) =>
+    selectedCandidates.includes(candidateId);
 
   return (
-    <div className="section-spacing">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Candidate Comparison</h1>
-          <p className="page-subtitle">Compare candidates side by side to make better decisions.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Compare Candidates</h1>
+            <p className="text-muted-foreground">Side-by-side candidate evaluation</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Export Comparison
+          </Button>
+          <Button size="sm">
+            Add to Shortlist
+          </Button>
         </div>
       </div>
 
-      <ContextFilter
-        events={mockEvents}
-        positions={mockPositions}
-        statuses={mockStatuses}
-        activeEvent={activeEvent}
-        setActiveEvent={setActiveEvent}
-        activePosition={activePosition}
-        setActivePosition={setActivePosition}
-        activeStatus={activeStatus}
-        setActiveStatus={setActiveStatus}
-        showViewToggle={false}
-      />
-
+      {/* Candidate Selector */}
       <Card>
-        <CardHeader className="card-padding">
-          <CardTitle className="card-header-lg">Select Candidates</CardTitle>
-          <CardDescription>Select up to 3 candidates to compare their qualifications</CardDescription>
+        <CardHeader>
+          <CardTitle>Select Candidates</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">Select candidates to compare (up to 3):</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredCandidates.map(candidate => (
-              <div
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mockCandidates.map((candidate) => (
+              <Button
                 key={candidate.id}
-                className={cn(
-                  "group relative p-4 border rounded-lg cursor-pointer transition-all",
-                  selectedCandidates.includes(candidate.id)
-                    ? "bg-primary/5 border-primary shadow-sm"
-                    : "hover:bg-muted/50"
-                )}
-                onClick={() => {
-                  setSelectedCandidates(prev => {
-                    if (prev.includes(candidate.id)) {
-                      return prev.filter(id => id !== candidate.id);
-                    } else {
-                      if (prev.length >= 3) return prev;
-                      return [...prev, candidate.id];
-                    }
-                  });
-                }}
+                variant={isSelected(candidate.id) ? 'secondary' : 'outline'}
+                className="justify-start gap-2"
+                onClick={() => handleCandidateToggle(candidate.id)}
               >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="min-w-0">
-                    <h3 className="font-medium truncate">{candidate.name}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{candidate.position}</p>
-                  </div>
-                  {selectedCandidates.includes(candidate.id) && (
-                    <div className="shrink-0 rounded-full bg-primary h-5 w-5 flex items-center justify-center">
-                      <Check className="h-3 w-3 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground">Score:</div>
-                    <div className="font-medium">{candidate.score}%</div>
-                  </div>
-                </div>
-              </div>
+                {isSelected(candidate.id) ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
+                {candidate.name}
+              </Button>
             ))}
-          </div>
-
-          <div className="flex justify-between items-center mt-6">
-            <p className="text-sm text-muted-foreground">
-              {selectedCandidates.length} of 3 candidates selected
-            </p>
-            <Button
-              disabled={selectedCandidates.length < 2}
-              onClick={() => {
-                // Scroll to comparison section
-                window.scrollTo({
-                  top: window.innerHeight,
-                  behavior: 'smooth'
-                });
-              }}
-            >
-              Compare Selected
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {selectedCandidates.length >= 2 && (
-        <CandidateComparisonComponent
-          candidates={selectedCandidatesData}
-        />
-      )}
+      {/* View Mode Toggle */}
+      <Tabs defaultValue={viewMode} className="w-full">
+        <TabsList>
+          <TabsTrigger value="resume" onClick={() => setViewMode('resume')}>
+            Resume View
+          </TabsTrigger>
+          <TabsTrigger value="interview" onClick={() => setViewMode('interview')}>
+            Interview Notes
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="resume">
+          {/* Resume Comparison */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {selectedCandidates.map((candidateId) => {
+              const candidate = getCandidate(candidateId);
+              return (
+                candidate && (
+                  <Card key={candidate.id}>
+                    <CardHeader>
+                      <CardTitle>{candidate.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-sm text-muted-foreground">
+                        <p>
+                          <Mail className="h-4 w-4 inline-block mr-1" />
+                          {candidate.email}
+                        </p>
+                        <p>
+                          <Phone className="h-4 w-4 inline-block mr-1" />
+                          {candidate.phone}
+                        </p>
+                        <p>
+                          <MapPin className="h-4 w-4 inline-block mr-1" />
+                          {candidate.location}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-bold">Skills</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {candidate.skills.map((skill) => (
+                            <Badge key={skill}>{skill}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold">Experience</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {candidate.experience} years
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold">Education</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {candidate.education}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              );
+            })}
+          </div>
+        </TabsContent>
+        <TabsContent value="interview">
+          {/* Interview Notes Comparison */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {selectedCandidates.map((candidateId) => {
+              const candidate = getCandidate(candidateId);
+              return (
+                candidate && (
+                  <Card key={candidate.id}>
+                    <CardHeader>
+                      <CardTitle>{candidate.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[300px] w-full">
+                        <p className="text-sm text-muted-foreground">
+                          {candidate.interviewNotes}
+                        </p>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )
+              );
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
