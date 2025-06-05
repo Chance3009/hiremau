@@ -4,7 +4,7 @@ export const RECRUITMENT_STAGES = [
     "screened",
     "interviewed",
     "final-review",
-    "hired"
+    "shortlisted"
 ] as const;
 
 export type RecruitmentStage = typeof RECRUITMENT_STAGES[number];
@@ -22,7 +22,7 @@ export const STAGE_CONFIG = {
         actions: ["schedule-interview", "start-interview", "reject"]
     },
     interviewed: {
-        label: "Interviewed",
+        label: "Interview",
         description: "Review interview results and compare candidates",
         actions: ["move-to-final", "request-another-interview", "reject"]
     },
@@ -31,10 +31,10 @@ export const STAGE_CONFIG = {
         description: "Make final hiring decisions",
         actions: ["make-offer", "reject"]
     },
-    hired: {
-        label: "Hired",
-        description: "Begin onboarding process",
-        actions: ["start-onboarding"]
+    shortlisted: {
+        label: "Shortlisted",
+        description: "Candidates ready for final offer",
+        actions: ["make-offer", "compare-candidates", "reject"]
     }
 } as const;
 

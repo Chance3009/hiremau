@@ -60,7 +60,6 @@ interface Candidate {
     phone: string;
     currentCompany: string;
     appliedDate: string;
-    source: string;
     lastPosition: string;
     expectedSalary: string;
     availability: string;
@@ -86,7 +85,6 @@ const mockCandidates: Candidate[] = [
         phone: '+1 234-567-8900',
         currentCompany: 'TechCorp Inc.',
         appliedDate: '2024-03-15',
-        source: 'LinkedIn',
         lastPosition: 'Senior Frontend Developer',
         expectedSalary: '$120,000',
         availability: 'In 2 months',
@@ -412,7 +410,7 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                             <span>{candidate.phone}</span>
                         </div>
                     </div>
-                    <div className="text-right space-y-1">
+                    <div className="text-right">
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -426,7 +424,6 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Badge variant="secondary">{candidate.source}</Badge>
                     </div>
                 </div>
 
@@ -477,7 +474,6 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
                         <TableHead>Fit Score</TableHead>
                         <TableHead>Experience</TableHead>
                         <TableHead>Applied Date</TableHead>
-                        <TableHead>Source</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -521,9 +517,6 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
                             </TableCell>
                             <TableCell>{candidate.experience}</TableCell>
                             <TableCell>{candidate.appliedDate}</TableCell>
-                            <TableCell>
-                                <Badge variant="secondary">{candidate.source}</Badge>
-                            </TableCell>
                             <TableCell>
                                 <Badge variant="outline">New</Badge>
                             </TableCell>
@@ -675,7 +668,6 @@ const RegisterDialog = () => {
 const AppliedCandidates = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState('date');
-    const [filterSource, setFilterSource] = useState('all');
     const [detailLevel, setDetailLevel] = useState<DetailLevel>('minimal');
     const navigate = useNavigate();
 
@@ -706,20 +698,6 @@ const AppliedCandidates = () => {
                                 <SelectItem value="date">Application Date</SelectItem>
                                 <SelectItem value="score">Fit Score</SelectItem>
                                 <SelectItem value="name">Name</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="w-[200px]">
-                        <Label htmlFor="source">Source</Label>
-                        <Select value={filterSource} onValueChange={setFilterSource}>
-                            <SelectTrigger id="source">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Sources</SelectItem>
-                                <SelectItem value="linkedin">LinkedIn</SelectItem>
-                                <SelectItem value="referral">Referral</SelectItem>
-                                <SelectItem value="event">Event</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

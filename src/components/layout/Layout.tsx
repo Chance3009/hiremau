@@ -14,7 +14,7 @@ const Layout = () => {
 
   const isRecruitmentPipeline = RECRUITMENT_PATHS.some(path =>
     location.pathname.startsWith(path)
-  ) || ['/applied', '/screened', '/interviewed', '/final-review', '/hired'].some(path =>
+  ) || ['/applied', '/screened', '/interviewed', '/final-review', '/shortlisted'].some(path =>
     location.pathname.startsWith(path)
   );
 

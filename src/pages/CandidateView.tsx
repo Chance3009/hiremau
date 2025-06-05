@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -52,11 +51,7 @@ const CandidateView = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={handleGoBack}>
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
+      <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
         <span className="text-muted-foreground">{candidate.position}</span>
       </div>

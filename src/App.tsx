@@ -19,6 +19,7 @@ import CandidateView from '@/pages/CandidateView';
 import Settings from '@/pages/Settings';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
+import ShortlistedCandidates from '@/pages/ShortlistedCandidates';
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { RecruitmentContextProvider } from "@/contexts/RecruitmentContext";
@@ -45,8 +46,9 @@ function App() {
                     <Route path="qr-registration" element={<QRRegistration />} />
                     <Route path="applied" element={<AppliedCandidates />} />
                     <Route path="screened" element={<Screening />} />
-                    <Route path="interview" element={<Interview />} />
+                    <Route path="interviewed" element={<Interview />} />
                     <Route path="final-review" element={<FinalReview />} />
+                    <Route path="shortlisted" element={<ShortlistedCandidates />} />
                     <Route path="candidate/:id" element={<CandidateView />} />
                     <Route path="comparison" element={<CandidateComparison />} />
                     <Route path="settings" element={<Settings />} />
