@@ -13,18 +13,18 @@ HireMau uses a multi-agent AI system coordinated by a central controller to deli
   - **Candidate Evaluation Agent:** Generates standardized candidate scores using predefined rubrics.
 
 - #### 💬 Interview & Support Agents:
-- **Interview Analysis Agent:** Analyzes interviews for key insights and behavioral cues.
-- **Interview Assistant Agent:** Offers live, dynamic question prompts during screenings.
-- **HR Agent:** Manages ranking, communications, and event summaries.
+  - **Interview Analysis Agent:** Analyzes interviews for key insights and behavioral cues.
+  - **Interview Assistant Agent:** Offers live, dynamic question prompts during screenings.
+  - **HR Agent:** Manages ranking, communications, and event summaries.
 
-#### 🗃️ Data Management Agent:
-- **Database Managing Agent:** Manages candidate data using RAG technology for contextual information retrieval and consistent profile maintenance.
-- Supports parallel processing and specialized tasks through centralized coordination for high-performance screening.
+- #### 🗃️ Data Management Agent:
+  - **Database Managing Agent:** Manages candidate data using RAG technology for contextual information retrieval and consistent profile maintenance.
+  - Supports parallel processing and specialized tasks through centralized coordination for high-performance screening.
 
-#### 🧠 RAG-Powered Context Management
-- Stores company information and uploaded job descriptions (PDF) to enable role-specific AI-generated interview questions.
-- Automatically saves candidate profiles after screenings.
-- Triggers smart re-engagement with previously screened candidates when new, relevant positions open, including automated personalized outreach.
+- #### 🧠 RAG-Powered Context Management
+  - Stores company information and uploaded job descriptions (PDF) to enable role-specific AI-generated interview questions.
+  - Automatically saves candidate profiles after screenings.
+  - Triggers smart re-engagement with previously screened candidates when new, relevant positions open, including automated personalized outreach.
 
 ### 🎙️ Real-Time Interview Assistance
 HireMau leverages large language models to assist recruiters during live, on-site interviews. The system listens in real-time, generates context-aware follow-up questions, and updates a visual fit indicator to reflect candidate alignment. Recruiters can add quick notes, and the AI adapts the interview flow accordingly. The Interview Assistant Agent ensures high-quality, relevant questions by integrating context from other agents, enabling thorough and efficient evaluations.
