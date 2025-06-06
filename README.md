@@ -7,12 +7,12 @@
 ### 🤖 Streamlined Screening with Agentic AI and RAG
 HireMau uses a multi-agent AI system coordinated by a central controller to deliver efficient, standardized candidate screening while reducing errors and improving data quality.
 
-#### 🧩 Core Screening Agents:
-- **Document Analysis Agent:** Extracts structured data from resumes and cover letters.
-- **Sourcing Agent:** Gathers additional background info through web crawling.
-- **Candidate Evaluation Agent:** Generates standardized candidate scores using predefined rubrics.
+- #### 🧩 Core Screening Agents:
+  - **Document Analysis Agent:** Extracts structured data from resumes and cover letters.
+  - **Sourcing Agent:** Gathers additional background info through web crawling.
+  - **Candidate Evaluation Agent:** Generates standardized candidate scores using predefined rubrics.
 
-#### 💬 Interview & Support Agents:
+- #### 💬 Interview & Support Agents:
 - **Interview Analysis Agent:** Analyzes interviews for key insights and behavioral cues.
 - **Interview Assistant Agent:** Offers live, dynamic question prompts during screenings.
 - **HR Agent:** Manages ranking, communications, and event summaries.
