@@ -596,6 +596,47 @@ const Interview: React.FC = () => {
                                 )}
                                 <HoverCard>
                                   <HoverCardTrigger>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                      <AlertCircle className="h-4 w-4" />
+                                    </Button>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium">AI Analysis</p>
+                                        {message.aiAnalysis?.confidence && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {Math.round(message.aiAnalysis.confidence * 100)}% confidence
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm">{message.aiAnalysis?.summary}</p>
+                                      {message.aiAnalysis?.keyPoints && (
+                                        <div className="space-y-1">
+                                          <p className="text-xs font-medium">Key Points:</p>
+                                          <ul className="text-xs text-muted-foreground list-disc pl-4">
+                                            {message.aiAnalysis.keyPoints.map((point, idx) => (
+                                              <li key={idx}>{point}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {message.aiAnalysis?.resumeMatch !== undefined && (
+                                        <div className="flex items-center gap-2 text-xs">
+                                          <Badge variant="outline" className={cn(
+                                            message.aiAnalysis.resumeMatch
+                                              ? "bg-green-100 text-green-700"
+                                              : "bg-red-100 text-red-700"
+                                          )}>
+                                            {message.aiAnalysis.resumeMatch ? 'Matches Resume' : 'Resume Mismatch'}
+                                          </Badge>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </HoverCardContent>
+                                </HoverCard>
+                                <HoverCard>
+                                  <HoverCardTrigger>
                                     <Button
                                       variant="ghost"
                                       size="icon"
