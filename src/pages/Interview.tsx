@@ -6,8 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
-  ChevronLeft, Bot, MessageSquare, Star, ThumbsUp, ThumbsDown,
-  Clock, User, AlertCircle, ChevronRight, Info, Plus, Mic, MicOff, RefreshCw
+  ChevronLeft, Bot, MessageSquare, ThumbsUp, ThumbsDown,
+  Clock, User, AlertCircle, ChevronRight, Info, Plus, Mic, MicOff, RefreshCw,
+  Pencil, Check, X
 } from 'lucide-react';
 import {
   HoverCard,
@@ -15,7 +16,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Textarea } from '@/components/ui/textarea';
-import { Rating } from '@/components/ui/rating';
 import { cn } from '@/lib/utils';
 import InterviewAssistant from '@/components/interview/InterviewAssistant';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
@@ -50,24 +50,24 @@ const mockCandidate = {
 };
 
 const mockInterviewContent = [
-    {
-      id: '1',
-      type: 'question' as const,
+  {
+    id: '1',
+    type: 'question' as const,
     content: 'Can you walk me through your experience with large-scale React applications?',
-      timestamp: '10:30 AM',
+    timestamp: '10:30 AM',
     category: 'technical-experience',
     color: 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900',
     aiAnalysis: {
       type: 'baseline',
       summary: 'Question targets core technical experience mentioned in resume'
     }
-    },
-    {
-      id: '2',
-      type: 'answer' as const,
+  },
+  {
+    id: '2',
+    type: 'answer' as const,
     content: 'In my current role at TechCorp, I led the development of our customer dashboard that serves over 50,000 daily users. We used React with TypeScript, and I implemented a micro-frontend architecture to handle the scale.',
-      timestamp: '10:31 AM',
-      rating: 4,
+    timestamp: '10:31 AM',
+    rating: 4,
     color: 'bg-white dark:bg-gray-800 border-gray-200',
     aiAnalysis: {
       type: 'excellent',
@@ -77,9 +77,9 @@ const mockInterviewContent = [
       resumeMatch: true
     },
     quickLabels: ['Technical Leadership', 'Scale Experience']
-    },
-    {
-      id: '3',
+  },
+  {
+    id: '3',
     type: 'answer' as const,
     content: 'We mainly used basic unit tests, but I haven\'t worked much with integration testing.',
     timestamp: '10:32 AM',
@@ -93,12 +93,12 @@ const mockInterviewContent = [
       resumeMatch: false
     },
     quickLabels: ['Limited Testing Experience']
-    },
-    {
-      id: '4',
-      type: 'answer' as const,
+  },
+  {
+    id: '4',
+    type: 'answer' as const,
     content: 'I have 8 years of experience with cloud architecture.',
-      timestamp: '10:33 AM',
+    timestamp: '10:33 AM',
     rating: 1,
     color: 'bg-white dark:bg-gray-800 border-gray-200',
     aiAnalysis: {
@@ -156,7 +156,8 @@ const Interview: React.FC = () => {
   const [quickNote, setQuickNote] = useState('');
   const [quickNotes, setQuickNotes] = useState<Array<{ text: string; timestamp: string; questionId?: string }>>([]);
   const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
-  const [quickLabel, setQuickLabel] = useState('');
+  const [suggestedLabels, setSuggestedLabels] = useState<{ messageId: string; labels: string[] } | null>(null);
+  const [editingLabel, setEditingLabel] = useState<{ messageId: string; labelIndex: number; value: string } | null>(null);
 
   const refreshSuggestedQuestions = () => {
     setIsRefreshingQuestions(true);
@@ -198,7 +199,72 @@ const Interview: React.FC = () => {
     }));
   };
 
-  const addQuickLabel = (messageId: string, label: string) => {
+  // Function to generate AI suggested labels based on the answer content and analysis
+  const generateAiSuggestedLabels = (message: any): string[] => {
+    const labels: string[] = [];
+    const analysis = message.aiAnalysis;
+
+    if (!analysis) return labels;
+
+    // Add label based on analysis type
+    switch (analysis.type) {
+      case 'excellent':
+        labels.push('Strong Response');
+        break;
+      case 'concern':
+        labels.push('Needs Follow-up');
+        break;
+      case 'mismatch':
+        labels.push('Potential Inconsistency');
+        break;
+    }
+
+    // Add labels based on key points
+    if (analysis.keyPoints) {
+      analysis.keyPoints.forEach(point => {
+        if (point.toLowerCase().includes('experience')) {
+          labels.push('Experience Highlight');
+        }
+        if (point.toLowerCase().includes('leadership')) {
+          labels.push('Leadership Quality');
+        }
+        if (point.toLowerCase().includes('technical')) {
+          labels.push('Technical Expertise');
+        }
+        if (point.toLowerCase().includes('mismatch') || point.toLowerCase().includes('verification')) {
+          labels.push('Requires Verification');
+        }
+      });
+    }
+
+    // Add label based on confidence
+    if (analysis.confidence) {
+      if (analysis.confidence >= 0.9) {
+        labels.push('High Confidence');
+      } else if (analysis.confidence < 0.7) {
+        labels.push('Low Confidence');
+      }
+    }
+
+    // Add label if resume match is explicitly false
+    if (analysis.resumeMatch === false) {
+      labels.push('Resume Mismatch');
+    }
+
+    return [...new Set(labels)]; // Remove duplicates
+  };
+
+  const handleShowSuggestions = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setSuggestedLabels({
+        messageId,
+        labels: generateAiSuggestedLabels(message)
+      });
+    }
+  };
+
+  const addLabel = (messageId: string, label: string) => {
     setMessages(prev => prev.map(msg => {
       if (msg.id === messageId) {
         return {
@@ -208,7 +274,36 @@ const Interview: React.FC = () => {
       }
       return msg;
     }));
-    setQuickLabel('');
+    setSuggestedLabels(null);
+  };
+
+  const updateLabel = (messageId: string, labelIndex: number, newValue: string) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const newLabels = [...(msg.quickLabels || [])];
+        newLabels[labelIndex] = newValue;
+        return {
+          ...msg,
+          quickLabels: newLabels
+        };
+      }
+      return msg;
+    }));
+    setEditingLabel(null);
+  };
+
+  const removeLabel = (messageId: string, labelIndex: number) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const newLabels = [...(msg.quickLabels || [])];
+        newLabels.splice(labelIndex, 1);
+        return {
+          ...msg,
+          quickLabels: newLabels
+        };
+      }
+      return msg;
+    }));
   };
 
   const getCategoryColor = (category: string) => {
@@ -348,11 +443,11 @@ const Interview: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                     <User className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
+                  </div>
+                  <div>
                     <CardTitle className="text-base">{mockCandidate.name}</CardTitle>
-                <CardDescription>{mockCandidate.position}</CardDescription>
-              </div>
+                    <CardDescription>{mockCandidate.position}</CardDescription>
+                  </div>
                 </div>
                 <HoverCard>
                   <HoverCardTrigger>
@@ -363,48 +458,48 @@ const Interview: React.FC = () => {
                   <HoverCardContent className="w-80">
                     <ScrollArea className="h-80">
                       <div className="space-y-4">
-              <div>
+                        <div>
                           <h4 className="font-medium">Experience</h4>
-                <p className="text-sm text-muted-foreground">{mockCandidate.experience}</p>
-              </div>
-              <Separator />
-              <div>
+                          <p className="text-sm text-muted-foreground">{mockCandidate.experience}</p>
+                        </div>
+                        <Separator />
+                        <div>
                           <h4 className="font-medium">Education</h4>
-                <p className="text-sm text-muted-foreground">{mockCandidate.education}</p>
-              </div>
-              <Separator />
-              <div>
+                          <p className="text-sm text-muted-foreground">{mockCandidate.education}</p>
+                        </div>
+                        <Separator />
+                        <div>
                           <h4 className="font-medium">Skills</h4>
                           <div className="flex flex-wrap gap-1 mt-1">
-                  {mockCandidate.skills.map((skill, index) => (
+                            {mockCandidate.skills.map((skill, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <Separator />
-              <div>
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <Separator />
+                        <div>
                           <h4 className="font-medium">AI Summary</h4>
                           <div className="space-y-2 mt-1">
-                  <div>
-                    <p className="text-sm font-medium text-green-600">Strengths</p>
+                            <div>
+                              <p className="text-sm font-medium text-green-600">Strengths</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                      {mockCandidate.aiSummary.strengths.map((strength, index) => (
-                        <li key={index}>{strength}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-yellow-600">Considerations</p>
+                                {mockCandidate.aiSummary.strengths.map((strength, index) => (
+                                  <li key={index}>{strength}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-yellow-600">Considerations</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                      {mockCandidate.aiSummary.considerations.map((consideration, index) => (
-                        <li key={index}>{consideration}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                                {mockCandidate.aiSummary.considerations.map((consideration, index) => (
+                                  <li key={index}>{consideration}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </ScrollArea>
                   </HoverCardContent>
@@ -441,7 +536,7 @@ const Interview: React.FC = () => {
                         <Textarea placeholder="Ask AI assistant..." className="h-8 text-xs" />
                         <Button size="sm" className="h-8">
                           <Bot className="h-3 w-3" />
-              </Button>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -457,13 +552,13 @@ const Interview: React.FC = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Interview Transcript</CardTitle>
-              <Button
-                variant={isRecording ? "destructive" : "default"}
-                size="sm"
-                onClick={() => setIsRecording(!isRecording)}
-              >
+                <Button
+                  variant={isRecording ? "destructive" : "default"}
+                  size="sm"
+                  onClick={() => setIsRecording(!isRecording)}
+                >
                   {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -488,11 +583,6 @@ const Interview: React.FC = () => {
                             </span>
                             {message.type === 'answer' && (
                               <div className="flex items-center gap-2">
-                                <Rating value={message.rating || 0} onChange={(value) => {
-                                  setMessages(prev => prev.map(msg =>
-                                    msg.id === message.id ? { ...msg, rating: value } : msg
-                                  ));
-                                }} />
                                 {message.aiAnalysis && getAnalysisBadge(message.aiAnalysis) && (
                                   <Badge
                                     variant="secondary"
@@ -506,78 +596,32 @@ const Interview: React.FC = () => {
                                 )}
                                 <HoverCard>
                                   <HoverCardTrigger>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                      <AlertCircle className="h-4 w-4" />
-                                    </Button>
-                                  </HoverCardTrigger>
-                                  <HoverCardContent>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium">AI Analysis</p>
-                                        {message.aiAnalysis?.confidence && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {Math.round(message.aiAnalysis.confidence * 100)}% confidence
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <p className="text-sm">{message.aiAnalysis?.summary}</p>
-                                      {message.aiAnalysis?.keyPoints && (
-                                        <div className="space-y-1">
-                                          <p className="text-xs font-medium">Key Points:</p>
-                                          <ul className="text-xs text-muted-foreground list-disc pl-4">
-                                            {message.aiAnalysis.keyPoints.map((point, idx) => (
-                                              <li key={idx}>{point}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                      {message.aiAnalysis?.resumeMatch !== undefined && (
-                                        <div className="flex items-center gap-2 text-xs">
-                                          <Badge variant="outline" className={cn(
-                                            message.aiAnalysis.resumeMatch
-                                              ? "bg-green-100 text-green-700"
-                                              : "bg-red-100 text-red-700"
-                                          )}>
-                                            {message.aiAnalysis.resumeMatch ? 'Matches Resume' : 'Resume Mismatch'}
-                                          </Badge>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </HoverCardContent>
-                                </HoverCard>
-                                <HoverCard>
-                                  <HoverCardTrigger>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 opacity-0 group-hover:opacity-100"
+                                      onClick={() => handleShowSuggestions(message.id)}
+                                    >
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </HoverCardTrigger>
-                                  <HoverCardContent side="top">
+                                  <HoverCardContent side="right" align="start">
                                     <div className="space-y-2">
-                                      <p className="text-sm font-medium">Add Quick Label</p>
-                                      <div className="flex gap-2">
-                                        <Input
-                                          placeholder="Enter label..."
-                                          className="text-xs h-8"
-                                          value={quickLabel}
-                                          onChange={(e) => setQuickLabel(e.target.value)}
-                                          onKeyPress={(e) => {
-                                            if (e.key === 'Enter' && quickLabel.trim()) {
-                                              addQuickLabel(message.id, quickLabel);
-                                            }
-                                          }}
-                                        />
-                                        <Button
-                                          size="sm"
-                                          className="h-8"
-                                          onClick={() => {
-                                            if (quickLabel.trim()) {
-                                              addQuickLabel(message.id, quickLabel);
-                                            }
-                                          }}
-                                        >
-                                          Add
-                                        </Button>
-                                      </div>
+                                      <p className="text-sm font-medium">Suggested Labels</p>
+                                      {suggestedLabels?.messageId === message.id && (
+                                        <div className="flex flex-wrap gap-2">
+                                          {suggestedLabels.labels.map((label, idx) => (
+                                            <Badge
+                                              key={idx}
+                                              variant="outline"
+                                              className="cursor-pointer hover:bg-secondary"
+                                              onClick={() => addLabel(message.id, label)}
+                                            >
+                                              {label}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   </HoverCardContent>
                                 </HoverCard>
@@ -586,11 +630,62 @@ const Interview: React.FC = () => {
                           </div>
                           <p className="text-sm">{message.content}</p>
                           {message.quickLabels && message.quickLabels.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
+                            <div className="mt-2 flex flex-wrap gap-2">
                               {message.quickLabels.map((label, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {label}
-                                </Badge>
+                                <div key={idx} className="flex items-center gap-1">
+                                  {editingLabel?.messageId === message.id && editingLabel?.labelIndex === idx ? (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        className="h-6 text-xs"
+                                        value={editingLabel.value}
+                                        onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
+                                        onKeyPress={(e) => {
+                                          if (e.key === 'Enter') {
+                                            updateLabel(message.id, idx, editingLabel.value);
+                                          }
+                                        }}
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => updateLabel(message.id, idx, editingLabel.value)}
+                                      >
+                                        <Check className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => setEditingLabel(null)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <Badge variant="secondary" className="text-xs">
+                                        {label}
+                                      </Badge>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-4 w-4 opacity-0 group-hover:opacity-100"
+                                        onClick={() => setEditingLabel({ messageId: message.id, labelIndex: idx, value: label })}
+                                      >
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-4 w-4 opacity-0 group-hover:opacity-100"
+                                        onClick={() => removeLabel(message.id, idx)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}
@@ -616,36 +711,36 @@ const Interview: React.FC = () => {
             {/* Suggested Questions */}
             <Card className="h-[40%]">
               <CardHeader className="py-2">
-              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Suggested Questions</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={refreshSuggestedQuestions}
-                  disabled={isRefreshingQuestions}
+                    disabled={isRefreshingQuestions}
                     className="h-8 px-2"
-                >
+                  >
                     <RefreshCw className={cn(
                       "h-4 w-4",
                       isRefreshingQuestions && "animate-spin"
                     )} />
-                </Button>
-              </div>
-            </CardHeader>
+                  </Button>
+                </div>
+              </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[calc(100%-3rem)]">
                   <div className="grid grid-cols-1 gap-1">
                     {suggestedQuestions.map((question) => (
                       <HoverCard key={question.id}>
                         <HoverCardTrigger asChild>
-                    <Button
-                      variant="ghost"
+                          <Button
+                            variant="ghost"
                             className="w-full justify-start text-left h-auto py-1.5 px-2 text-xs font-normal whitespace-normal"
-                    >
+                          >
                             <div className="line-clamp-2">
                               {question.question}
                             </div>
-                    </Button>
+                          </Button>
                         </HoverCardTrigger>
                         <HoverCardContent side="left" className="w-80">
                           <div className="space-y-2">
@@ -662,11 +757,11 @@ const Interview: React.FC = () => {
                           </div>
                         </HoverCardContent>
                       </HoverCard>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
 
             {/* Quick Notes Section */}
             <Card className="h-[60%]">

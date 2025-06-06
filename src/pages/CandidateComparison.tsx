@@ -5,43 +5,111 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Check, Mail, MapPin, Phone, User } from 'lucide-react';
+import { ArrowLeft, Check, Star, ThumbsUp, X } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
-// Mock data
-const mockCandidates = [
+// Import the interfaces from FinalReview
+interface TechnicalAnalysis {
+  score: number;
+  skills: string[];
+  strengths: string[];
+  areasToImprove: string[];
+  projectExperience: string;
+}
+
+interface CommunicationAnalysis {
+  score: number;
+  strengths: string[];
+  areasToImprove: string[];
+  teamworkHighlights: string;
+}
+
+interface CulturalAnalysis {
+  score: number;
+  values: string[];
+  strengths: string[];
+  concerns: string[];
+}
+
+interface JobFitAnalysis {
+  score: number;
+  matchingSkills: string[];
+  growthPotential: string;
+  risks: string;
+}
+
+interface CandidateAnalysis {
+  technical: TechnicalAnalysis;
+  communication: CommunicationAnalysis;
+  cultural: CulturalAnalysis;
+  jobFit: JobFitAnalysis;
+  summary: string;
+}
+
+interface Candidate {
+  id: string;
+  name: string;
+  position: string;
+  status: string;
+  rating: number;
+  interviewDate: string;
+  interviewer: string;
+  notes: string;
+  strengths: string[];
+  considerations: string[];
+  analysis: CandidateAnalysis;
+}
+
+// Use the same mock data from FinalReview
+const mockCandidates: Candidate[] = [
   {
     id: '1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    location: 'New York, USA',
-    skills: ['React', 'TypeScript', 'Node.js'],
-    experience: 5,
-    education: 'BS Computer Science',
-    interviewNotes: 'Strong technical skills, good communication. Shows leadership potential.'
+    name: 'Alex Johnson',
+    position: 'Frontend Developer',
+    status: 'Pending Review',
+    rating: 4.5,
+    interviewDate: '2025-04-15',
+    interviewer: 'John Doe',
+    notes: 'Strong technical skills, good cultural fit',
+    strengths: [
+      'Deep React knowledge',
+      'Good problem-solving skills',
+      'Clear communication'
+    ],
+    considerations: [
+      'Limited backend experience',
+      'No experience with our specific tech stack'
+    ],
+    analysis: {
+      technical: {
+        score: 85,
+        skills: ['React', 'TypeScript', 'Frontend Architecture'],
+        strengths: ['Component Design', 'State Management', 'Performance Optimization'],
+        areasToImprove: ['Backend Integration', 'Testing Coverage'],
+        projectExperience: 'Led development of 3 major web applications'
+      },
+      communication: {
+        score: 90,
+        strengths: ['Clear Explanations', 'Active Listening', 'Technical Documentation'],
+        areasToImprove: ['Public Speaking'],
+        teamworkHighlights: 'Effectively collaborated in cross-functional teams'
+      },
+      cultural: {
+        score: 88,
+        values: ['Innovation', 'Collaboration', 'Continuous Learning'],
+        strengths: ['Team Player', 'Mentorship Experience', 'Problem-solving Mindset'],
+        concerns: ['May need guidance on company processes']
+      },
+      jobFit: {
+        score: 87,
+        matchingSkills: ['Frontend Development', 'UI/UX Implementation', 'Agile Experience'],
+        growthPotential: 'High potential for technical leadership role',
+        risks: 'May need support for backend tasks initially'
+      },
+      summary: 'Strong candidate with excellent frontend skills. Shows good potential for growth.'
+    }
   },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '+1 234 567 8901',
-    location: 'San Francisco, USA',
-    skills: ['Angular', 'Python', 'AWS'],
-    experience: 7,
-    education: 'MS Software Engineering',
-    interviewNotes: 'Excellent problem-solving abilities. Great team player with strong architectural background.'
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    email: 'mike.j@example.com',
-    phone: '+1 234 567 8902',
-    location: 'Austin, USA',
-    skills: ['Vue.js', 'Java', 'Docker'],
-    experience: 4,
-    education: 'BS Information Technology',
-    interviewNotes: 'Good technical foundation. Enthusiastic about learning new technologies.'
-  }
+  // ... other candidates from FinalReview ...
 ];
 
 const getCandidate = (id: string) => mockCandidates.find(c => c.id === id);
@@ -49,7 +117,7 @@ const getCandidate = (id: string) => mockCandidates.find(c => c.id === id);
 const CandidateComparison = () => {
   const navigate = useNavigate();
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>(['1', '2']);
-  const [viewMode, setViewMode] = useState<'resume' | 'interview'>('resume');
+  const [viewMode, setViewMode] = useState<'analysis' | 'interview'>('analysis');
 
   const handleCandidateToggle = (candidateId: string) => {
     setSelectedCandidates((prev) => {
@@ -63,11 +131,10 @@ const CandidateComparison = () => {
     });
   };
 
-  const isSelected = (candidateId: string) =>
-    selectedCandidates.includes(candidateId);
+  const isSelected = (candidateId: string) => selectedCandidates.includes(candidateId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -79,22 +146,14 @@ const CandidateComparison = () => {
             <p className="text-muted-foreground">Side-by-side candidate evaluation</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            Export Comparison
-          </Button>
-          <Button size="sm">
-            Add to Shortlist
-          </Button>
-        </div>
       </div>
 
       {/* Candidate Selector */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Candidates</CardTitle>
+          <CardTitle>Select Candidates to Compare</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {mockCandidates.map((candidate) => (
               <Button
@@ -106,7 +165,7 @@ const CandidateComparison = () => {
                 {isSelected(candidate.id) ? (
                   <Check className="h-4 w-4" />
                 ) : (
-                  <User className="h-4 w-4" />
+                  <Star className="h-4 w-4" />
                 )}
                 {candidate.name}
               </Button>
@@ -118,86 +177,153 @@ const CandidateComparison = () => {
       {/* View Mode Toggle */}
       <Tabs value={viewMode} className="w-full">
         <TabsList>
-          <TabsTrigger value="resume" onClick={() => setViewMode('resume')}>
-            Resume View
+          <TabsTrigger value="analysis" onClick={() => setViewMode('analysis')}>
+            Analysis
           </TabsTrigger>
           <TabsTrigger value="interview" onClick={() => setViewMode('interview')}>
             Interview Notes
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="resume">
-          {/* Resume Comparison */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <TabsContent value="analysis">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selectedCandidates.map((candidateId) => {
               const candidate = getCandidate(candidateId);
+              if (!candidate) return null;
+
               return (
-                candidate && (
-                  <Card key={candidate.id}>
-                    <CardHeader>
-                      <CardTitle>{candidate.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
-                        <p>
-                          <Mail className="h-4 w-4 inline-block mr-1" />
-                          {candidate.email}
-                        </p>
-                        <p>
-                          <Phone className="h-4 w-4 inline-block mr-1" />
-                          {candidate.phone}
-                        </p>
-                        <p>
-                          <MapPin className="h-4 w-4 inline-block mr-1" />
-                          {candidate.location}
-                        </p>
+                <Card key={candidate.id}>
+                  <CardHeader>
+                    <CardTitle>{candidate.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Score Overview */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Technical</span>
+                          <span className="font-medium">{candidate.analysis.technical.score}%</span>
+                        </div>
+                        <Progress value={candidate.analysis.technical.score} />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-sm font-bold">Skills</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {candidate.skills.map((skill) => (
-                            <Badge key={skill}>{skill}</Badge>
-                          ))}
+                        <div className="flex justify-between text-sm">
+                          <span>Communication</span>
+                          <span className="font-medium">{candidate.analysis.communication.score}%</span>
                         </div>
+                        <Progress value={candidate.analysis.communication.score} />
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold">Experience</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {candidate.experience} years
-                        </p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Cultural Fit</span>
+                          <span className="font-medium">{candidate.analysis.cultural.score}%</span>
+                        </div>
+                        <Progress value={candidate.analysis.cultural.score} />
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold">Education</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {candidate.education}
-                        </p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Job Fit</span>
+                          <span className="font-medium">{candidate.analysis.jobFit.score}%</span>
+                        </div>
+                        <Progress value={candidate.analysis.jobFit.score} />
                       </div>
-                    </CardContent>
-                  </Card>
-                )
+                    </div>
+
+                    {/* Skills */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Technical Skills</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {candidate.analysis.technical.skills.map((skill) => (
+                          <Badge key={skill} variant="secondary">{skill}</Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Strengths */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Key Strengths</h4>
+                      <ul className="space-y-1">
+                        {candidate.strengths.map((strength, i) => (
+                          <li key={i} className="text-sm flex items-center gap-2">
+                            <ThumbsUp className="h-4 w-4 text-green-500" />
+                            {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Considerations */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Considerations</h4>
+                      <ul className="space-y-1">
+                        {candidate.considerations.map((consideration, i) => (
+                          <li key={i} className="text-sm flex items-center gap-2">
+                            <X className="h-4 w-4 text-yellow-500" />
+                            {consideration}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Summary */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Overall Assessment</h4>
+                      <p className="text-sm text-muted-foreground">{candidate.analysis.summary}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         </TabsContent>
+
         <TabsContent value="interview">
-          {/* Interview Notes Comparison */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {selectedCandidates.map((candidateId) => {
               const candidate = getCandidate(candidateId);
+              if (!candidate) return null;
+
               return (
-                candidate && (
-                  <Card key={candidate.id}>
-                    <CardHeader>
-                      <CardTitle>{candidate.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ScrollArea className="h-[300px] w-full">
-                        <p className="text-sm text-muted-foreground">
-                          {candidate.interviewNotes}
-                        </p>
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-                )
+                <Card key={candidate.id}>
+                  <CardHeader>
+                    <CardTitle>{candidate.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Interviewed by {candidate.interviewer} on {candidate.interviewDate}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Interview Notes</h4>
+                      <p className="text-sm text-muted-foreground">{candidate.notes}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Strengths</h4>
+                        <ul className="space-y-1">
+                          {candidate.strengths.map((strength, i) => (
+                            <li key={i} className="text-sm flex items-center gap-2">
+                              <ThumbsUp className="h-4 w-4 text-green-500" />
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Considerations</h4>
+                        <ul className="space-y-1">
+                          {candidate.considerations.map((consideration, i) => (
+                            <li key={i} className="text-sm flex items-center gap-2">
+                              <X className="h-4 w-4 text-yellow-500" />
+                              {consideration}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>

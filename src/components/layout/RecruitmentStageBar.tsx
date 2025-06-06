@@ -20,7 +20,7 @@ const stageRoutes: Record<RecruitmentStage, string> = {
   'shortlisted': '/shortlisted'
 };
 
-const stageLabels: Record<RecruitmentStage, string> = {
+export const stageLabels: Record<RecruitmentStage, string> = {
   'applied': 'Applied',
   'screened': 'Screened',
   'interviewed': 'Interview',

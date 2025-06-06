@@ -24,6 +24,7 @@ import ShortlistedCandidates from '@/pages/ShortlistedCandidates';
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { RecruitmentContextProvider } from "@/contexts/RecruitmentContext";
+import { NewJobOpening } from '@/pages/NewJobOpening';
 
 const queryClient = new QueryClient();
 
@@ -42,7 +43,10 @@ function App() {
                     <Route path="events" element={<EventList />} />
                     <Route path="event-setup" element={<EventSetup />} />
                     <Route path="event-dashboard/:id" element={<EventDashboard />} />
-                    <Route path="job-openings" element={<JobOpenings />} />
+                    <Route path="job-openings">
+                      <Route index element={<JobOpenings />} />
+                      <Route path="new" element={<NewJobOpening />} />
+                    </Route>
                     <Route path="candidate-intake" element={<CandidateIntake />} />
                     <Route path="qr-registration" element={<QRRegistration />} />
                     <Route path="applied" element={<AppliedCandidates />} />

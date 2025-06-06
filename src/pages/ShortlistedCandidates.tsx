@@ -43,9 +43,6 @@ const ShortlistedCandidates = () => {
                     <h2 className="text-2xl font-semibold tracking-tight">Shortlisted Candidates</h2>
                     <p className="text-sm text-muted-foreground">Review and make final decisions</p>
                 </div>
-                <Button onClick={() => navigate('/candidate-comparison')}>
-                    Compare Candidates
-                </Button>
             </div>
 
             <div className="flex justify-between items-center gap-4">

@@ -29,6 +29,7 @@ import {
   useSidebar
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useRecruitment } from "@/contexts/RecruitmentContext";
 
 interface MenuItem {
   title: string;
@@ -92,8 +93,15 @@ const menuGroups: MenuGroup[] = [
 export function AppSidebar() {
   const location = useLocation();
   const { state, setOpen } = useSidebar();
+  const { setCurrentStage } = useRecruitment();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
+
+  const handleNavigation = (path: string) => {
+    if (path === '/interview') {
+      setCurrentStage('interviewed');
+    }
+  };
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="shrink-0 border-r">
@@ -168,6 +176,7 @@ export function AppSidebar() {
                     >
                       <NavLink
                         to={item.path}
+                        onClick={() => handleNavigation(item.path)}
                         className={({ isActive }) =>
                           cn(
                             "flex items-center rounded-md transition-colors duration-200",

@@ -4,60 +4,84 @@ interface JobDetails {
     location: string;
     description: string;
     requirements: string[];
-}
-
-export async function extractJobDetails(jobDescription: string): Promise<JobDetails> {
-    // TODO: Replace this with actual AI service integration
-    // This is a mock implementation that simulates AI processing
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock AI processing
-    const lines = jobDescription.split('\n').filter(line => line.trim());
-
-    // Basic extraction logic (replace with AI service)
-    const title = lines.find(line =>
-        line.toLowerCase().includes('position') ||
-        line.toLowerCase().includes('job title') ||
-        line.toLowerCase().includes('role')
-    )?.replace(/^.*?:\s*/, '') || 'Position Title';
-
-    const department = lines.find(line =>
-        line.toLowerCase().includes('department') ||
-        line.toLowerCase().includes('team')
-    )?.replace(/^.*?:\s*/, '') || 'Department';
-
-    const location = lines.find(line =>
-        line.toLowerCase().includes('location') ||
-        line.toLowerCase().includes('based')
-    )?.replace(/^.*?:\s*/, '') || 'Location';
-
-    // Extract requirements (look for bullet points or numbered lists)
-    const requirements = lines
-        .filter(line => line.trim().match(/^[-•*]|\d+\./))
-        .map(line => line.replace(/^[-•*]|\d+\.\s*/, '').trim())
-        .filter(line => line.length > 0);
-
-    // Clean up the description (remove the extracted parts)
-    const description = lines
-        .filter(line =>
-            !line.toLowerCase().includes('position:') &&
-            !line.toLowerCase().includes('department:') &&
-            !line.toLowerCase().includes('location:') &&
-            !line.match(/^[-•*]|\d+\./)
-        )
-        .join('\n')
-        .trim();
-
-    return {
-        title,
-        department,
-        location,
-        description,
-        requirements: requirements.length > 0 ? requirements : ['No specific requirements extracted'],
+    salary: {
+        min: string;
+        max: string;
+        currency: string;
+        period: string;
     };
+    employmentType: string;
+    experienceLevel: string;
+    benefits: string[];
 }
+
+// Mock data for demo purposes
+const mockSkills = {
+    'developer': [
+        'React', 'TypeScript', 'Node.js', 'GraphQL', 'Docker',
+        'AWS', 'Git', 'REST APIs', 'Jest', 'CI/CD'
+    ],
+    'designer': [
+        'Figma', 'Adobe XD', 'UI/UX', 'Prototyping', 'User Research',
+        'Design Systems', 'Responsive Design', 'Sketch', 'Adobe Creative Suite'
+    ],
+    'manager': [
+        'Agile', 'Project Management', 'Team Leadership', 'Strategic Planning',
+        'Stakeholder Management', 'Risk Management', 'Budgeting'
+    ]
+};
+
+export const extractJobDetails = async (text: string) => {
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // For demo, just return mock data
+    return {
+        title: 'Senior Frontend Developer',
+        department: 'Engineering',
+        location: 'Remote / Hybrid - New York',
+        description: `We are looking for a Senior Frontend Developer to join our growing team. You will be responsible for:
+
+• Building responsive and performant user interfaces
+• Collaborating with designers and backend engineers
+• Mentoring junior developers
+• Contributing to our design system
+• Leading technical discussions and code reviews
+
+Our tech stack includes React, TypeScript, GraphQL, and modern frontend tools.`,
+        requirements: [
+            '5+ years of experience with React and modern JavaScript',
+            'Strong TypeScript and state management skills',
+            'Experience with GraphQL and REST APIs',
+            'History of mentoring junior developers',
+            'Excellent communication and collaboration skills'
+        ],
+        salary: {
+            min: '120000',
+            max: '180000',
+            currency: 'USD',
+            period: 'year'
+        },
+        employmentType: 'full-time',
+        experienceLevel: 'senior',
+        benefits: [
+            'Health, Dental & Vision Insurance',
+            'Unlimited PTO',
+            '401(k) with Company Match',
+            'Remote Work Options',
+            'Professional Development Budget',
+            'Home Office Stipend'
+        ]
+    };
+};
+
+export const suggestSkillsAndRequirements = async (text: string) => {
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // For demo, always return developer skills
+    return mockSkills.developer;
+};
 
 // Function to match candidates with job requirements
 export async function matchCandidateToJob(
