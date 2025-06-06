@@ -1,13 +1,22 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Calendar, Clock, Users, VideoIcon } from "lucide-react";
+import { useRecruitment } from '@/contexts/RecruitmentContext';
 
 const InterviewLobby = () => {
     const [view, setView] = useState<'my-interviews' | 'instant'>('my-interviews');
+    const navigate = useNavigate();
+    const { setCurrentStage } = useRecruitment();
+
+    const startInterview = (id: string) => {
+        setCurrentStage('interviewed');
+        navigate(`/interview/${id}`);
+    };
 
     // Mock data for interviews
     const myInterviews = [
@@ -81,7 +90,7 @@ const InterviewLobby = () => {
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">{interview.candidate.email}</p>
                                                     </div>
-                                                    <Button>
+                                                    <Button onClick={() => startInterview(interview.id)}>
                                                         <VideoIcon className="h-4 w-4 mr-2" />
                                                         Start Interview
                                                     </Button>
@@ -166,7 +175,7 @@ const InterviewLobby = () => {
                                     </div>
                                 </div>
 
-                                <Button className="w-full">
+                                <Button className="w-full" onClick={() => startInterview('instant')}>
                                     <VideoIcon className="h-4 w-4 mr-2" />
                                     Start Instant Interview
                                 </Button>
