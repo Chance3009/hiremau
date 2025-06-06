@@ -203,13 +203,18 @@ const Interview: React.FC = () => {
   const generateAiSuggestedLabels = (message: any): string[] => {
     const labels: string[] = [];
     const analysis = message.aiAnalysis;
+    const content = message.content.toLowerCase();
 
     if (!analysis) return labels;
 
     // Add label based on analysis type
     switch (analysis.type) {
       case 'excellent':
+      case 'positive':
         labels.push('Strong Response');
+        break;
+      case 'good':
+        labels.push('Good Answer');
         break;
       case 'concern':
         labels.push('Needs Follow-up');
@@ -222,19 +227,52 @@ const Interview: React.FC = () => {
     // Add labels based on key points
     if (analysis.keyPoints) {
       analysis.keyPoints.forEach(point => {
-        if (point.toLowerCase().includes('experience')) {
+        const pointLower = point.toLowerCase();
+        if (pointLower.includes('experience')) {
           labels.push('Experience Highlight');
         }
-        if (point.toLowerCase().includes('leadership')) {
+        if (pointLower.includes('leadership')) {
           labels.push('Leadership Quality');
         }
-        if (point.toLowerCase().includes('technical')) {
+        if (pointLower.includes('technical')) {
           labels.push('Technical Expertise');
         }
-        if (point.toLowerCase().includes('mismatch') || point.toLowerCase().includes('verification')) {
+        if (pointLower.includes('mismatch') || pointLower.includes('verification')) {
           labels.push('Requires Verification');
         }
+        if (pointLower.includes('depth')) {
+          labels.push('Deep Knowledge');
+        }
+        if (pointLower.includes('operational')) {
+          labels.push('Operational Excellence');
+        }
+        if (pointLower.includes('problem-solving')) {
+          labels.push('Problem Solver');
+        }
       });
+    }
+
+    // Add content-based labels
+    if (content.includes('scale') || content.includes('performance') || content.includes('metrics')) {
+      labels.push('Scalability Focus');
+    }
+    if (content.includes('team') || content.includes('collaboration')) {
+      labels.push('Team Player');
+    }
+    if (content.includes('problem') || content.includes('challenge') || content.includes('solved')) {
+      labels.push('Problem Solving');
+    }
+    if (content.includes('architecture') || content.includes('design') || content.includes('system')) {
+      labels.push('System Design');
+    }
+    if (content.includes('test') || content.includes('quality') || content.includes('monitoring')) {
+      labels.push('Quality Focus');
+    }
+    if (content.includes('learn') || content.includes('study') || content.includes('improve')) {
+      labels.push('Growth Mindset');
+    }
+    if (content.includes('implement') || content.includes('developed') || content.includes('built')) {
+      labels.push('Implementation');
     }
 
     // Add label based on confidence
@@ -635,34 +673,44 @@ const Interview: React.FC = () => {
                                     </div>
                                   </HoverCardContent>
                                 </HoverCard>
-                                <HoverCard>
-                                  <HoverCardTrigger>
+                                <HoverCard openDelay={0} closeDelay={500}>
+                                  <HoverCardTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 opacity-0 group-hover:opacity-100"
-                                      onClick={() => handleShowSuggestions(message.id)}
+                                      className="h-8 w-8"
+                                      onMouseEnter={() => handleShowSuggestions(message.id)}
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </HoverCardTrigger>
-                                  <HoverCardContent side="right" align="start">
+                                  <HoverCardContent
+                                    side="right"
+                                    align="start"
+                                    className="w-72 p-3"
+                                  >
                                     <div className="space-y-2">
                                       <p className="text-sm font-medium">Suggested Labels</p>
-                                      {suggestedLabels?.messageId === message.id && (
-                                        <div className="flex flex-wrap gap-2">
-                                          {suggestedLabels.labels.map((label, idx) => (
-                                            <Badge
-                                              key={idx}
-                                              variant="outline"
-                                              className="cursor-pointer hover:bg-secondary"
-                                              onClick={() => addLabel(message.id, label)}
-                                            >
-                                              {label}
-                                            </Badge>
-                                          ))}
-                                        </div>
-                                      )}
+                                      <div className="flex flex-wrap gap-2">
+                                        {suggestedLabels?.messageId === message.id ? (
+                                          suggestedLabels.labels.length > 0 ? (
+                                            suggestedLabels.labels.map((label, idx) => (
+                                              <Badge
+                                                key={idx}
+                                                variant="outline"
+                                                className="cursor-pointer hover:bg-secondary transition-colors px-2 py-1"
+                                                onClick={() => addLabel(message.id, label)}
+                                              >
+                                                {label}
+                                              </Badge>
+                                            ))
+                                          ) : (
+                                            <p className="text-sm text-muted-foreground">No suggestions available</p>
+                                          )
+                                        ) : (
+                                          <p className="text-sm text-muted-foreground">Loading suggestions...</p>
+                                        )}
+                                      </div>
                                     </div>
                                   </HoverCardContent>
                                 </HoverCard>
@@ -768,17 +816,17 @@ const Interview: React.FC = () => {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[calc(100%-3rem)]">
-                  <div className="grid grid-cols-1 gap-1">
+              <CardContent className="p-0">
+                <ScrollArea className="h-[calc(100%-3rem)] px-4">
+                  <div className="space-y-1">
                     {suggestedQuestions.map((question) => (
                       <HoverCard key={question.id}>
                         <HoverCardTrigger asChild>
                           <Button
                             variant="ghost"
-                            className="w-full justify-start text-left h-auto py-1.5 px-2 text-xs font-normal whitespace-normal"
+                            className="w-full justify-start text-left h-auto py-1.5 px-2 text-xs font-normal"
                           >
-                            <div className="line-clamp-2">
+                            <div className="line-clamp-1">
                               {question.question}
                             </div>
                           </Button>
@@ -787,14 +835,13 @@ const Interview: React.FC = () => {
                           <div className="space-y-2">
                             <p className="text-sm">{question.question}</p>
                             <div className="flex flex-wrap gap-1">
-                              {question.tags.map((tag, idx) => (
+                              {question.tags.slice(0, 3).map((tag, idx) => (
                                 <Badge key={idx} variant="secondary" className="text-xs">
                                   {tag}
                                 </Badge>
                               ))}
                             </div>
-                            <p className="text-xs text-muted-foreground">{question.context}</p>
-                            <p className="text-xs text-muted-foreground">{question.aiReason}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{question.aiReason}</p>
                           </div>
                         </HoverCardContent>
                       </HoverCard>
