@@ -2,6 +2,16 @@
 
 **HireMau** is an intelligent web-based screening tool designed to help recruiters and HR managers conduct faster, more effective candidate evaluations. By leveraging advanced AI technologies, including **Large Language Models (LLMs)**, **Agentic AI**, and **Retrieval-Augmented Generation (RAG)**, HireMau automates and enhances early-stage screening tasks such as skill-gap analysis, background checks, and live interview support. The platform reduces manual workload, improves consistency, and enables high-volume screening with minimal effort.
 
+## Showcases
+| Key Features  | Demonstration |
+| :---:  | :---: |
+| Homepage | <img src="https://github.com/user-attachments/assets/06a0db44-fb09-4de7-a748-7de8d93e915e" height="300"> |
+| Multi-Source Data Collection and AI-Powered Urban Monitoring | <img src="https://github.com/user-attachments/assets/71898064-93d9-4f12-ab54-ed41d2733455" height="300"> <img src="https://github.com/user-attachments/assets/66d0b8ee-8a53-4cc6-9d34-cb32b6304539" height="300"> <img src="https://github.com/user-attachments/assets/4877a147-b68c-473e-9757-c84bf767a8c1" height="300"> |
+| Real-Time Alerts | <img src="https://github.com/user-attachments/assets/b07ed53d-f0f0-42ff-a7ba-40667fc6dd11" height="300"> <img src="https://github.com/user-attachments/assets/f2f9e95f-b253-4252-b0e8-7e0dfaad42fa" height="300"> |
+| AI-Driven Risk Assessment and Crowdsourcing Prioritization | <img src="https://github.com/user-attachments/assets/4877a147-b68c-473e-9757-c84bf767a8c1" height="300"> <img src="https://github.com/user-attachments/assets/0807e95f-1443-4292-a662-ad5d6703f541" height="300"> |
+| Issue Tracking and Community Engagement | <img src="https://github.com/user-attachments/assets/0807e95f-1443-4292-a662-ad5d6703f541" height="300"> <img src="https://github.com/user-attachments/assets/caa39ca5-6eb9-48f9-a844-d5df0ff70efa" height="300"> <img src="https://github.com/user-attachments/assets/d9697aa0-bb7e-47ff-b0d5-5734a588de10" height="300"> |
+| Dashboard | <img src="https://github.com/user-attachments/assets/2e7f1ff6-37d1-442a-ba00-97b1792b8014" height="300"> <img src="https://github.com/user-attachments/assets/83b06522-cba1-40f1-9864-6fe8fa747380" height="300"> |
+
 ## Key Features
 
 ### 🤖 Streamlined Screening with Agentic AI and RAG
