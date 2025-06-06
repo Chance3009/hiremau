@@ -36,6 +36,7 @@ Collaborative tools allow multiple recruiters to evaluate candidates simultaneou
 
 ****All collected and processed data can be seamlessly exported to the company’s existing HR system via API integration, ensuring easy access, continuity, and centralised candidate tracking.****
 
+---
 
 ## Getting Started
 
