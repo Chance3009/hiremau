@@ -1,8 +1,7 @@
 # HireMau
 
-**HireMau** is an AI-assisted, browser-based recruitment assistant tailored for **on-site and campus hiring events**. Built for speed and clarity, it helps HR teams and recruiters streamline their end-to-end hiring workflow — from job setup and candidate intake to interviews and final decision-making — without depending on bulky ATS tools.
-
-> Designed for fast-paced recruitment. Powered by smart summaries. Controlled by human judgment.
+Overview
+HireMau is an intelligent web-based screening tool designed to help recruiters and HR managers conduct faster, more effective candidate evaluations. By leveraging advanced AI technologies—including Large Language Models (LLMs), Agentic AI, and Retrieval-Augmented Generation (RAG)—HireMau automates and enhances early-stage screening tasks such as skill-gap analysis, background checks, and live interview support. The platform reduces manual workload, improves consistency, and enables high-volume screening with minimal effort.
 
 ---
 
