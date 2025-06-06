@@ -1,6 +1,6 @@
-# Overview of HireMau
+# 🚀 Overview of HireMau
 
-**HireMau** is an intelligent web-based screening tool designed to help recruiters and HR managers conduct faster, more effective candidate evaluations. By leveraging advanced AI technologies—including **Large Language Models (LLMs)**, **Agentic AI**, and **Retrieval-Augmented Generation (RAG)**, HireMau automates and enhances early-stage screening tasks such as skill-gap analysis, background checks, and live interview support. The platform reduces manual workload, improves consistency, and enables high-volume screening with minimal effort.
+**HireMau** is an intelligent web-based screening tool designed to help recruiters and HR managers conduct faster, more effective candidate evaluations. By leveraging advanced AI technologies, including **Large Language Models (LLMs)**, **Agentic AI**, and **Retrieval-Augmented Generation (RAG)**, HireMau automates and enhances early-stage screening tasks such as skill-gap analysis, background checks, and live interview support. The platform reduces manual workload, improves consistency, and enables high-volume screening with minimal effort.
 
 ## Key Features
 
@@ -34,7 +34,7 @@ HireMau groups job applications by recruitment events like career fairs or campu
 
 Collaborative tools allow multiple recruiters to evaluate candidates simultaneously with synchronized data, supporting real-time remote consultation and consistent workflows across locations. After events, automated candidate ranking, bulk communication, and detailed analytics provide insights on ROI, candidate quality, and process efficiency.
 
-****All collected and processed data can be seamlessly exported to the company’s existing HR system via API integration, ensuring easy access, continuity, and centralised candidate tracking.**
+****All collected and processed data can be seamlessly exported to the company’s existing HR system via API integration, ensuring easy access, continuity, and centralised candidate tracking.****
 
 ---
 
