@@ -427,7 +427,7 @@ const Interview: React.FC = () => {
           <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
             Skip Interview
           </Button>
-          <Button onClick={() => navigate('/interviewed/1/evaluation')}>
+          <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>
             End Interview
           </Button>
         </div>
