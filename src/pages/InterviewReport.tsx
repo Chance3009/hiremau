@@ -20,311 +20,211 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from "@/components/ui/page-header";
+import { mockInterviewReports, mockCandidates } from '@/mocks/interviewData';
 
-// Mock data - in real app, this would come from your state/context/API
-const mockInterviewReport = {
-    candidate: {
-        name: 'John Doe',
-        position: 'Frontend Developer',
-        date: '2024-03-20',
-        duration: '45 minutes',
-    },
-    quickLabels: [
-        'Strong Technical Skills',
-        'Good Communication',
-        'Leadership Experience',
-        'Needs Clarification on Testing',
-    ],
-    quickNotes: [
-        {
-            text: 'Shows strong understanding of React architecture',
-            timestamp: '10:32 AM'
-        },
-        {
-            text: 'Limited experience with testing frameworks',
-            timestamp: '10:45 AM'
-        },
-    ],
-    aiAnalysis: {
-        overallScore: 85,
-        confidence: 0.92,
-        strengths: [
-            'Deep technical knowledge in React and TypeScript',
-            'Excellent problem-solving approach',
-            'Strong team leadership experience',
-        ],
-        concerns: [
-            'Limited testing experience',
-            'Some gaps in cloud architecture knowledge',
-        ],
-        keyHighlights: [
-            {
-                type: 'positive',
-                point: 'Led a team of 5 developers in previous role',
-                confidence: 0.95,
-            },
-            {
-                type: 'positive',
-                point: 'Implemented complex state management solutions',
-                confidence: 0.88,
-            },
-            {
-                type: 'concern',
-                point: 'Limited experience with integration testing',
-                confidence: 0.85,
-            },
-        ],
-        resumeMatches: {
-            matching: [
-                'React experience',
-                'Team leadership',
-                'Project management',
-            ],
-            discrepancies: [
-                'Years of cloud experience',
-            ],
-        },
-    },
-    transcriptHighlights: [
-        {
-            question: 'Can you describe your experience with large-scale React applications?',
-            answer: 'Led development of customer dashboard serving 50,000 daily users using React and TypeScript...',
-            analysis: {
-                type: 'positive',
-                summary: 'Strong technical leadership with proven scale experience',
-                confidence: 0.95,
-            },
-        },
-        {
-            question: 'How do you handle testing in your applications?',
-            answer: 'We mainly used basic unit tests, but I haven\'t worked much with integration testing.',
-            analysis: {
-                type: 'concern',
-                summary: 'Limited testing experience for senior role requirements',
-                confidence: 0.88,
-            },
-        },
-    ],
-};
-
-const InterviewReport = () => {
+const InterviewReport: React.FC = () => {
     const navigate = useNavigate();
-    const { candidateId } = useParams();
-    const { setCurrentStage } = useRecruitment();
+    const { reportId } = useParams();
+
+    // Get the report from mock data
+    const report = mockInterviewReports.find(r => r.id === reportId) || mockInterviewReports[0];
+    const candidate = mockCandidates.find(c => c.id === report.candidateId);
 
     return (
-        <div className="space-y-6 p-6">
-            <PageHeader
-                title="Interview Report"
-                subtitle={`${mockInterviewReport.candidate.name} - ${mockInterviewReport.candidate.position}`}
-            >
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => navigate('/candidates')}>
-                        Back to Candidates
+        <div className="flex flex-col min-h-screen">
+            <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <PageHeader
+                    title={candidate?.name || 'Interview Report'}
+                    subtitle={candidate?.position}
+                    className="gap-4"
+                >
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                        <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => {
-                        setCurrentStage('final-review');
-                        navigate('/final-review');
-                    }}>
-                        Proceed to Final Review
-                    </Button>
-                </div>
-            </PageHeader>
+                </PageHeader>
+            </div>
 
-            <div className="grid grid-cols-3 gap-6">
-                {/* Left Column - Quick Overview */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Interview Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Date</span>
-                                <span className="font-medium">{mockInterviewReport.candidate.date}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Duration</span>
-                                <span className="font-medium">{mockInterviewReport.candidate.duration}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">AI Score</span>
+            <div className="flex-1 space-y-4 p-4">
+                <div className="grid gap-4">
+                    {/* Interview Details */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg font-medium">Interview Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="font-medium">
-                                        {mockInterviewReport.aiAnalysis.overallScore}%
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">
-                                        {Math.round(mockInterviewReport.aiAnalysis.confidence * 100)}% confidence
-                                    </Badge>
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm">{report.date} ({report.duration} minutes)</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm">{report.interviewer.name} ({report.interviewer.role})</span>
                                 </div>
                             </div>
-                        </div>
+                        </CardContent>
+                    </Card>
 
-                        <Separator />
-
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">Quick Labels</h3>
+                    {/* Quick Labels */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg font-medium">Quick Labels</CardTitle>
+                        </CardHeader>
+                        <CardContent>
                             <div className="flex flex-wrap gap-2">
-                                {mockInterviewReport.quickLabels.map((label, idx) => (
-                                    <Badge key={idx} variant="secondary" className="text-xs">
-                                        {label}
-                                    </Badge>
+                                {report.quickLabels.map((label, index) => (
+                                    <Badge key={index} variant="secondary">{label}</Badge>
                                 ))}
                             </div>
-                        </div>
+                        </CardContent>
+                    </Card>
 
-                        <Separator />
-
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">Resume Match</h3>
-                            <div className="space-y-2">
-                                <div>
-                                    <p className="text-xs font-medium text-green-600 mb-1">Matching Points</p>
-                                    <ul className="text-xs text-muted-foreground list-disc pl-4">
-                                        {mockInterviewReport.aiAnalysis.resumeMatches.matching.map((point, idx) => (
-                                            <li key={idx}>{point}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-red-600 mb-1">Discrepancies</p>
-                                    <ul className="text-xs text-muted-foreground list-disc pl-4">
-                                        {mockInterviewReport.aiAnalysis.resumeMatches.discrepancies.map((point, idx) => (
-                                            <li key={idx}>{point}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Middle Column - AI Analysis */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>AI Analysis</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                <ThumbsUp className="h-4 w-4 text-green-500" />
-                                Strengths
-                            </h3>
-                            <ul className="space-y-1">
-                                {mockInterviewReport.aiAnalysis.strengths.map((strength, idx) => (
-                                    <li key={idx} className="text-sm flex items-start gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                                        {strength}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                <ThumbsDown className="h-4 w-4 text-red-500" />
-                                Areas of Concern
-                            </h3>
-                            <ul className="space-y-1">
-                                {mockInterviewReport.aiAnalysis.concerns.map((concern, idx) => (
-                                    <li key={idx} className="text-sm flex items-start gap-2">
-                                        <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-                                        {concern}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">Key Highlights</h3>
-                            <div className="space-y-2">
-                                {mockInterviewReport.aiAnalysis.keyHighlights.map((highlight, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={cn(
-                                            "p-3 rounded-lg border",
-                                            highlight.type === 'positive'
-                                                ? "bg-green-50 border-green-100"
-                                                : "bg-red-50 border-red-100"
-                                        )}
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            {highlight.type === 'positive' ? (
-                                                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
-                                            ) : (
-                                                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5" />
-                                            )}
-                                            <div>
-                                                <p className="text-sm">{highlight.point}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    {Math.round(highlight.confidence * 100)}% confidence
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Right Column - Notes & Transcript */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Notes & Highlights</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">Quick Notes</h3>
+                    {/* Quick Notes */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg font-medium">Quick Notes</CardTitle>
+                        </CardHeader>
+                        <CardContent>
                             <ScrollArea className="h-[200px]">
-                                <div className="space-y-2">
-                                    {mockInterviewReport.quickNotes.map((note, idx) => (
-                                        <div key={idx} className="p-3 bg-muted rounded-lg">
-                                            <p className="text-sm">{note.text}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">{note.timestamp}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                            <h3 className="text-sm font-medium mb-2">Key Moments</h3>
-                            <ScrollArea className="h-[300px]">
                                 <div className="space-y-4">
-                                    {mockInterviewReport.transcriptHighlights.map((highlight, idx) => (
-                                        <div key={idx} className="space-y-2">
-                                            <div className="bg-muted p-3 rounded-lg">
-                                                <p className="text-sm font-medium">{highlight.question}</p>
-                                                <p className="text-sm mt-2">{highlight.answer}</p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "text-xs",
-                                                            highlight.analysis.type === 'positive'
-                                                                ? "bg-green-50 text-green-700"
-                                                                : "bg-red-50 text-red-700"
-                                                        )}
-                                                    >
-                                                        {highlight.analysis.type === 'positive' ? 'Strong Response' : 'Needs Follow-up'}
-                                                    </Badge>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {Math.round(highlight.analysis.confidence * 100)}% confidence
-                                                    </span>
-                                                </div>
+                                    {report.quickNotes.map((note, index) => (
+                                        <div key={index} className="flex items-start gap-4">
+                                            <MessageSquare className="h-4 w-4 text-muted-foreground mt-1" />
+                                            <div className="space-y-1">
+                                                <p className="text-sm">{note.text}</p>
+                                                <p className="text-xs text-muted-foreground">{note.timestamp}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </ScrollArea>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+
+                    {/* AI Analysis */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg font-medium">AI Analysis</CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Brain className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        Confidence: {(report.aiAnalysis.confidence * 100).toFixed(0)}%
+                                    </span>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Overall Score */}
+                            <div>
+                                <h4 className="text-sm font-medium mb-2">Overall Score</h4>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-green-500 rounded-full"
+                                            style={{ width: `${report.aiAnalysis.overallScore}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-sm font-medium">{report.aiAnalysis.overallScore}%</span>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Strengths & Concerns */}
+                            <div className="grid gap-4">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <ThumbsUp className="h-4 w-4 text-green-500" />
+                                        <h4 className="text-sm font-medium">Strengths</h4>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {report.aiAnalysis.strengths.map((strength, index) => (
+                                            <li key={index} className="text-sm flex items-start gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                                                {strength}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <ThumbsDown className="h-4 w-4 text-yellow-500" />
+                                        <h4 className="text-sm font-medium">Areas of Concern</h4>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {report.aiAnalysis.concerns.map((concern, index) => (
+                                            <li key={index} className="text-sm flex items-start gap-2">
+                                                <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                                                {concern}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Key Highlights */}
+                            <div>
+                                <h4 className="text-sm font-medium mb-2">Key Highlights</h4>
+                                <div className="space-y-2">
+                                    {report.aiAnalysis.keyHighlights.map((highlight, index) => (
+                                        <div
+                                            key={index}
+                                            className={cn(
+                                                "p-3 rounded-lg text-sm",
+                                                highlight.type === 'positive'
+                                                    ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                                                    : "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{highlight.point}</span>
+                                                <span className="text-xs opacity-70">
+                                                    {(highlight.confidence * 100).toFixed(0)}% confidence
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Resume Matches */}
+                            <div>
+                                <h4 className="text-sm font-medium mb-2">Resume Match Analysis</h4>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                            <h5 className="text-sm font-medium">Matching Claims</h5>
+                                        </div>
+                                        <ul className="space-y-1">
+                                            {report.aiAnalysis.resumeMatches.matching.map((match, index) => (
+                                                <li key={index} className="text-sm text-muted-foreground">• {match}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    {report.aiAnalysis.resumeMatches.discrepancies.length > 0 && (
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                                <h5 className="text-sm font-medium">Discrepancies</h5>
+                                            </div>
+                                            <ul className="space-y-1">
+                                                {report.aiAnalysis.resumeMatches.discrepancies.map((discrepancy, index) => (
+                                                    <li key={index} className="text-sm text-muted-foreground">• {discrepancy}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

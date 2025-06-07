@@ -21,144 +21,89 @@ import InterviewAssistant from '@/components/interview/InterviewAssistant';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from "@/components/ui/page-header";
+import { mockCandidates, mockInterviews } from '@/mocks/interviewData';
+import { Note } from '@/types';
 
-// Mock data
-const mockCandidate = {
-  id: '1',
-  name: 'John Doe',
-  position: 'Frontend Developer',
-  event: 'UPM Career Fair 2025',
-  status: 'In Interview',
-  rating: 4.5,
-  notes: 'Strong technical background, good communication skills.',
-  resume: '/path/to/resume.pdf',
-  photo: '/path/to/photo.jpg',
-  experience: '5 years of frontend development experience with React and TypeScript',
-  education: 'B.S. Computer Science, University of Michigan',
-  skills: ['React', 'TypeScript', 'Node.js', 'GraphQL', 'AWS'],
-  aiSummary: {
-    strengths: [
-      'Strong technical background in React',
-      'Proven experience with TypeScript',
-      'Good problem-solving skills'
-    ],
-    considerations: [
-      'Limited backend experience',
-      'No experience with our specific tech stack'
-    ],
-    fitAnalysis: 'Strong potential fit for the frontend role with room to grow into full-stack development.'
-  }
-};
+// Types for suggested questions
+interface SuggestedQuestion {
+  id: string;
+  question: string;
+  category: string;
+  context: string;
+  tags: string[];
+  aiReason: string;
+}
 
-const mockInterviewContent = [
-  {
-    id: '1',
-    type: 'question' as const,
-    content: 'Can you walk me through your experience with large-scale React applications?',
-    timestamp: '10:30 AM',
-    category: 'technical-experience',
-    color: 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900',
-    aiAnalysis: {
-      type: 'baseline',
-      summary: 'Question targets core technical experience mentioned in resume'
-    }
-  },
-  {
-    id: '2',
-    type: 'answer' as const,
-    content: 'In my current role at TechCorp, I led the development of our customer dashboard that serves over 50,000 daily users. We used React with TypeScript, and I implemented a micro-frontend architecture to handle the scale.',
-    timestamp: '10:31 AM',
-    rating: 4,
-    color: 'bg-white dark:bg-gray-800 border-gray-200',
-    aiAnalysis: {
-      type: 'excellent',
-      summary: 'Strong technical leadership with proven scale experience',
-      confidence: 0.95,
-      keyPoints: ['Led large-scale project', 'Micro-frontend expertise'],
-      resumeMatch: true
-    },
-    quickLabels: ['Technical Leadership', 'Scale Experience']
-  },
-  {
-    id: '3',
-    type: 'answer' as const,
-    content: 'We mainly used basic unit tests, but I haven\'t worked much with integration testing.',
-    timestamp: '10:32 AM',
-    rating: 2,
-    color: 'bg-white dark:bg-gray-800 border-gray-200',
-    aiAnalysis: {
-      type: 'concern',
-      summary: 'Limited testing experience for senior role requirements',
-      confidence: 0.88,
-      keyPoints: ['Basic testing only', 'Gap in integration testing'],
-      resumeMatch: false
-    },
-    quickLabels: ['Limited Testing Experience']
-  },
-  {
-    id: '4',
-    type: 'answer' as const,
-    content: 'I have 8 years of experience with cloud architecture.',
-    timestamp: '10:33 AM',
-    rating: 1,
-    color: 'bg-white dark:bg-gray-800 border-gray-200',
-    aiAnalysis: {
-      type: 'mismatch',
-      summary: 'Claims conflict with resume (shows 3 years)',
-      confidence: 0.92,
-      keyPoints: ['Experience duration mismatch', 'Requires verification'],
-      resumeMatch: false
-    },
-    quickLabels: ['Potential Resume Mismatch']
-  }
-];
+interface MessageAIAnalysis {
+  type: string;
+  summary: string;
+  confidence: number;
+  keyPoints?: string[];
+  resumeMatch?: boolean;
+}
 
-const suggestedQuestionsList = [
-  {
-    id: '1',
-    question: 'Can you describe a challenging technical problem you solved recently?',
-    category: 'technical',
-    context: 'Based on mentioned experience with micro-frontends',
-    tags: ['Problem Solving', 'Technical Depth'],
-    aiReason: 'Candidate showed strong technical background, probe deeper into problem-solving approach'
-  },
-  {
-    id: '2',
-    question: 'How do you approach mentoring junior developers?',
-    category: 'leadership',
-    context: 'Following up on team leadership experience',
-    tags: ['Leadership', 'Mentoring'],
-    aiReason: 'Candidate mentioned team leadership, explore management style'
-  },
-  {
-    id: '3',
-    question: 'What\'s your approach to technical debt?',
-    category: 'technical',
-    context: 'Related to large-scale application experience',
-    tags: ['Architecture', 'Best Practices'],
-    aiReason: 'Relevant to discussed experience with large-scale applications'
-  },
-  {
-    id: '4',
-    question: 'Tell me about a time you had to make a difficult technical decision.',
-    category: 'behavioral',
-    context: 'Based on architectural decisions mentioned',
-    tags: ['Decision Making', 'Leadership'],
-    aiReason: 'Probe decision-making process given mentioned architectural choices'
-  }
-];
+interface MessageEvent {
+  id: string;
+  type: 'question' | 'answer';
+  content: string;
+  timestamp: string;
+  category?: string;
+  rating?: number;
+  color?: string;
+  aiAnalysis?: MessageAIAnalysis;
+  quickLabels?: string[];
+}
 
 const Interview: React.FC = () => {
   const navigate = useNavigate();
   const { candidateId } = useParams();
   const [isRecording, setIsRecording] = useState(false);
-  const [messages, setMessages] = useState(mockInterviewContent);
-  const [suggestedQuestions, setSuggestedQuestions] = useState(suggestedQuestionsList);
+  const [messages, setMessages] = useState<MessageEvent[]>([]);
   const [quickNote, setQuickNote] = useState('');
-  const [quickNotes, setQuickNotes] = useState<Array<{ text: string; timestamp: string; questionId?: string }>>([]);
+  const [quickNotes, setQuickNotes] = useState<Note[]>([]);
   const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
   const [suggestedLabels, setSuggestedLabels] = useState<{ messageId: string; labels: string[] } | null>(null);
   const [editingLabel, setEditingLabel] = useState<{ messageId: string; labelIndex: number; value: string } | null>(null);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
+  const [questionNote, setQuestionNote] = useState('');
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+
+  // Find the candidate from mock data
+  const candidate = mockCandidates.find(c => c.id === candidateId) || mockCandidates[0];
+
+  // Initialize messages from mock data
+  React.useEffect(() => {
+    const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
+      ...msg,
+      type: msg.type as 'question' | 'answer'
+    })) || [];
+    setMessages(initialMessages);
+  }, []);
+
+  const addMessage = (content: string, type: 'question' | 'answer') => {
+    const newMessage: MessageEvent = {
+      id: String(messages.length + 1),
+      type,
+      content,
+      timestamp: new Date().toLocaleTimeString(),
+      category: type === 'question' ? 'technical-experience' : undefined,
+      aiAnalysis: {
+        type: 'baseline',
+        summary: 'Processing response...',
+        confidence: 0.8
+      }
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const addQuickNote = (text: string) => {
+    const newNote: Note = {
+      text,
+      timestamp: new Date().toLocaleTimeString()
+    };
+    setQuickNotes(prev => [...prev, newNote]);
+  };
 
   const refreshSuggestedQuestions = () => {
     setIsRefreshingQuestions(true);
@@ -180,130 +125,23 @@ const Interview: React.FC = () => {
           context: 'Deep dive into mentioned architecture',
           tags: ['Architecture', 'Problem Solving'],
           aiReason: 'Explore challenges and solutions in mentioned micro-frontend implementation'
-        },
-        // ... more contextual questions
+        }
       ]);
       setIsRefreshingQuestions(false);
     }, 1000);
   };
 
-  // Function to add quick note to specific answer
-  const addQuickNote = (messageId: string, note: string) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId) {
-        return {
-          ...msg,
-          quickNotes: [...(msg.quickNotes || []), note]
-        };
-      }
-      return msg;
-    }));
-  };
-
   // Function to generate AI suggested labels based on the answer content and analysis
-  const generateAiSuggestedLabels = (message: any): string[] => {
-    const labels: string[] = [];
-    const analysis = message.aiAnalysis;
-    const content = message.content.toLowerCase();
-
-    if (!analysis) return labels;
-
-    // Add label based on analysis type
-    switch (analysis.type) {
-      case 'excellent':
-      case 'positive':
-        labels.push('Strong Response');
-        break;
-      case 'good':
-        labels.push('Good Answer');
-        break;
-      case 'concern':
-        labels.push('Needs Follow-up');
-        break;
-      case 'mismatch':
-        labels.push('Potential Inconsistency');
-        break;
-    }
-
-    // Add labels based on key points
-    if (analysis.keyPoints) {
-      analysis.keyPoints.forEach(point => {
-        const pointLower = point.toLowerCase();
-        if (pointLower.includes('experience')) {
-          labels.push('Experience Highlight');
-        }
-        if (pointLower.includes('leadership')) {
-          labels.push('Leadership Quality');
-        }
-        if (pointLower.includes('technical')) {
-          labels.push('Technical Expertise');
-        }
-        if (pointLower.includes('mismatch') || pointLower.includes('verification')) {
-          labels.push('Requires Verification');
-        }
-        if (pointLower.includes('depth')) {
-          labels.push('Deep Knowledge');
-        }
-        if (pointLower.includes('operational')) {
-          labels.push('Operational Excellence');
-        }
-        if (pointLower.includes('problem-solving')) {
-          labels.push('Problem Solver');
-        }
-      });
-    }
-
-    // Add content-based labels
-    if (content.includes('scale') || content.includes('performance') || content.includes('metrics')) {
-      labels.push('Scalability Focus');
-    }
-    if (content.includes('team') || content.includes('collaboration')) {
-      labels.push('Team Player');
-    }
-    if (content.includes('problem') || content.includes('challenge') || content.includes('solved')) {
-      labels.push('Problem Solving');
-    }
-    if (content.includes('architecture') || content.includes('design') || content.includes('system')) {
-      labels.push('System Design');
-    }
-    if (content.includes('test') || content.includes('quality') || content.includes('monitoring')) {
-      labels.push('Quality Focus');
-    }
-    if (content.includes('learn') || content.includes('study') || content.includes('improve')) {
-      labels.push('Growth Mindset');
-    }
-    if (content.includes('implement') || content.includes('developed') || content.includes('built')) {
-      labels.push('Implementation');
-    }
-
-    // Add label based on confidence
-    if (analysis.confidence) {
-      if (analysis.confidence >= 0.9) {
-        labels.push('High Confidence');
-      } else if (analysis.confidence < 0.7) {
-        labels.push('Low Confidence');
-      }
-    }
-
-    // Add label if resume match is explicitly false
-    if (analysis.resumeMatch === false) {
-      labels.push('Resume Mismatch');
-    }
-
-    return [...new Set(labels)]; // Remove duplicates
+  const generateSuggestedLabels = (messageId: string, content: string) => {
+    // Simulate AI analysis
+    setSuggestedLabels({
+      messageId,
+      labels: ['Technical Depth', 'Problem Solving', 'Architecture']
+    });
   };
 
-  const handleShowSuggestions = (messageId: string) => {
-    const message = messages.find(m => m.id === messageId);
-    if (message) {
-      setSuggestedLabels({
-        messageId,
-        labels: generateAiSuggestedLabels(message)
-      });
-    }
-  };
-
-  const addLabel = (messageId: string, label: string) => {
+  // Function to add a label to a message
+  const addLabelToMessage = (messageId: string, label: string) => {
     setMessages(prev => prev.map(msg => {
       if (msg.id === messageId) {
         return {
@@ -313,32 +151,31 @@ const Interview: React.FC = () => {
       }
       return msg;
     }));
-    setSuggestedLabels(null);
   };
 
+  // Function to edit a label
   const updateLabel = (messageId: string, labelIndex: number, newValue: string) => {
     setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId) {
-        const newLabels = [...(msg.quickLabels || [])];
-        newLabels[labelIndex] = newValue;
+      if (msg.id === messageId && msg.quickLabels) {
+        const updatedLabels = [...msg.quickLabels];
+        updatedLabels[labelIndex] = newValue;
         return {
           ...msg,
-          quickLabels: newLabels
+          quickLabels: updatedLabels
         };
       }
       return msg;
     }));
-    setEditingLabel(null);
   };
 
+  // Function to remove a label
   const removeLabel = (messageId: string, labelIndex: number) => {
     setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId) {
-        const newLabels = [...(msg.quickLabels || [])];
-        newLabels.splice(labelIndex, 1);
+      if (msg.id === messageId && msg.quickLabels) {
+        const updatedLabels = msg.quickLabels.filter((_, idx) => idx !== labelIndex);
         return {
           ...msg,
-          quickLabels: newLabels
+          quickLabels: updatedLabels
         };
       }
       return msg;
@@ -456,11 +293,11 @@ const Interview: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <PageHeader
-          title={mockCandidate.name}
-          subtitle={mockCandidate.position}
+          title={candidate.name}
+          subtitle={candidate.position}
           className="gap-4"
         >
-          <Badge>{mockCandidate.status}</Badge>
+          <Badge>{candidate.status}</Badge>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
               Skip Interview
@@ -484,8 +321,8 @@ const Interview: React.FC = () => {
                     <User className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">{mockCandidate.name}</CardTitle>
-                    <CardDescription>{mockCandidate.position}</CardDescription>
+                    <CardTitle className="text-base">{candidate.name}</CardTitle>
+                    <CardDescription>{candidate.position}</CardDescription>
                   </div>
                 </div>
                 <HoverCard>
@@ -499,18 +336,18 @@ const Interview: React.FC = () => {
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-medium">Experience</h4>
-                          <p className="text-sm text-muted-foreground">{mockCandidate.experience}</p>
+                          <p className="text-sm text-muted-foreground">{candidate.experience}</p>
                         </div>
                         <Separator />
                         <div>
                           <h4 className="font-medium">Education</h4>
-                          <p className="text-sm text-muted-foreground">{mockCandidate.education}</p>
+                          <p className="text-sm text-muted-foreground">{candidate.education}</p>
                         </div>
                         <Separator />
                         <div>
                           <h4 className="font-medium">Skills</h4>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {mockCandidate.skills.map((skill, index) => (
+                            {candidate.skills.map((skill, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 {skill}
                               </Badge>
@@ -524,17 +361,17 @@ const Interview: React.FC = () => {
                             <div>
                               <p className="text-sm font-medium text-green-600">Strengths</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {mockCandidate.aiSummary.strengths.map((strength, index) => (
+                                {candidate.aiSummary?.strengths?.map((strength, index) => (
                                   <li key={index}>{strength}</li>
-                                ))}
+                                )) || []}
                               </ul>
                             </div>
                             <div>
                               <p className="text-sm font-medium text-yellow-600">Considerations</p>
                               <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {mockCandidate.aiSummary.considerations.map((consideration, index) => (
+                                {candidate.aiSummary?.considerations?.map((consideration, index) => (
                                   <li key={index}>{consideration}</li>
-                                ))}
+                                )) || []}
                               </ul>
                             </div>
                           </div>
@@ -680,7 +517,7 @@ const Interview: React.FC = () => {
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8"
-                                      onMouseEnter={() => handleShowSuggestions(message.id)}
+                                      onMouseEnter={() => generateSuggestedLabels(message.id, message.content)}
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
@@ -700,7 +537,7 @@ const Interview: React.FC = () => {
                                                 key={idx}
                                                 variant="outline"
                                                 className="cursor-pointer hover:bg-secondary transition-colors px-2 py-1"
-                                                onClick={() => addLabel(message.id, label)}
+                                                onClick={() => addLabelToMessage(message.id, label)}
                                               >
                                                 {label}
                                               </Badge>
