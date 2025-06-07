@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 const JobOpenings: React.FC = () => {
   const navigate = useNavigate();
@@ -31,14 +33,16 @@ const JobOpenings: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Job Openings</h1>
-        <Button onClick={() => navigate('/job-openings/new')} size="sm">
+    <div className="space-y-6">
+      <PageHeader
+        title="Job Openings"
+        subtitle="Manage and track open positions"
+      >
+        <Button onClick={() => navigate('/jobs/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          New Position
+          Create Job Opening
         </Button>
-      </div>
+      </PageHeader>
 
       <ScrollArea className="h-[calc(100vh-8rem)]">
         <div className="grid gap-4">

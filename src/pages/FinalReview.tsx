@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface TechnicalAnalysis {
   score: number;
@@ -262,31 +264,26 @@ const FinalReview: React.FC = () => {
   const isSelected = (candidateId: string) => selectedForComparison.includes(candidateId);
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Final Review</h1>
-          <p className="text-sm text-muted-foreground">Review and compare candidates</p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Final Review"
+        subtitle="Review and compare candidates for final decision"
+      >
         <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === 'individual' ? 'default' : 'outline'}
-            onClick={() => setViewMode('individual')}
-            size="sm"
-          >
-            <Star className="h-4 w-4 mr-2" />
-            Individual Analysis
-          </Button>
-          <Button
-            variant={viewMode === 'comparison' ? 'default' : 'outline'}
-            onClick={() => setViewMode('comparison')}
-            size="sm"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Compare Candidates
-          </Button>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'individual' | 'comparison')}>
+            <TabsList>
+              <TabsTrigger value="individual">
+                <Users className="h-4 w-4 mr-2" />
+                Individual Review
+              </TabsTrigger>
+              <TabsTrigger value="comparison">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Compare Candidates
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-      </div>
+      </PageHeader>
 
       {viewMode === 'individual' ? (
         // Individual Analysis View

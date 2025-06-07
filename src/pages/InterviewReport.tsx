@@ -19,6 +19,7 @@ import {
     ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageHeader } from "@/components/ui/page-header";
 
 // Mock data - in real app, this would come from your state/context/API
 const mockInterviewReport = {
@@ -113,19 +114,10 @@ const InterviewReport = () => {
 
     return (
         <div className="space-y-6 p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold">Interview Report</h1>
-                        <p className="text-muted-foreground">
-                            {mockInterviewReport.candidate.name} - {mockInterviewReport.candidate.position}
-                        </p>
-                    </div>
-                </div>
+            <PageHeader
+                title="Interview Report"
+                subtitle={`${mockInterviewReport.candidate.name} - ${mockInterviewReport.candidate.position}`}
+            >
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={() => navigate('/candidates')}>
                         Back to Candidates
@@ -137,7 +129,7 @@ const InterviewReport = () => {
                         Proceed to Final Review
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             <div className="grid grid-cols-3 gap-6">
                 {/* Left Column - Quick Overview */}

@@ -10,8 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PageHeader } from "@/components/ui/page-header";
+import { useNavigate, useParams } from 'react-router-dom';
 
 const EventDashboard: React.FC = () => {
+    const navigate = useNavigate();
+    const { eventId } = useParams();
+
     const eventStats = [
         {
             title: "Total Registrations",
@@ -88,22 +93,19 @@ const EventDashboard: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Tech Career Fair</h1>
-                    <p className="text-muted-foreground">March 15, 2024 • Ongoing</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm">
-                        <Clock className="h-4 w-4 mr-2" />
-                        Event Schedule
+            <PageHeader
+                title={mockEvent.name}
+                subtitle={`${mockEvent.startDate} - ${mockEvent.endDate}`}
+            >
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => navigate('/events')}>
+                        Back to Events
                     </Button>
-                    <Button size="sm">
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Check-in
+                    <Button onClick={() => navigate('/event/setup')}>
+                        Edit Event
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {eventStats.map((stat, index) => (

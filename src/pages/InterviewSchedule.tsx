@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,6 +10,8 @@ import { Clock, Calendar as CalendarIcon, Users, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useParams, useNavigate } from 'react-router-dom';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 const InterviewSchedule = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -20,7 +21,9 @@ const InterviewSchedule = () => {
   const params = useParams();
   const candidateId = params.candidateId;
   const navigate = useNavigate();
-  
+  const [selectedEvent, setSelectedEvent] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>('2024-03-20');
+
   // Mock candidate data that would come from API in a real app
   const candidate = {
     id: candidateId || '1',
@@ -30,14 +33,14 @@ const InterviewSchedule = () => {
     status: 'shortlist',
     photo: ''
   };
-  
+
   // Mock interviewers
   const interviewers = [
     { id: '1', name: 'Emma Rodriguez', role: 'Technical Lead' },
     { id: '2', name: 'Michael Chen', role: 'Senior Developer' },
     { id: '3', name: 'Sarah Kim', role: 'Engineering Manager' },
   ];
-  
+
   const handleSchedule = () => {
     if (!date || !time || !interviewer) {
       toast({
@@ -47,30 +50,56 @@ const InterviewSchedule = () => {
       });
       return;
     }
-    
+
     toast({
       title: "Interview Scheduled",
       description: `Interview with ${candidate.name} scheduled for ${format(date, 'MMMM d, yyyy')} at ${time}`,
     });
-    
+
     // Navigate to interview page or interviews list
     navigate('/interview');
   };
-  
+
   const timeSlots = [
-    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', 
+    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
     '11:00 AM', '11:30 AM', '01:00 PM', '01:30 PM',
     '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
     '04:00 PM', '04:30 PM'
   ];
 
+  // Filter interviews based on selected event
+  const filteredInterviews = mockInterviews.filter(interview =>
+    selectedEvent === 'all' || interview.eventId === selectedEvent
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Schedule Interview</h1>
-        <p className="text-muted-foreground">Set up an interview time with {candidate.name}</p>
-      </div>
-      
+      <PageHeader
+        title="Interview Schedule"
+        subtitle="Manage and view upcoming interviews"
+      >
+        <div className="flex items-center gap-2">
+          <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Events" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {/* Add events from the events array */}
+            </SelectContent>
+          </Select>
+          <Select value={selectedDate} onValueChange={setSelectedDate}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2024-03-20">March 20, 2024</SelectItem>
+              <SelectItem value="2024-03-21">March 21, 2024</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </PageHeader>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
@@ -93,7 +122,7 @@ const InterviewSchedule = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Interview Details</CardTitle>
@@ -105,7 +134,7 @@ const InterviewSchedule = () => {
                 <TabsTrigger value="schedule">Schedule</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="schedule">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -118,7 +147,7 @@ const InterviewSchedule = () => {
                       className="rounded-md border"
                     />
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Select Time</Label>
@@ -133,7 +162,7 @@ const InterviewSchedule = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Interviewer</Label>
                       <Select value={interviewer} onValueChange={setInterviewer}>
@@ -149,7 +178,7 @@ const InterviewSchedule = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Interview Type</Label>
                       <Select value={interviewType} onValueChange={setInterviewType}>
@@ -163,7 +192,7 @@ const InterviewSchedule = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Duration</Label>
                       <Select defaultValue="30">
@@ -181,19 +210,19 @@ const InterviewSchedule = () => {
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="settings">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Location/Meeting Link</Label>
                     <Input placeholder="Enter interview location or meeting link" />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Additional Notes</Label>
                     <Input placeholder="Any additional information for the candidate" />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Send Notification</Label>
                     <Select defaultValue="email">

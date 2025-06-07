@@ -7,10 +7,14 @@ import { FileText, User, ChevronLeft, Brain, MessageSquare } from 'lucide-react'
 import { Separator } from '@/components/ui/separator';
 import ResumeSummary from '@/components/candidate/ResumeSummary';
 import AIAnalysis from '@/components/interview/AIAnalysis';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { useRecruitment } from "@/contexts/RecruitmentContext";
 
 const CandidateView = () => {
   const { candidateId } = useParams();
   const navigate = useNavigate();
+  const { setCurrentStage } = useRecruitment();
   const [activeTab, setActiveTab] = useState('resume');
 
   // Mock candidate data - in a real app, this would come from an API call
@@ -46,13 +50,13 @@ const CandidateView = () => {
       score: 88,
       summary: "Strong match with required technical skills. Expert in React ecosystem and modern frontend development.",
       details: {
-      strengths: [
+        strengths: [
           "Expert in React and TypeScript",
           "Strong CI/CD implementation experience",
           "Proven track record in modern frontend architecture"
-      ],
-      gaps: [
-        "Limited cloud platform experience",
+        ],
+        gaps: [
+          "Limited cloud platform experience",
           "No mention of testing frameworks",
           "Could benefit from more backend exposure"
         ],
@@ -106,14 +110,22 @@ const CandidateView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={handleGoBack}>
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
-        <h1 className="text-2xl font-bold tracking-tight">{candidate.name}</h1>
-        <span className="text-muted-foreground">{candidate.position}</span>
-      </div>
+      <PageHeader
+        title={candidate.name}
+        subtitle={candidate.position}
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleGoBack}>
+            Back
+          </Button>
+          <Button onClick={() => {
+            setCurrentStage('interviewed');
+            navigate('/interview');
+          }}>
+            Start Interview
+          </Button>
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-3 gap-6">
         {/* Main Content */}
@@ -346,11 +358,11 @@ const CandidateView = () => {
                   <h3 className="text-lg font-semibold mb-2">Education</h3>
                   {candidate.education.map((edu, index) => (
                     <div key={index} className="mb-6">
-                  <div className="bg-muted/50 p-4 rounded-lg mb-2">
+                      <div className="bg-muted/50 p-4 rounded-lg mb-2">
                         <h4 className="font-medium">{edu}</h4>
                       </div>
-                      </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>

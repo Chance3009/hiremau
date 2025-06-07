@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from "@/components/ui/page-header";
 
 // Mock current user
 const currentUser = {
@@ -443,62 +444,68 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
 };
 
 const Screening = () => {
-    const [view, setView] = useState<'candidates' | 'schedule'>('candidates');
-    const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const [selectedEvent, setSelectedEvent] = useState<string>('all');
+    const [view, setView] = useState<'list' | 'calendar'>('list');
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [selectedDate, setSelectedDate] = useState('2024-03-20');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'scheduled'>('all');
 
-    // Filter and sort candidates - uninterviewed first
-    const filteredCandidates = screenedCandidates
-        .filter(candidate => {
-            const matchesSearch = candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                candidate.position.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesStatus = filterStatus === 'all' ||
-                (filterStatus === 'pending' && candidate.status === 'pending') ||
-                (filterStatus === 'scheduled' && candidate.status === 'scheduled');
-            return matchesSearch && matchesStatus;
-        })
-        .sort((a, b) => {
-            if (a.status === 'pending' && b.status !== 'pending') return -1;
-            if (a.status !== 'pending' && b.status === 'pending') return 1;
-            return 0;
-        });
+    // Filter candidates based on event and status
+    const filteredCandidates = screenedCandidates.filter(candidate => {
+        const matchesEvent = selectedEvent === 'all' || candidate.eventId === selectedEvent;
+        const matchesStatus = filterStatus === 'all' || candidate.status === filterStatus;
+        const matchesSearch = candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            candidate.position.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesEvent && matchesStatus && matchesSearch;
+    });
 
     return (
-        <div className="space-y-4">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                    Screened Candidates
-                </h1>
-                <p className="text-muted-foreground">
-                    Schedule interviews for qualified candidates
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader
+                title="Screening"
+                subtitle="Schedule and manage candidate interviews"
+            >
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setView(view === 'list' ? 'calendar' : 'list')}>
+                        {view === 'list' ? <CalendarDays className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                    </Button>
+                    <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="All Events" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Events</SelectItem>
+                            {events.map(event => (
+                                <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </PageHeader>
 
             <div className="flex items-center justify-between">
                 <Tabs
                     value={view}
                     onValueChange={(v) => {
-                        setView(v as 'candidates' | 'schedule');
-                        if (v === 'candidates') {
+                        setView(v as 'list' | 'calendar');
+                        if (v === 'list') {
                             setFilterStatus('all');
                         }
                     }}
                     className="w-full"
                 >
                     <TabsList>
-                        <TabsTrigger value="candidates">
+                        <TabsTrigger value="list">
                             <Users className="h-4 w-4 mr-2" />
                             Candidates
                         </TabsTrigger>
-                        <TabsTrigger value="schedule">
+                        <TabsTrigger value="calendar">
                             <Calendar className="h-4 w-4 mr-2" />
                             Schedule
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="candidates" className="space-y-4">
+                    <TabsContent value="list" className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="flex-1 max-w-sm relative">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -553,19 +560,7 @@ const Screening = () => {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="schedule" className="space-y-6">
-                        <div className="flex items-center gap-4">
-                            <Select value={selectedDate} onValueChange={setSelectedDate}>
-                                <SelectTrigger className="w-[200px]">
-                                    <SelectValue placeholder="Select date" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="2024-03-20">March 20, 2024</SelectItem>
-                                    <SelectItem value="2024-03-21">March 21, 2024</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
+                    <TabsContent value="calendar" className="space-y-6">
                         <div className="grid gap-6">
                             {interviewers.map(interviewer => (
                                 <Card key={interviewer.id}>
@@ -581,7 +576,7 @@ const Screening = () => {
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <TimeSlotGrid date={selectedDate} interviewer={interviewer} />
+                                        <TimeSlotGrid date="2024-03-20" interviewer={interviewer} />
                                     </CardContent>
                                 </Card>
                             ))}

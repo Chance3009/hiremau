@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Check, Star, ThumbsUp, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 // Import the interfaces from FinalReview
 interface TechnicalAnalysis {
@@ -134,19 +136,17 @@ const CandidateComparison = () => {
   const isSelected = (candidateId: string) => selectedCandidates.includes(candidateId);
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4" />
+    <div className="space-y-6">
+      <PageHeader
+        title="Compare Candidates"
+        subtitle="Compare and evaluate candidates side by side"
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Compare Candidates</h1>
-            <p className="text-muted-foreground">Side-by-side candidate evaluation</p>
-          </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Candidate Selector */}
       <Card>

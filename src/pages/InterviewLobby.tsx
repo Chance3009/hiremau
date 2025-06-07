@@ -7,11 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Calendar, Clock, Users, VideoIcon } from "lucide-react";
 import { useRecruitment } from '@/contexts/RecruitmentContext';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const InterviewLobby = () => {
     const [view, setView] = useState<'my-interviews' | 'instant'>('my-interviews');
     const navigate = useNavigate();
     const { setCurrentStage } = useRecruitment();
+    const [selectedEvent, setSelectedEvent] = useState<string>('all');
 
     const startInterview = (id: string) => {
         setCurrentStage('interviewed');
@@ -50,14 +54,31 @@ const InterviewLobby = () => {
         }
     ];
 
+    // Filter interviews based on selected event
+    const filteredInterviews = myInterviews.filter(interview =>
+        selectedEvent === 'all' || interview.id === selectedEvent
+    );
+
     return (
-        <div className="space-y-4">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Interview Hub</h1>
-                <p className="text-muted-foreground">
-                    Manage your interviews and conduct instant interviews with AI assistance
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader
+                title="Interview Lobby"
+                subtitle="Manage and conduct scheduled interviews"
+            >
+                <div className="flex items-center gap-2">
+                    <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="All Events" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Events</SelectItem>
+                            {myInterviews.map(event => (
+                                <SelectItem key={event.id} value={event.id}>{event.candidate.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </PageHeader>
 
             <Tabs value={view} onValueChange={(v) => setView(v as 'my-interviews' | 'instant')} className="w-full">
                 <TabsList>
@@ -79,7 +100,7 @@ const InterviewLobby = () => {
                         <CardContent>
                             <ScrollArea className="h-[600px] pr-4">
                                 <div className="space-y-4">
-                                    {myInterviews.map((interview) => (
+                                    {filteredInterviews.map((interview) => (
                                         <Card key={interview.id}>
                                             <CardContent className="p-4">
                                                 <div className="flex items-center justify-between">

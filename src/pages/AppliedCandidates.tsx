@@ -15,6 +15,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import CandidateIntakeForm from '@/components/candidate/CandidateIntakeForm';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from '@/components/ui/use-toast';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 // Enhanced mock data with AI analysis fields
 interface SkillMatch {
@@ -557,107 +559,71 @@ const RegisterDialog = () => {
     const [mode, setMode] = useState<'form' | 'qr'>('form');
     const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
-    const handleCopyLink = () => {
-        // In a real app, this would copy the registration link
-        toast({
-            title: "Link Copied",
-            description: "Registration link copied to clipboard",
-        });
-    };
-
-    const handleDownloadQR = () => {
-        // In a real app, this would download the QR code image
-        toast({
-            title: "QR Code Downloaded",
-            description: "QR code image saved to your device",
-        });
-    };
-
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Register Candidate
+                    Add Candidate
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-                <DialogHeader className="pb-2">
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
                     <DialogTitle>Register New Candidate</DialogTitle>
-                    <Tabs value={mode} onValueChange={(value) => setMode(value as 'form' | 'qr')} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="form">
-                                <Mail className="h-4 w-4 mr-2" />
-                                Manual Form
-                            </TabsTrigger>
-                            <TabsTrigger value="qr">
-                                <QrCode className="h-4 w-4 mr-2" />
-                                QR Code
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
                 </DialogHeader>
-
-                <div className="flex-1 overflow-y-auto py-2">
-                    {mode === 'qr' ? (
-                        <div className="flex flex-col gap-4">
-                            <div className="space-y-3">
-                                <Label className="text-sm">Event (Optional)</Label>
-                                <Select value={selectedEvent || undefined} onValueChange={setSelectedEvent}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select event or leave empty for general application" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="general">General Application</SelectItem>
-                                        <SelectItem value="tech-meetup">Tech Meetup 2024</SelectItem>
-                                        <SelectItem value="career-fair">Career Fair 2024</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground">
-                                    Select an event to generate a specific QR code for that event, or leave empty for a general application
-                                </p>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                            <Label>Registration Mode</Label>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant={mode === 'form' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMode('form')}
+                                >
+                                    Manual Form
+                                </Button>
+                                <Button
+                                    variant={mode === 'qr' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMode('qr')}
+                                >
+                                    QR Code
+                                </Button>
                             </div>
-
-                            <div className="flex items-center gap-6">
-                                <div className="h-64 w-64 border rounded-md flex items-center justify-center bg-muted/50">
-                                    {selectedEvent ? (
-                                        <div className="text-center p-4">
-                                            <QrCode className="h-40 w-40 mx-auto mb-2" />
-                                            <p className="text-sm font-medium">
-                                                {selectedEvent === 'general' ? 'General Application' : selectedEvent}
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center p-4">
-                                            <p className="text-sm text-muted-foreground">Select an event to generate a QR code</p>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <div className="space-y-2">
-                                        <h4 className="font-medium text-sm">Quick Application Process</h4>
-                                        <ul className="text-sm text-muted-foreground space-y-1">
-                                            <li>• Scan QR code with your phone</li>
-                                            <li>• Fill out the mobile-friendly form</li>
-                                            <li>• Submit your application instantly</li>
-                                        </ul>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={handleCopyLink} disabled={!selectedEvent}>
-                                            <Copy className="h-4 w-4 mr-2" />
-                                            Copy Link
-                                        </Button>
-                                        <Button size="sm" onClick={handleDownloadQR} disabled={!selectedEvent}>
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Download QR
-                                        </Button>
-                                    </div>
-                                </div>
+                        </div>
+                        <div className="w-[200px]">
+                            <Label>Event</Label>
+                            <Select value={selectedEvent || ''} onValueChange={setSelectedEvent}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select event" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="event1">UPM Career Fair 2025</SelectItem>
+                                    <SelectItem value="event2">Tech Meetup March</SelectItem>
+                                    <SelectItem value="event3">Virtual Job Fair</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    {mode === 'qr' ? (
+                        <div className="flex flex-col items-center justify-center p-8 space-y-4 border-2 border-dashed rounded-lg">
+                            <QrCode className="h-16 w-16 text-muted-foreground" />
+                            <div className="text-center">
+                                <p className="font-medium">Scan QR Code</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Point your camera at the QR code to register
+                                </p>
                             </div>
                         </div>
                     ) : (
-                        <CandidateIntakeForm />
+                        <CandidateIntakeForm onSubmit={(data) => {
+                            console.log('Form submitted:', data);
+                            toast({
+                                title: "Candidate registered",
+                                description: "The candidate has been successfully registered.",
+                            });
+                        }} />
                     )}
                 </div>
             </DialogContent>
@@ -678,13 +644,12 @@ const AppliedCandidates = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Applied Candidates</h2>
-                    <p className="text-sm text-muted-foreground">Review and process new applications</p>
-                </div>
+            <PageHeader
+                title="Applied Candidates"
+                subtitle="Review and process new applications"
+            >
                 <RegisterDialog />
-            </div>
+            </PageHeader>
 
             <div className="flex justify-between items-center gap-4">
                 <div className="flex gap-4">
@@ -701,33 +666,49 @@ const AppliedCandidates = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="w-[200px]">
-                        <Label htmlFor="details">Detail Level</Label>
-                        <Select value={detailLevel} onValueChange={(value: DetailLevel) => setDetailLevel(value)}>
-                            <SelectTrigger id="details">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="minimal">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Minimal</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="standard">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Standard</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="detailed">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Detailed</span>
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="w-[300px]">
+                        <Label>Detail Level</Label>
+                        <div className="flex items-center gap-1 mt-2 p-1 bg-muted rounded-lg">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "minimal" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("minimal")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Minimal
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "standard" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("standard")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Standard
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "detailed" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("detailed")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Detailed
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 // Mock data for shortlisted candidates
 const mockShortlisted = [
@@ -35,15 +37,37 @@ const ShortlistedCandidates = () => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState('date');
+    const [selectedEvent, setSelectedEvent] = useState<string>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'offered'>('all');
+
+    // Filter candidates based on event and status
+    const filteredCandidates = mockShortlisted.filter(candidate => {
+        const matchesEvent = selectedEvent === 'all' || candidate.id === selectedEvent;
+        const matchesStatus = filterStatus === 'all' || candidate.status === filterStatus;
+        return matchesEvent && matchesStatus;
+    });
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Shortlisted Candidates</h2>
-                    <p className="text-sm text-muted-foreground">Review and make final decisions</p>
+            <PageHeader
+                title="Shortlisted Candidates"
+                subtitle="Review and make final hiring decisions"
+            >
+                <div className="flex items-center gap-2">
+                    <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="All Events" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Events</SelectItem>
+                            {mockShortlisted.map(candidate => (
+                                <SelectItem key={candidate.id} value={candidate.id}>{candidate.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
-            </div>
+            </PageHeader>
 
             <div className="flex justify-between items-center gap-4">
                 <div className="flex gap-4">
@@ -83,7 +107,7 @@ const ShortlistedCandidates = () => {
 
             {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {mockShortlisted.map((candidate) => (
+                    {filteredCandidates.map((candidate) => (
                         <Card key={candidate.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-6">
                                 <div className="space-y-4">
@@ -163,7 +187,7 @@ const ShortlistedCandidates = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {mockShortlisted.map((candidate) => (
+                                {filteredCandidates.map((candidate) => (
                                     <TableRow key={candidate.id}>
                                         <TableCell>
                                             <div className="space-y-1">

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,8 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { useNavigate } from 'react-router-dom';
 
 const EventSetup = () => {
+  const navigate = useNavigate();
   const [eventName, setEventName] = React.useState('');
   const [eventDate, setEventDate] = React.useState('');
   const [eventLocation, setEventLocation] = React.useState('');
@@ -28,7 +31,7 @@ const EventSetup = () => {
   };
 
   const updatePosition = (id: number, field: string, value: string) => {
-    setPositions(positions.map(p => 
+    setPositions(positions.map(p =>
       p.id === id ? { ...p, [field]: value } : p
     ));
   };
@@ -43,10 +46,16 @@ const EventSetup = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Event Setup</h1>
-        <p className="text-muted-foreground">Create and configure recruiting events and job positions.</p>
-      </div>
+      <PageHeader
+        title="Event Setup"
+        subtitle="Create and configure recruiting events"
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/events')}>
+            Back to Events
+          </Button>
+        </div>
+      </PageHeader>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6">
@@ -59,9 +68,9 @@ const EventSetup = () => {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="event-name">Event Name</Label>
-                  <Input 
-                    id="event-name" 
-                    placeholder="e.g. Fall 2025 Career Fair" 
+                  <Input
+                    id="event-name"
+                    placeholder="e.g. Fall 2025 Career Fair"
                     value={eventName}
                     onChange={(e) => setEventName(e.target.value)}
                     required
@@ -70,9 +79,9 @@ const EventSetup = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="event-date">Event Date</Label>
-                    <Input 
-                      id="event-date" 
-                      type="date" 
+                    <Input
+                      id="event-date"
+                      type="date"
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
                       required
@@ -80,9 +89,9 @@ const EventSetup = () => {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="event-location">Location</Label>
-                    <Input 
-                      id="event-location" 
-                      placeholder="e.g. University Main Campus" 
+                    <Input
+                      id="event-location"
+                      placeholder="e.g. University Main Campus"
                       value={eventLocation}
                       onChange={(e) => setEventLocation(e.target.value)}
                       required

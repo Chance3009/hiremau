@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import InterviewAssistant from '@/components/interview/InterviewAssistant';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from "@/components/ui/page-header";
 
 // Mock data
 const mockCandidate = {
@@ -454,21 +455,21 @@ const Interview: React.FC = () => {
     <div className="h-[calc(100vh-3rem)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">{mockCandidate.name}</h1>
-            <p className="text-sm text-muted-foreground">{mockCandidate.position}</p>
-          </div>
+        <PageHeader
+          title={mockCandidate.name}
+          subtitle={mockCandidate.position}
+          className="gap-4"
+        >
           <Badge>{mockCandidate.status}</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
-            Skip Interview
-          </Button>
-          <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>
-            End Interview
-          </Button>
-        </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
+              Skip Interview
+            </Button>
+            <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>
+              End Interview
+            </Button>
+          </div>
+        </PageHeader>
       </div>
 
       {/* Main Content */}

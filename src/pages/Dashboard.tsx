@@ -4,6 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Check, Clock, X, Users, Briefcase, TrendingUp, Calendar, Target, ArrowUp, ArrowDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { PageHeader } from "@/components/ui/page-header";
+import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const candidateStats = [
@@ -79,19 +82,18 @@ const Dashboard = () => {
     { name: 'DevOps', value: 10, growth: '+30%' },
   ];
 
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">HR Dashboard</h1>
-          <p className="text-muted-foreground">Recruitment metrics & insights</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
-            Last updated: <span className="font-medium">Just now</span>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Overview of recruitment activities and insights"
+      >
+        <Button onClick={() => navigate('/interview')}>
+          Review Candidates
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {candidateStats.map((stat, index) => (
