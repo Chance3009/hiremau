@@ -12,10 +12,18 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PageHeader } from "@/components/ui/page-header";
 import { useNavigate, useParams } from 'react-router-dom';
+import useRecruitmentStore from '@/store/useRecruitmentStore';
 
 const EventDashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { eventId } = useParams();
+    const { eventId } = useParams<{ eventId: string }>();
+    const { events } = useRecruitmentStore();
+
+    const event = events.find(e => e.id === eventId) || events[0];
+
+    if (!event) {
+        return <div>Event not found</div>;
+    }
 
     const eventStats = [
         {
@@ -94,8 +102,8 @@ const EventDashboard: React.FC = () => {
     return (
         <div className="space-y-6">
             <PageHeader
-                title={mockEvent.name}
-                subtitle={`${mockEvent.startDate} - ${mockEvent.endDate}`}
+                title={event.name}
+                subtitle={`${event.date} - ${event.location}`}
             >
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={() => navigate('/events')}>
