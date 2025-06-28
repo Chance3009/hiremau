@@ -17,15 +17,15 @@ const stageRoutes: Record<RecruitmentStage, string> = {
   'screened': '/screened',
   'interviewed': '/interviewed',
   'final-review': '/final-review',
-  'hired': '/hired'
+  'shortlisted': '/shortlisted'
 };
 
-const stageLabels: Record<RecruitmentStage, string> = {
+export const stageLabels: Record<RecruitmentStage, string> = {
   'applied': 'Applied',
   'screened': 'Screened',
-  'interviewed': 'Interviewed',
+  'interviewed': 'Interview',
   'final-review': 'Final Review',
-  'hired': 'Hired'
+  'shortlisted': 'Shortlisted'
 };
 
 // Mock data for candidate counts in each stage - will come from context in real app
@@ -34,7 +34,7 @@ const stageCounts: Record<RecruitmentStage, number> = {
   "screened": 12,
   "interviewed": 8,
   "final-review": 3,
-  "hired": 1,
+  "shortlisted": 1,
 };
 
 export const RecruitmentStageBar = () => {
@@ -73,11 +73,9 @@ export const RecruitmentStageBar = () => {
                     "group-hover:shadow-md"
                   )}
                   style={{
-                    clipPath: index === RECRUITMENT_STAGES.length - 1
-                      ? "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
-                      : "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%)",
-                    marginRight: index === RECRUITMENT_STAGES.length - 1 ? "0" : "-20px",
-                    paddingRight: index === RECRUITMENT_STAGES.length - 1 ? "0" : "20px",
+                    clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%)",
+                    marginRight: "-20px",
+                    paddingRight: "20px",
                   }}
                 >
                   <div className="flex items-center w-full px-4 gap-2">

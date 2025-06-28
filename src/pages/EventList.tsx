@@ -7,6 +7,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Calendar, Users, Clock, TrendingUp, Search, LayoutGrid, Plus, ArrowRight, Building2, MapPin, List, MoreVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { PageHeader } from "@/components/ui/page-header";
 
 // Mock data for events
 const events = [
@@ -91,6 +92,7 @@ const EventList = () => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'upcoming' | 'past'>('all');
 
     const filteredEvents = events.filter(event =>
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,18 +116,16 @@ const EventList = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-1rem)] flex flex-col gap-4 p-4">
-            {/* Header */}
-            <div className="flex justify-between items-center shrink-0">
-                <div>
-                    <h1 className="page-title">Events</h1>
-                    <p className="page-subtitle">Manage and monitor recruitment events</p>
-                </div>
-                <Button onClick={() => navigate('/event-setup')} className="gap-2">
-                    <Plus className="h-4 w-4" />
+        <div className="space-y-6">
+            <PageHeader
+                title="Events"
+                subtitle="Manage recruiting events and job fairs"
+            >
+                <Button onClick={() => navigate('/event/setup')}>
+                    <Plus className="h-4 w-4 mr-2" />
                     Create Event
                 </Button>
-            </div>
+            </PageHeader>
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">

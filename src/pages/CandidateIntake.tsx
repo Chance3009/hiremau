@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CandidateIntakeForm from '@/components/candidate/CandidateIntakeForm';
 import ResumeSummary from '@/components/candidate/ResumeSummary';
@@ -8,13 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 const CandidateIntake = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
   const location = useLocation();
-  
+  const navigate = useNavigate();
+
   // Mock candidates list
   const candidates = [
     {
@@ -62,7 +64,7 @@ const CandidateIntake = () => {
       date: '2025-05-22'
     }
   ];
-  
+
   const handleFormSubmit = (data: any) => {
     console.log('Candidate data submitted:', data);
     // In a real app, this would process the resume, send to API, etc.
@@ -72,49 +74,55 @@ const CandidateIntake = () => {
       description: "Candidate information has been analyzed.",
     });
   };
-  
+
   const handleStatusChange = (status: 'shortlist' | 'kiv' | 'reject') => {
     const messages = {
       shortlist: "Candidate has been shortlisted for interview",
       kiv: "Candidate has been marked for further review",
       reject: "Candidate has been rejected"
     };
-    
+
     toast({
       title: `Status Updated: ${status.toUpperCase()}`,
       description: messages[status],
     });
-    
+
     // Reset the form after a decision is made
     setShowSummary(false);
   };
-  
+
   const handleNotesChange = (notes: string) => {
     // This would update the candidate record in a real app
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Candidate Intake</h1>
-        <p className="text-muted-foreground">Register new candidates and analyze their resumes</p>
-      </div>
-      
+      <PageHeader
+        title="Candidate Registration"
+        subtitle="Register new candidates for the recruitment process"
+      >
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/candidates')}>
+            Back to Candidates
+          </Button>
+        </div>
+      </PageHeader>
+
       <Tabs defaultValue="register">
         <TabsList>
           <TabsTrigger value="register">Register Candidate</TabsTrigger>
           <TabsTrigger value="all">All Candidates</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="register" className="pt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <CandidateIntakeForm onSubmit={handleFormSubmit} />
             </div>
-            
+
             <div>
               {showSummary ? (
-                <ResumeSummary 
+                <ResumeSummary
                   onStatusChange={handleStatusChange}
                   onNotesChange={handleNotesChange}
                 />
@@ -131,7 +139,7 @@ const CandidateIntake = () => {
             </div>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="all" className="pt-4">
           <div className="flex justify-end mb-4">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'card')} className="w-auto">
@@ -141,7 +149,7 @@ const CandidateIntake = () => {
               </TabsList>
             </Tabs>
           </div>
-          
+
           {viewMode === 'list' ? (
             <CandidateList candidates={candidates} />
           ) : (

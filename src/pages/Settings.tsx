@@ -2,16 +2,17 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ATSConfig from '@/components/settings/ATSConfig';
 import ATSSync from '@/components/settings/ATSSync';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
 const Settings = () => {
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-                <p className="text-muted-foreground">
-                    Manage your application settings and integrations
-                </p>
-            </div>
+            <PageHeader
+                title="Settings"
+                subtitle="Configure application preferences"
+            />
 
             <Tabs defaultValue="ats" className="space-y-6">
                 <TabsList>
@@ -37,6 +38,18 @@ const Settings = () => {
                     </div>
                 </TabsContent>
             </Tabs>
+
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>General Settings</CardTitle>
+                        <CardDescription>Configure your general preferences</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {/* Settings content */}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 };

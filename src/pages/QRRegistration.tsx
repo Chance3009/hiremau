@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,25 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { QrCode, Download, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { useNavigate } from 'react-router-dom';
 
 const QRRegistration = () => {
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [selectedEvent, setSelectedEvent] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
-  
+
   // Mock events and positions
   const events = [
     { id: '1', name: 'UPM Career Fair 2025' },
     { id: '2', name: 'Tech Recruit Summit' },
     { id: '3', name: 'Engineering Talent Day' }
   ];
-  
+
   const positions = [
     { id: '1', name: 'Frontend Developer' },
     { id: '2', name: 'UX Designer' },
     { id: '3', name: 'Backend Developer' },
     { id: '4', name: 'Product Manager' },
   ];
-  
+
+  // Filter positions based on selected event
+  const filteredPositions = positions.filter(position =>
+    selectedEvent === 'all' || position.eventId === selectedEvent
+  );
+
   const handleGenerateQR = () => {
     if (!selectedEvent) {
       toast({
@@ -35,14 +43,14 @@ const QRRegistration = () => {
       });
       return;
     }
-    
+
     // In a real app, this would generate a QR code using an API
     toast({
       title: "QR Code Generated",
       description: `QR code created for ${events.find(e => e.id === selectedEvent)?.name}`,
     });
   };
-  
+
   const handleCopyLink = () => {
     // In a real app, this would copy the registration link
     toast({
@@ -50,7 +58,7 @@ const QRRegistration = () => {
       description: "Registration link copied to clipboard",
     });
   };
-  
+
   const handleDownloadQR = () => {
     // In a real app, this would download the QR code image
     toast({
@@ -61,18 +69,32 @@ const QRRegistration = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">QR Registration</h1>
-        <p className="text-muted-foreground">Generate QR codes for candidate self-registration at events</p>
-      </div>
-      
+      <PageHeader
+        title="QR Registration"
+        subtitle="Generate QR codes for quick candidate registration"
+      >
+        <div className="flex items-center gap-2">
+          <Select value={selectedEvent || ''} onValueChange={setSelectedEvent}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select Event" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {events.map(event => (
+                <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </PageHeader>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Create Registration QR Code</CardTitle>
             <CardDescription>Generate a QR code for candidates to scan and self-register</CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="event">Select Event</Label>
@@ -87,7 +109,7 @@ const QRRegistration = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="position">Position (Optional)</Label>
               <Select onValueChange={(value) => setSelectedPosition(value)} value={selectedPosition || undefined}>
@@ -95,27 +117,27 @@ const QRRegistration = () => {
                   <SelectValue placeholder="All positions" />
                 </SelectTrigger>
                 <SelectContent>
-                  {positions.map((position) => (
+                  {filteredPositions.map((position) => (
                     <SelectItem key={position.id} value={position.id}>{position.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">If selected, the form will automatically pre-fill the position field</p>
             </div>
-            
+
             <Button className="w-full" onClick={handleGenerateQR}>
               <QrCode className="mr-2 h-4 w-4" />
               Generate QR Code
             </Button>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Registration QR Code</CardTitle>
             <CardDescription>Candidates can scan this QR code to access the registration form</CardDescription>
           </CardHeader>
-          
+
           <CardContent className="flex flex-col items-center justify-center">
             <div className="h-64 w-64 border rounded-md flex items-center justify-center bg-muted/50">
               {selectedEvent ? (
@@ -133,7 +155,7 @@ const QRRegistration = () => {
               )}
             </div>
           </CardContent>
-          
+
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={handleCopyLink} disabled={!selectedEvent}>
               <Copy className="mr-2 h-4 w-4" />

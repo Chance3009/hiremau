@@ -46,7 +46,7 @@ const Header: React.FC = () => {
     'job-openings': 'Job Openings',
     'candidate-intake': 'Candidate Intake',
     'qr-registration': 'QR Registration',
-    'interview': 'Interview',
+    'interviewed': 'Interview',
     'final-review': 'Final Review',
     'candidate': 'Candidate',
     'candidate-comparison': 'Comparison',

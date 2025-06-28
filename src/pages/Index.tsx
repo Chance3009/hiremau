@@ -33,7 +33,7 @@ const Index = () => {
       title: "Interview Assistant",
       description: "Conduct interviews with AI-suggested questions",
       icon: <MessageSquare className="h-6 w-6" />,
-      path: "/interview",
+      path: "/interviewed",
       color: "bg-amber-50 text-amber-600"
     },
     {

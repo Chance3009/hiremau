@@ -5,8 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import Layout from '@/components/layout/Layout';
 import Interview from '@/pages/Interview';
+import InterviewLobby from '@/pages/InterviewLobby';
+import InterviewReport from '@/pages/InterviewReport';
 import CandidateIntake from '@/pages/CandidateIntake';
 import AppliedCandidates from '@/pages/AppliedCandidates';
+import Screening from '@/pages/Screening';
 import QRRegistration from '@/pages/QRRegistration';
 import EventSetup from '@/pages/EventSetup';
 import EventList from '@/pages/EventList';
@@ -18,9 +21,11 @@ import CandidateView from '@/pages/CandidateView';
 import Settings from '@/pages/Settings';
 import Dashboard from '@/pages/Dashboard';
 import NotFound from '@/pages/NotFound';
+import ShortlistedCandidates from '@/pages/ShortlistedCandidates';
 import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { RecruitmentContextProvider } from "@/contexts/RecruitmentContext";
+import { NewJobOpening } from '@/pages/NewJobOpening';
 
 const queryClient = new QueryClient();
 
@@ -33,28 +38,32 @@ function App() {
             <NavigationProvider>
               <RecruitmentContextProvider>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route element={<Layout />}>
-                    {/* Overview Routes */}
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/job-openings" element={<JobOpenings />} />
-                    <Route path="/events" element={<EventList />} />
-                    <Route path="/event-setup" element={<EventSetup />} />
-                    <Route path="/event-dashboard/:eventId" element={<EventDashboard />} />
-
-                    {/* Recruitment Pipeline Routes */}
-                    <Route path="/applied" element={<AppliedCandidates />} />
-                    <Route path="/candidate-intake" element={<CandidateIntake />} />
-                    <Route path="/screened" element={<CandidateComparison />} />
-                    <Route path="/interviewed" element={<Interview />} />
-                    <Route path="/final-review" element={<FinalReview />} />
-                    <Route path="/hired" element={<CandidateView />} />
-                    <Route path="/candidate-comparison" element={<CandidateComparison />} />
-
-                    {/* Additional Routes */}
-                    <Route path="/candidate/:candidateId" element={<CandidateView />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Settings />} />
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="events" element={<EventList />} />
+                    <Route path="event-setup" element={<EventSetup />} />
+                    <Route path="event-dashboard/:id" element={<EventDashboard />} />
+                    <Route path="job-openings">
+                      <Route index element={<JobOpenings />} />
+                      <Route path="new" element={<NewJobOpening />} />
+                    </Route>
+                    <Route path="candidate-intake" element={<CandidateIntake />} />
+                    <Route path="qr-registration" element={<QRRegistration />} />
+                    <Route path="applied" element={<AppliedCandidates />} />
+                    <Route path="screened" element={<Screening />} />
+                    <Route path="interviewed" element={<InterviewLobby />} />
+                    <Route path="interview">
+                      <Route index element={<InterviewLobby />} />
+                      <Route path="new" element={<Interview />} />
+                      <Route path=":id" element={<Interview />} />
+                      <Route path=":id/report" element={<InterviewReport />} />
+                    </Route>
+                    <Route path="final-review" element={<FinalReview />} />
+                    <Route path="shortlisted" element={<ShortlistedCandidates />} />
+                    <Route path="candidate/:id" element={<CandidateView />} />
+                    <Route path="comparison" element={<CandidateComparison />} />
+                    <Route path="settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>

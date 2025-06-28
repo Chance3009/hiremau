@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle } from 'lucide-react';
+import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle, Upload, ClipboardPaste, ArrowLeft, Download, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,10 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CandidateIntakeForm from '@/components/candidate/CandidateIntakeForm';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from '@/components/ui/use-toast';
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 // Enhanced mock data with AI analysis fields
 interface SkillMatch {
@@ -58,7 +62,6 @@ interface Candidate {
     phone: string;
     currentCompany: string;
     appliedDate: string;
-    source: string;
     lastPosition: string;
     expectedSalary: string;
     availability: string;
@@ -84,7 +87,6 @@ const mockCandidates: Candidate[] = [
         phone: '+1 234-567-8900',
         currentCompany: 'TechCorp Inc.',
         appliedDate: '2024-03-15',
-        source: 'LinkedIn',
         lastPosition: 'Senior Frontend Developer',
         expectedSalary: '$120,000',
         availability: 'In 2 months',
@@ -134,15 +136,119 @@ const mockCandidates: Candidate[] = [
 
 type DetailLevel = 'minimal' | 'standard' | 'detailed';
 
-const AIInsightCard = ({ analysis }: { analysis: AIAnalysis }) => {
+const AIInsightCard = ({ analysis, detailLevel }: { analysis: AIAnalysis; detailLevel: DetailLevel }) => {
+    // Helper function to get AI summary
+    const getAISummary = () => {
+        const strengths = analysis.insights.filter(i => i.type === 'strength');
+        const opportunities = analysis.insights.filter(i => i.type === 'opportunity');
+        return `${strengths[0]?.description || ''}. ${opportunities[0]?.description || ''}`;
+    };
+
+    if (detailLevel === 'minimal') {
+        return (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">AI Match</h3>
+                </div>
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium">Overall Match</span>
+                        <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
+                    </div>
+                    <Progress value={analysis.overallMatch} className="h-2" />
+                    <p className="text-sm text-muted-foreground mt-2">{getAISummary()}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (detailLevel === 'standard') {
+        return (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">AI Analysis</h3>
+                </div>
+
+                <div className="space-y-4">
+                    {/* Overall Match */}
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Overall Match</span>
+                            <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
+                        </div>
+                        <Progress value={analysis.overallMatch} className="h-2" />
+                    </div>
+
+                    {/* Culture & Growth */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Target className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">Culture Fit</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Progress value={analysis.cultureFit} className="h-2" />
+                                <span className="text-sm font-medium">{analysis.cultureFit}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <LineChart className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">Growth Potential</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Progress value={analysis.growthPotential} className="h-2" />
+                                <span className="text-sm font-medium">{analysis.growthPotential}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* AI Summary */}
+                    <div>
+                        <h4 className="text-sm font-medium mb-2">AI Summary</h4>
+                        <div className="space-y-2">
+                            {analysis.insights.map((insight, index) => (
+                                <div key={index} className="flex items-start gap-2">
+                                    <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                    <span className="text-sm">{insight.description}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Risk Factors */}
+                    {analysis.riskFactors.length > 0 && (
+                        <div>
+                            <h4 className="text-sm font-medium mb-2">Potential Concerns</h4>
+                            <div className="space-y-2">
+                                {analysis.riskFactors.map((risk, index) => (
+                                    <div key={index} className="flex items-start gap-2">
+                                        <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
+                                            risk.severity === 'medium' ? 'text-yellow-500' :
+                                                'text-muted-foreground'
+                                            }`} />
+                                        <span className="text-sm">{risk.description}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Detailed view
     return (
         <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
             <div className="flex items-center gap-2 mb-2">
                 <Brain className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">AI Screening Insights</h3>
+                <h3 className="font-semibold">Detailed Skills Analysis</h3>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
                 {/* Overall Match */}
                 <div>
                     <div className="flex justify-between items-center mb-1">
@@ -152,100 +258,46 @@ const AIInsightCard = ({ analysis }: { analysis: AIAnalysis }) => {
                     <Progress value={analysis.overallMatch} className="h-2" />
                 </div>
 
-                {/* Skill Matches */}
+                {/* Detailed Skill Matches */}
                 <div>
-                    <h4 className="text-sm font-medium mb-2">Key Skills Analysis</h4>
-                    <div className="space-y-2">
+                    <h4 className="text-sm font-medium mb-2">Skills Breakdown</h4>
+                    <div className="space-y-3">
                         {analysis.skillMatches.map((skill) => (
-                            <div key={skill.skill} className="flex items-center gap-2">
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm">
-                                            {skill.skill}
-                                            {skill.required && (
-                                                <Badge variant="secondary" className="ml-2 text-xs">Required</Badge>
-                                            )}
-                                        </span>
-                                        <span className="text-sm font-medium">{skill.score}%</span>
+                            <div key={skill.skill} className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">{skill.skill}</span>
+                                        {skill.required && (
+                                            <Badge variant="secondary" className="text-xs">Required</Badge>
+                                        )}
                                     </div>
-                                    <Progress value={skill.score} className="h-1.5" />
+                                    <span className="text-sm font-medium">{skill.score}%</span>
+                                </div>
+                                <Progress value={skill.score} className="h-1.5" />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>{skill.experience} experience</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Culture & Growth */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Target className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Culture Fit</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Progress value={analysis.cultureFit} className="h-2" />
-                            <span className="text-sm font-medium">{analysis.cultureFit}%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <LineChart className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">Growth Potential</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Progress value={analysis.growthPotential} className="h-2" />
-                            <span className="text-sm font-medium">{analysis.growthPotential}%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Key Insights */}
+                {/* Development Areas */}
                 <div>
-                    <h4 className="text-sm font-medium mb-2">Key Insights</h4>
+                    <h4 className="text-sm font-medium mb-2">Recommended Development</h4>
                     <div className="space-y-2">
-                        {analysis.insights.map((insight, index) => (
+                        {analysis.learningPath.map((item, index) => (
                             <div key={index} className="flex items-start gap-2">
-                                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                <span className="text-sm">{insight.description}</span>
+                                <GraduationCap className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="text-sm font-medium">{item.skill}</span>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">{item.priority} priority</Badge>
+                                        <span className="text-xs text-muted-foreground">Est. {item.estimatedTimeToAcquire}</span>
+                                    </div>
+                                </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-
-                {/* Risk Factors */}
-                {analysis.riskFactors.length > 0 && (
-                    <div>
-                        <h4 className="text-sm font-medium mb-2">Risk Assessment</h4>
-                        <div className="space-y-2">
-                            {analysis.riskFactors.map((risk, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                    <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
-                                            risk.severity === 'medium' ? 'text-yellow-500' :
-                                                'text-muted-foreground'
-                                        }`} />
-                                    <span className="text-sm">{risk.description}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Career Path */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Career Development</h4>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Recommended Role:</span>
-                            <Badge variant="outline">{analysis.recommendedRole}</Badge>
-                        </div>
-                        <div>
-                            <span className="text-sm text-muted-foreground">Similar Roles:</span>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                                {analysis.similarRoles.map((role) => (
-                                    <Badge key={role} variant="secondary">{role}</Badge>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -289,7 +341,7 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                     ))}
                 </div>
 
-                <AIInsightCard analysis={candidate.aiAnalysis} />
+                <AIInsightCard analysis={candidate.aiAnalysis} detailLevel={detailLevel} />
             </div>
         );
 
@@ -360,7 +412,7 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                             <span>{candidate.phone}</span>
                         </div>
                     </div>
-                    <div className="text-right space-y-1">
+                    <div className="text-right">
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -374,7 +426,6 @@ const CandidateCard = ({ candidate, onMove, detailLevel }) => {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Badge variant="secondary">{candidate.source}</Badge>
                     </div>
                 </div>
 
@@ -425,23 +476,32 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
                         <TableHead>Fit Score</TableHead>
                         <TableHead>Experience</TableHead>
                         <TableHead>Applied Date</TableHead>
-                        <TableHead>Source</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {candidates.map((candidate) => (
-                        <TableRow key={candidate.id}>
-                            <TableCell>
+                        <TableRow
+                            key={candidate.id}
+                            className="group relative"
+                        >
+                            <TableCell className="relative">
                                 <HoverCard>
                                     <HoverCardTrigger asChild>
-                                        <div className="space-y-1 cursor-pointer">
+                                        <div className="cursor-pointer group-hover:text-primary transition-colors">
                                             <div className="font-medium">{candidate.name}</div>
-                                            <div className="text-sm text-muted-foreground">{candidate.email}</div>
+                                            <div className="text-sm text-muted-foreground group-hover:text-primary/80">{candidate.email}</div>
+                                            {/* Invisible extended hit area */}
+                                            <div className="absolute inset-0" />
                                         </div>
                                     </HoverCardTrigger>
-                                    <HoverCardContent className="w-[400px]">
+                                    <HoverCardContent
+                                        side="right"
+                                        align="start"
+                                        className="w-[400px] shadow-lg"
+                                        sideOffset={-50}
+                                    >
                                         <CandidateCard
                                             candidate={candidate}
                                             onMove={onMove}
@@ -459,9 +519,6 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
                             </TableCell>
                             <TableCell>{candidate.experience}</TableCell>
                             <TableCell>{candidate.appliedDate}</TableCell>
-                            <TableCell>
-                                <Badge variant="secondary">{candidate.source}</Badge>
-                            </TableCell>
                             <TableCell>
                                 <Badge variant="outline">New</Badge>
                             </TableCell>
@@ -499,41 +556,76 @@ const CandidateList = ({ candidates, onMove, detailLevel }) => {
 };
 
 const RegisterDialog = () => {
-    const [showQR, setShowQR] = useState(false);
+    const [mode, setMode] = useState<'form' | 'qr'>('form');
+    const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Register Candidate
+                    Add Candidate
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="flex justify-between items-center">
-                        Register New Candidate
-                        <Button variant="outline" onClick={() => setShowQR(!showQR)}>
-                            <QrCode className="h-4 w-4 mr-2" />
-                            {showQR ? 'Manual Entry' : 'QR Code'}
-                        </Button>
-                    </DialogTitle>
+                    <DialogTitle>Register New Candidate</DialogTitle>
                 </DialogHeader>
-                {showQR ? (
-                    <div className="flex flex-col items-center justify-center p-6">
-                        <div className="bg-secondary p-8 rounded-lg mb-4">
-                            {/* Replace with actual QR code component */}
-                            <div className="w-48 h-48 bg-primary/10 flex items-center justify-center">
-                                QR Code Placeholder
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                            <Label>Registration Mode</Label>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant={mode === 'form' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMode('form')}
+                                >
+                                    Manual Form
+                                </Button>
+                                <Button
+                                    variant={mode === 'qr' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setMode('qr')}
+                                >
+                                    QR Code
+                                </Button>
                             </div>
                         </div>
-                        <p className="text-center text-muted-foreground">
-                            Scan this QR code to fill out the candidate registration form
-                        </p>
+                        <div className="w-[200px]">
+                            <Label>Event</Label>
+                            <Select value={selectedEvent || ''} onValueChange={setSelectedEvent}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select event" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="event1">UPM Career Fair 2025</SelectItem>
+                                    <SelectItem value="event2">Tech Meetup March</SelectItem>
+                                    <SelectItem value="event3">Virtual Job Fair</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                ) : (
-                    <CandidateIntakeForm />
-                )}
+                    {mode === 'qr' ? (
+                        <div className="flex flex-col items-center justify-center p-8 space-y-4 border-2 border-dashed rounded-lg">
+                            <QrCode className="h-16 w-16 text-muted-foreground" />
+                            <div className="text-center">
+                                <p className="font-medium">Scan QR Code</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Point your camera at the QR code to register
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <CandidateIntakeForm onSubmit={(data) => {
+                            console.log('Form submitted:', data);
+                            toast({
+                                title: "Candidate registered",
+                                description: "The candidate has been successfully registered.",
+                            });
+                        }} />
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
@@ -542,7 +634,6 @@ const RegisterDialog = () => {
 const AppliedCandidates = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState('date');
-    const [filterSource, setFilterSource] = useState('all');
     const [detailLevel, setDetailLevel] = useState<DetailLevel>('minimal');
     const navigate = useNavigate();
 
@@ -553,13 +644,12 @@ const AppliedCandidates = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Applied Candidates</h2>
-                    <p className="text-sm text-muted-foreground">Review and process new applications</p>
-                </div>
+            <PageHeader
+                title="Applied Candidates"
+                subtitle="Review and process new applications"
+            >
                 <RegisterDialog />
-            </div>
+            </PageHeader>
 
             <div className="flex justify-between items-center gap-4">
                 <div className="flex gap-4">
@@ -576,47 +666,49 @@ const AppliedCandidates = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="w-[200px]">
-                        <Label htmlFor="source">Source</Label>
-                        <Select value={filterSource} onValueChange={setFilterSource}>
-                            <SelectTrigger id="source">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Sources</SelectItem>
-                                <SelectItem value="linkedin">LinkedIn</SelectItem>
-                                <SelectItem value="referral">Referral</SelectItem>
-                                <SelectItem value="event">Event</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="w-[200px]">
-                        <Label htmlFor="details">Detail Level</Label>
-                        <Select value={detailLevel} onValueChange={(value: DetailLevel) => setDetailLevel(value)}>
-                            <SelectTrigger id="details">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="minimal">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Minimal</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="standard">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Standard</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="detailed">
-                                    <div className="flex items-center gap-2">
-                                        <Eye className="h-4 w-4" />
-                                        <span>Detailed</span>
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="w-[300px]">
+                        <Label>Detail Level</Label>
+                        <div className="flex items-center gap-1 mt-2 p-1 bg-muted rounded-lg">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "minimal" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("minimal")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Minimal
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "standard" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("standard")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Standard
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "flex-1 h-8",
+                                    detailLevel === "detailed" && "bg-background shadow-sm"
+                                )}
+                                onClick={() => setDetailLevel("detailed")}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Detailed
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

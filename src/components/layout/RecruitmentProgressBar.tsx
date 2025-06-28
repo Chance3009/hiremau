@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useRecruitment } from "@/contexts/RecruitmentContext";
 import { RECRUITMENT_STAGES } from "@/config/constants";
+import { stageLabels } from "./RecruitmentStageBar";
 
 export const RecruitmentProgressBar = () => {
     const { currentStage } = useRecruitment();
@@ -21,8 +22,8 @@ export const RecruitmentProgressBar = () => {
                                             : "bg-muted"
                                 )}
                             />
-                            <span className="text-xs mt-2 text-muted-foreground capitalize">
-                                {stage.replace(/-/g, ' ')}
+                            <span className="text-xs mt-2 text-muted-foreground">
+                                {stageLabels[stage]}
                             </span>
                         </div>
                         {index < RECRUITMENT_STAGES.length - 1 && (
