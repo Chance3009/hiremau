@@ -1,24 +1,279 @@
+# 🚀 HireMau - Comprehensive .gitignore
+
+# ===============================================
+# 🎨 FRONTEND (React TypeScript)
+# ===============================================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Production builds
+frontend/dist/
+frontend/build/
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
 # Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Vite
+frontend/.vite/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Testing
+frontend/coverage/
+
+# Storybook
+frontend/storybook-static/
+
+# ===============================================
+# 🚀 BACKEND (FastAPI Python)
+# ===============================================
+
+# Python
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+
+# Virtual environments
+backend/venv/
+backend/env/
+backend/ENV/
+backend/.venv/
+
+# Environment variables
+backend/.env
+backend/.env.local
+backend/.env.production
+
+# Distribution / packaging
+backend/.Python
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/share/python-wheels/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+
+# PyInstaller
+backend/*.manifest
+backend/*.spec
+
+# Testing
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/coverage.xml
+backend/*.cover
+backend/*.py,cover
+backend/.hypothesis/
+
+# Jupyter Notebook
+backend/.ipynb_checkpoints
+
+# IPython
+backend/profile_default/
+backend/ipython_config.py
+
+# Database
+backend/*.db
+backend/*.sqlite3
+
+# Logs
+backend/logs/
+backend/*.log
+
+# Service account
+backend/serviceAccount.json
+
+# ===============================================
+# 🤖 AGENT (Google ADK)
+# ===============================================
+
+# Python
+agent/__pycache__/
+agent/*.py[cod]
+agent/*$py.class
+
+# Virtual environments
+agent/venv/
+agent/env/
+agent/.venv/
+
+# Environment variables
+agent/.env
+agent/.env.local
+
+# ADK specific
+agent/.adk/
+agent/adk_cache/
+
+# Agent logs
+agent/logs/
+agent/*.log
+
+# Model downloads
+agent/models/
+agent/embeddings/
+
+# Bright Data cache
+agent/.brightdata/
+
+# ===============================================
+# 🔐 SECURITY & CREDENTIALS
+# ===============================================
+
+# Service account keys
+**/serviceAccount.json
+**/service-account-key.json
+**/firebase-adminsdk-*.json
+
+# API keys and secrets
+**/.env
+**/.env.local
+**/.env.production
+**/.env.staging
+**/config/secrets.json
+**/secrets.yaml
+
+# OAuth tokens
+**/token.json
+**/credentials.json
+**/.credentials/
+
+# ===============================================
+# 🗄️ DATABASES & STORAGE
+# ===============================================
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.bak
+
+# ===============================================
+# 🔧 DEVELOPMENT TOOLS
+# ===============================================
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# ===============================================
+# 📝 LOGS & MONITORING
+# ===============================================
+
+# All log files
+logs/
+*.log
+*.log.*
+
+# Performance monitoring
+.nyc_output/
+
+# ===============================================
+# 🚀 DEPLOYMENT
+# ===============================================
+
+# Docker
+.dockerignore
+**/Dockerfile.prod
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# ===============================================
+# 🧪 TESTING
+# ===============================================
+
+# Test coverage
+coverage/
+.nyc_output/
+junit.xml
+
+# Test artifacts
+screenshots/
+test-results/
+
+# ===============================================
+# 📦 BUILD ARTIFACTS
+# ===============================================
+
+# Compiled output
+**/dist/
+**/build/
+**/out/
+
+# Package files
+*.tgz
+*.tar.gz
+
+# ===============================================
+# 🎯 PROJECT SPECIFIC
+# ===============================================
+
+# Development scripts
+scripts/dev/
+scripts/test/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Temporary development files
+TODO.md
+NOTES.md
+.scratch/

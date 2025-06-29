@@ -1,4 +1,4 @@
-# 🚀 Overview of HireMau
+# 🚀 HireMau - AI-Powered Recruitment Platform
 
 **HireMau** is an intelligent web-based screening tool designed to help recruiters and HR managers conduct faster, more effective candidate evaluations. By leveraging advanced AI technologies, including **Large Language Models (LLMs)**, **Agentic AI**, and **Retrieval-Augmented Generation (RAG)**, HireMau automates and enhances early-stage screening tasks such as skill-gap analysis, background checks, and live interview support. The platform reduces manual workload, improves consistency, and enables high-volume screening with minimal effort.
 
@@ -51,20 +51,213 @@ Collaborative tools allow multiple recruiters to evaluate candidates simultaneou
 
 ---
 
-## Getting Started
+## Project Structure
 
-### 1. Clone the repository
+```
+hiremau/
+├── 🎨 frontend/           # React TypeScript Application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Main application pages
+│   │   ├── services/      # API service layer
+│   │   ├── hooks/         # Custom React hooks
+│   │   └── types/         # TypeScript definitions
+│   └── README.md          # Frontend documentation
+│
+├── 🚀 backend/            # FastAPI REST API
+│   ├── routers/           # API route definitions
+│   ├── services/          # Business logic layer
+│   ├── models.py          # Data models & schemas
+│   ├── workflow_state_machine.py # Recruitment workflow
+│   └── README.md          # Backend documentation
+│
+└── 🤖 agent/              # ADK Agent Service (SEPARATE)
+    ├── candidate_sourcing_agent/
+    │   ├── agent.py       # Main ParallelAgent
+    │   ├── subagents/     # Specialized sub-agents
+    │   └── models.py      # Agent data models
+    ├── requirements.txt   # Agent dependencies
+    └── README.md          # Agent documentation
+ 
+
+```
+
+### Prerequisites
+- **Node.js 18+** (Frontend)
+- **Python 3.8+** (Backend & Agent)
+- **Google Cloud Firestore** account
+- **Gemini API key** (AI features)
+- **Bright Data account** (Agent web scraping)
+
+## Getting Started
+### 1. Clone Repository
 ```bash
 git clone git@github.com:Chance3009/hire-flow.git
-cd hire-flow
+cd hiremau
 ```
 
-### 2. Install dependencies
+### 2. Setup Backend
 ```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your credentials
+
+# Start backend server
+uvicorn main:app --reload --host 0.0.0.0 --port 8001
+```
+
+### 3. Setup Frontend
+```bash
+cd frontend
 npm install
-```
 
-### 3. Start the development server
-```bash
+# Configure environment  
+cp .env.example .env.local
+# Edit .env.local with backend URL
+
+# Start development server
 npm run dev
 ```
+
+### 4. Setup Agent Service
+```bash
+cd agent
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+
+# Configure environment
+cp env_template.txt .env
+# Edit .env with API keys
+
+# Test agent
+adk run candidate_sourcing_agent
+```
+
+## 🌐 Service URLs
+
+Once all services are running:
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8001
+- **API Docs**: http://localhost:8001/docs
+- **Agent CLI**: `adk run candidate_sourcing_agent`
+- **Agent Web**: `adk web candidate_sourcing_agent`
+
+## 📊 Recruitment Workflow
+
+### Stage Progression
+```
+Applied → Screening → Interview Scheduled → Interviewing 
+    ↓
+Interview Completed → Additional Interview → Final Review
+    ↓  
+Offer Extended → Negotiating → Hired ✅
+    ↓
+[Any stage] → On Hold → [Reactivate] 
+[Any stage] → Rejected ❌
+```
+
+### AI Agent Integration
+```
+Candidate Input → ADK ParallelAgent
+    ├── LinkedIn Agent (Profile & Experience)
+    ├── GitHub Agent (Technical Skills)  
+    └── Website Agent (Portfolio & Bio)
+         ↓
+    Synthesizer Agent → Enriched Profile
+         ↓
+    Backend API → Updated Candidate Record
+```
+
+## 🛠️ Development
+
+### Backend Development
+```bash
+cd backend
+# Run with auto-reload
+uvicorn main:app --reload --port 8001
+
+# Run tests
+pytest
+
+# Check code quality
+black . && isort . && flake8
+```
+
+### Frontend Development  
+```bash
+cd frontend
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run tests
+npm run test
+
+# Lint and format
+npm run lint && npm run format
+```
+
+### Agent Development
+```bash
+cd agent
+# Interactive testing
+adk run candidate_sourcing_agent
+
+# Test with specific inputs
+python -m candidate_sourcing_agent.cli --name "John Doe" --github "johndoe"
+
+# Deploy to ADK cloud
+adk deploy candidate_sourcing_agent
+```
+
+## 📚 Documentation
+
+### Service Documentation
+- **[Frontend README](./frontend/README.md)** - React app setup and components
+- **[Backend README](./backend/README.md)** - API endpoints and workflow
+- **[Agent README](./agent/README.md)** - ADK agent architecture and usage
+
+### Workflow Documentation
+- **[Recruitment Workflow](./backend/RECRUITMENT_WORKFLOW.md)** - Complete workflow guide
+- **[Workflow Examples](./backend/WORKFLOW_EXAMPLES.md)** - Implementation examples
+- **[API Compatibility](./API_COMPATIBILITY_REPORT.md)** - API integration guide
+
+## 🚀 Deployment
+
+### Production Deployment
+1. **Frontend**: Deploy to Vercel/Netlify
+2. **Backend**: Deploy to Google Cloud Run/AWS Lambda
+3. **Agent**: Deploy to ADK Cloud or dedicated server
+4. **Database**: Google Cloud Firestore (production mode)
+
+### Environment Configuration
+Each service requires specific environment variables:
+- **Backend**: Firestore credentials, Gemini API key
+- **Frontend**: Backend API URL, feature flags
+- **Agent**: Bright Data credentials, Google API key
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow coding standards for each service
+4. Add tests for new functionality
+5. Update relevant documentation
+6. Submit Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Built with ❤️ using React, FastAPI, and Google ADK**
