@@ -4,6 +4,7 @@ from .subagents.company_agent import company_agent
 from .subagents.candidate_agent import candidate_agent
 from .subagents.google_search_agent import gs_agent
 from .subagents.source_agent import source_agent
+from .subagents.evaluation_agent import evaluation_agent
 
 root_agent = Agent(
     name="main_agent",
@@ -23,12 +24,12 @@ root_agent = Agent(
     - candidate_agent: RAG agent that retrieves raw document chunks regarding candidates and processes them using its own reasoning capabilities.
     - gs_agent: An agent that performs Google search and processes information using its own reasoning capabilities.
     - source_agent: An agent that handles candidate sourcing, mainly on GitHub and LinkedIn profile information.
+    - evaluation_agent: An agent that handles candidate evaluation and profile synthesis. (Do not use it for now, as it is not implemented yet.)
 
     Guidelines:
     - Call the correct agent tool based on the user's request.
     """,
     sub_agents=[
-          # The agent that handles candidate sourcing and GitHub profile information.
     ],
     tools=[
         AgentTool(
@@ -42,6 +43,9 @@ root_agent = Agent(
         ),
         AgentTool(
             gs_agent # The agent that handles Google search operations
+        ),
+        AgentTool(
+            evaluation_agent  # The agent that handles candidate evaluation and profile synthesis
         ),
     ],
 )

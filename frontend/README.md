@@ -96,6 +96,10 @@ cp .env.example .env.local
 VITE_API_BASE_URL=http://localhost:8001
 VITE_API_TIMEOUT=10000
 
+# Supabase Configuration
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_KEY=your-supabase-api-key
+
 # Feature Flags
 VITE_ENABLE_AI_FEATURES=true
 VITE_ENABLE_ANALYTICS=true
@@ -237,12 +241,30 @@ export const fetchCandidates = async (filters?: CandidateFilters) => {
 };
 ```
 
-### Error Handling
-Consistent error handling across all services:
-- Network error fallbacks
-- Retry logic for failed requests
-- User-friendly error messages
-- Offline mode support (planned)
+### Supabase Integration
+
+A reusable Supabase client is provided in `src/lib/supabaseClient.ts` for easy access to your Supabase backend from anywhere in your React app.
+
+#### Environment Variables
+Add the following to your `.env.local` (or `.env.example`):
+
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_KEY=your-supabase-api-key
+```
+
+#### Usage Example
+
+Import the client in any file:
+
+```typescript
+import { supabase } from '@/lib/supabaseClient';
+
+// Example: Fetch all rows from the 'planets' table
+const { data, error } = await supabase.from('planets').select('*');
+```
+
+The client will throw an error if the required environment variables are not set.
 
 ## 🎯 Pages Overview
 
