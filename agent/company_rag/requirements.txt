@@ -1,0 +1,15 @@
+langchain_core
+langchain-ollama
+langchain-huggingface
+langchain-chroma
+python-dotenv
+streamlit
+langchain_community
+langserve
+fastapi
+uvicorn
+sse_starlette
+bs4
+pypdf
+chromadb
+sentence-transformers
