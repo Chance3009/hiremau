@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from root_agent import root_agent
+from interview_summary_agent import interview_summary_agent
 
 from fastapi import FastAPI, Request
 
@@ -185,5 +186,15 @@ async def create_note(request: Request):
     data = await request.json()
     # Save data to database here
     return {"status": "success", "note": data}
+
+# Define the route for the interview summary
+@app.post("/summarize_interview")
+async def summarize_interview(request: Request):
+    try:
+        interview_data = await request.json()
+        response = interview_summary_agent.query(interview_data)
+        return JSONResponse(content={"summary": response.text}, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 print("✅ main.py loaded successfully")
