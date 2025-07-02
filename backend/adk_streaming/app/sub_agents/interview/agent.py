@@ -13,8 +13,6 @@
 # limitations under the License.
 
 from google.adk.agents import Agent
-from google.adk.tools import google_search  # Import the tool
-from pydantic import BaseModel, Field
 
 # class InterviewAgentOutput(BaseModel):
 #     interviewee_audio: str = Field(description="Transcript or summary of what the interviewee said.")
@@ -22,7 +20,7 @@ from pydantic import BaseModel, Field
 #     interview_question: str = Field(description="A follow-up question for the interviewer.")
 
 
-root_agent = Agent(
+interview_agent = Agent(
    # A unique name for the agent.
    name="interview_agent",
    # The Large Language Model (LLM) that agent will use.

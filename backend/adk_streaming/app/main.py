@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from interview_agent.agent import root_agent
+from root_agent.agent import root_agent
 
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
@@ -61,8 +61,12 @@ async def agent_to_client_sse(live_events):
         if not (part and part.text and event.partial):
             continue
 
-        # Sanitize the text to remove triple backticks and extra formatting
-        cleaned_text = re.sub(r"^```(?:json)?\n|\n?```$", "", part.text.strip(), flags=re.MULTILINE)
+        # ✅ Improved backtick cleanup for Gemini-wrapped JSON
+        raw_text = part.text.strip()
+        cleaned_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
+        cleaned_text = re.sub(r"\s*```$", "", cleaned_text).strip()
+
+        print(f"[🧼 CLEANED TEXT]: {cleaned_text}")  # Optional debug
 
         message = {
             "mime_type": "text/plain",
@@ -70,6 +74,7 @@ async def agent_to_client_sse(live_events):
         }
         yield f"data: {json.dumps(message)}\n\n"
         print(f"[AGENT TO CLIENT]: text/plain: {message}")
+
 
 # FastAPI app setup
 app = FastAPI()
