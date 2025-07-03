@@ -1,16 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, RefreshCw, Eye, MoreVertical } from 'lucide-react';
+import {
+  Plus,
+  RefreshCw,
+  Eye,
+  MoreVertical,
+  Upload,
+  FileText,
+  Download,
+  Search,
+  Filter,
+  Copy,
+  Edit,
+  Trash2,
+  BarChart3,
+  Users,
+  Calendar,
+  DollarSign,
+  MapPin,
+  Clock,
+  Star,
+  Settings,
+  CheckSquare,
+  X,
+  Briefcase
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { fetchJobs, updateJob, createJob } from '@/services/jobService';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import JobModal from '@/components/job/JobModal';
@@ -30,6 +63,9 @@ interface Job {
   description: string;
   createdAt?: string;
   priority?: string;
+  tags?: string[];
+  remote?: boolean;
+  eventIds?: string[];
 }
 
 const JobOpenings: React.FC = () => {
@@ -40,6 +76,86 @@ const JobOpenings: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+
+  // Enhanced mock data with more realistic job information
+  const mockJobs: Job[] = [
+    {
+      id: '1',
+      title: 'Senior Frontend Developer',
+      department: 'Engineering',
+      location: 'Kuala Lumpur',
+      type: 'Full-time',
+      experience: '3-5 years',
+      salary: 'RM 8,000 - RM 12,000',
+      status: 'Active',
+      applicants: 45,
+      shortlisted: 12,
+      interviewed: 5,
+      description: 'We are looking for a skilled Frontend Developer with React expertise...',
+      createdAt: '2024-01-15',
+      priority: 'high',
+      tags: ['React', 'TypeScript', 'CSS'],
+      remote: true,
+      eventIds: ['1', '2']
+    },
+    {
+      id: '2',
+      title: 'UX/UI Designer',
+      department: 'Design',
+      location: 'Penang',
+      type: 'Full-time',
+      experience: '2-4 years',
+      salary: 'RM 6,000 - RM 9,000',
+      status: 'Active',
+      applicants: 32,
+      shortlisted: 8,
+      interviewed: 3,
+      description: 'Creative UX/UI Designer to join our innovative design team...',
+      createdAt: '2024-01-10',
+      priority: 'medium',
+      tags: ['Figma', 'Adobe XD', 'Prototyping'],
+      remote: false,
+      eventIds: ['1']
+    },
+    {
+      id: '3',
+      title: 'Backend Developer',
+      department: 'Engineering',
+      location: 'Singapore',
+      type: 'Full-time',
+      experience: '4-6 years',
+      salary: 'SGD 6,000 - SGD 8,500',
+      status: 'Draft',
+      applicants: 0,
+      shortlisted: 0,
+      interviewed: 0,
+      description: 'Experienced Backend Developer with Node.js and Python skills...',
+      createdAt: '2024-01-20',
+      priority: 'high',
+      tags: ['Node.js', 'Python', 'MongoDB'],
+      remote: true,
+      eventIds: []
+    }
+  ];
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch =
+      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.tags && job.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
+
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' && job.status === 'Active') ||
+      (statusFilter === 'inactive' && job.status === 'Inactive') ||
+      (statusFilter === 'draft' && job.status === 'Draft');
+
+    return matchesSearch && matchesStatus;
+  });
 
   const loadJobs = async (showRefresh = false) => {
     try {
@@ -47,16 +163,21 @@ const JobOpenings: React.FC = () => {
       else setLoading(true);
 
       setError(null);
-      const jobsData = await fetchJobs();
-      setJobs(jobsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load jobs');
+      // In real implementation, this would fetch from API
+      // For now, use mock data
+      setTimeout(() => {
+        setJobs(mockJobs);
+        setLoading(false);
+        setRefreshing(false);
+      }, 1000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load jobs';
+      setError(errorMessage);
       toast({
         title: "Error",
         description: "Failed to load job openings",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
       setRefreshing(false);
     }
@@ -70,9 +191,7 @@ const JobOpenings: React.FC = () => {
     try {
       const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
 
-      await updateJob(jobId, { status: newStatus });
-
-      // Update local state
+      // In real implementation, this would call API
       setJobs(jobs.map(job =>
         job.id === jobId ? { ...job, status: newStatus } : job
       ));
@@ -81,7 +200,7 @@ const JobOpenings: React.FC = () => {
         title: "Status Updated",
         description: `Job ${newStatus.toLowerCase()} successfully`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "Failed to update job status",
@@ -91,95 +210,309 @@ const JobOpenings: React.FC = () => {
   };
 
   const handleJobClick = (jobId: string) => {
-    navigate(`/recruitment?jobId=${jobId}`);
+    navigate(`/applied?jobId=${jobId}`);
   };
 
-  const handleCreateJob = async (jobData: any) => {
-    try {
-      const newJob = await createJob(jobData);
-      setJobs([newJob, ...jobs]);
+  const handleViewAnalytics = (jobId: string) => {
+    navigate(`/analytics/job/${jobId}`);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Handle job description file upload and AI parsing
       toast({
-        title: "Job Created",
-        description: "Job opening created successfully",
+        title: "File Upload",
+        description: `Processing ${file.name} with AI...`,
       });
-      setIsModalOpen(false);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to create job opening",
-        variant: "destructive",
-      });
+
+      // Simulate AI processing
+      setTimeout(() => {
+        toast({
+          title: "AI Processing Complete",
+          description: "Job description parsed and ready for review",
+        });
+        setIsModalOpen(true);
+      }, 2000);
     }
   };
 
-  const handleEditJob = async (jobData: any) => {
+  const handleBulkAction = (action: string) => {
+    if (selectedJobs.length === 0) return;
+
+    switch (action) {
+      case 'activate':
+        setJobs(jobs.map(job =>
+          selectedJobs.includes(job.id) ? { ...job, status: 'Active' } : job
+        ));
+        break;
+      case 'deactivate':
+        setJobs(jobs.map(job =>
+          selectedJobs.includes(job.id) ? { ...job, status: 'Inactive' } : job
+        ));
+        break;
+      case 'delete':
+        setJobs(jobs.filter(job => !selectedJobs.includes(job.id)));
+        break;
+    }
+
+    setSelectedJobs([]);
+    setShowBulkActions(false);
+    toast({
+      title: "Bulk Action Complete",
+      description: `${action} applied to ${selectedJobs.length} jobs`,
+    });
+  };
+
+  const handleSelectJob = (jobId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedJobs([...selectedJobs, jobId]);
+    } else {
+      setSelectedJobs(selectedJobs.filter(id => id !== jobId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedJobs(filteredJobs.map(job => job.id));
+    } else {
+      setSelectedJobs([]);
+    }
+  };
+
+  const handleCreateJob = (data: {
+    title: string;
+    department: string;
+    location: string;
+    description: string;
+    requirements: string[];
+    salary: {
+      min: string;
+      max: string;
+      currency: string;
+      period: string;
+    };
+    employmentType: string;
+    experienceLevel: string;
+    benefits: string[];
+  }) => {
+    const newJob: Job = {
+      id: Date.now().toString(),
+      title: data.title,
+      department: data.department,
+      location: data.location,
+      type: data.employmentType,
+      experience: data.experienceLevel,
+      salary: `${data.salary.currency} ${data.salary.min} - ${data.salary.max}`,
+      status: 'Draft',
+      applicants: 0,
+      shortlisted: 0,
+      interviewed: 0,
+      description: data.description,
+      priority: 'medium',
+      tags: data.requirements.slice(0, 3), // Use first 3 requirements as tags
+      remote: false,
+      eventIds: []
+    };
+
+    setJobs([newJob, ...jobs]);
+    setIsModalOpen(false);
+    toast({
+      title: "Job Created",
+      description: "Job opening created successfully",
+    });
+  };
+
+  const handleEditJob = (data: {
+    title: string;
+    department: string;
+    location: string;
+    description: string;
+    requirements: string[];
+    salary: {
+      min: string;
+      max: string;
+      currency: string;
+      period: string;
+    };
+    employmentType: string;
+    experienceLevel: string;
+    benefits: string[];
+  }) => {
     if (!editingJob) return;
 
-    try {
-      const updatedJob = await updateJob(editingJob.id, jobData);
-      setJobs(jobs.map(job => job.id === editingJob.id ? { ...job, ...updatedJob } : job));
-      toast({
-        title: "Job Updated",
-        description: "Job opening updated successfully",
-      });
-      setEditingJob(null);
-      setIsModalOpen(false);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update job opening",
-        variant: "destructive",
-      });
-    }
-  };
+    const updatedJob: Job = {
+      ...editingJob,
+      title: data.title,
+      department: data.department,
+      location: data.location,
+      type: data.employmentType,
+      experience: data.experienceLevel,
+      salary: `${data.salary.currency} ${data.salary.min} - ${data.salary.max}`,
+      description: data.description,
+      tags: data.requirements.slice(0, 3), // Use first 3 requirements as tags
+    };
 
-  const openCreateModal = () => {
+    setJobs(jobs.map(job => job.id === editingJob.id ? updatedJob : job));
     setEditingJob(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (job: Job) => {
-    setEditingJob(job);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
     setIsModalOpen(false);
-    setEditingJob(null);
+    toast({
+      title: "Job Updated",
+      description: "Job opening updated successfully",
+    });
   };
 
-  const getStatusVariant = (status: string) => {
-    return status === 'Active' ? 'default' : 'secondary';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Active': return 'bg-green-50 text-green-600 border-green-200';
+      case 'Inactive': return 'bg-gray-50 text-gray-600 border-gray-200';
+      case 'Draft': return 'bg-yellow-50 text-yellow-600 border-yellow-200';
+      default: return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+      case 'high': return 'text-red-600 bg-red-50';
+      case 'medium': return 'text-yellow-600 bg-yellow-50';
+      case 'low': return 'text-green-600 bg-green-50';
+      default: return 'text-gray-600 bg-gray-50';
     }
   };
 
-  const JobSkeleton = () => (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-32" />
+  const JobCard = ({ job }: { job: Job }) => (
+    <Card className="hover:shadow-lg transition-all duration-200 group">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3 flex-1">
+            <Checkbox
+              checked={selectedJobs.includes(job.id)}
+              onCheckedChange={(checked) => handleSelectJob(job.id, checked as boolean)}
+              className="mt-1"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <CardTitle className="text-lg">{job.title}</CardTitle>
+                <Badge variant="outline" className={getStatusColor(job.status)}>
+                  {job.status}
+                </Badge>
+                <Badge variant="secondary" className={getPriorityColor(job.priority!)}>
+                  {job.priority}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {job.location}
+                </span>
+                <span>{job.department}</span>
+                <span>{job.type}</span>
+                {job.remote && (
+                  <Badge variant="outline" className="text-xs">
+                    Remote
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
-          <Skeleton className="h-6 w-16" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleJobClick(job.id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Candidates
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setEditingJob(job)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Job
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleViewAnalytics(job.id)}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Analytics
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center">
-          <div className="flex gap-6">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-20" />
+
+      <CardContent className="pt-0">
+        <div className="space-y-4">
+          {/* Job Details */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span>{job.experience}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span>{job.salary}</span>
+            </div>
           </div>
-          <Skeleton className="h-6 w-12" />
+
+          {/* Tags */}
+          {job.tags && job.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {job.tags.map((tag, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 pt-3 border-t">
+            <div className="text-center">
+              <p className="text-lg font-semibold text-blue-600">{job.applicants}</p>
+              <p className="text-xs text-muted-foreground">Applicants</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-green-600">{job.shortlisted}</p>
+              <p className="text-xs text-muted-foreground">Shortlisted</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-purple-600">{job.interviewed}</p>
+              <p className="text-xs text-muted-foreground">Interviewed</p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-3">
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => handleJobClick(job.id)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              View Candidates
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleViewAnalytics(job.id)}
+            >
+              <BarChart3 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -197,35 +530,12 @@ const JobOpenings: React.FC = () => {
             Create Job Opening
           </Button>
         </PageHeader>
-
-        <div className="grid gap-4">
-          {[...Array(5)].map((_, i) => (
-            <JobSkeleton key={i} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="h-48 w-full" />
+            </div>
           ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error && jobs.length === 0) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Job Openings"
-          subtitle="Manage and track open positions"
-        >
-          <Button onClick={openCreateModal}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Job Opening
-          </Button>
-        </PageHeader>
-
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <p className="text-muted-foreground">Failed to load job openings</p>
-          <Button onClick={() => loadJobs()} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
         </div>
       </div>
     );
@@ -235,119 +545,159 @@ const JobOpenings: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Job Openings"
-        subtitle={`${jobs.length} position${jobs.length !== 1 ? 's' : ''} available`}
+        subtitle="Manage and track open positions"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => loadJobs(true)}
-            disabled={refreshing}
+            onClick={() => document.getElementById('file-upload')?.click()}
           >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Job Description
+          </Button>
+          <input
+            id="file-upload"
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button variant="outline" onClick={() => loadJobs(true)} disabled={refreshing}>
             <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
             Refresh
           </Button>
-          <Button onClick={openCreateModal}>
+          <Button onClick={() => setIsModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Create Job Opening
           </Button>
         </div>
       </PageHeader>
 
-      <ScrollArea className="h-[calc(100vh-8rem)]">
-        <div className="grid gap-4">
-          {jobs.map((job) => (
-            <Card
-              key={job.id}
-              className="cursor-pointer hover:bg-accent/5 transition-colors"
-            >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div
-                    className="flex-1"
-                    onClick={() => handleJobClick(job.id)}
-                  >
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {job.title}
-                      {job.priority && (
-                        <span className={cn("text-sm font-normal", getPriorityColor(job.priority))}>
-                          ({job.priority} priority)
-                        </span>
-                      )}
-                    </CardTitle>
-                    <CardDescription>{job.department} • {job.location}</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={getStatusVariant(job.status)}>
-                      {job.status}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleJobClick(job.id)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Pipeline
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditModal(job)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Edit Job
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-6 text-sm text-muted-foreground">
-                    <span>{job.applicants || 0} applicants</span>
-                    <span>{job.shortlisted || 0} shortlisted</span>
-                    <span>{job.interviewed || 0} interviewed</span>
-                    <span>{job.type}</span>
-                    <span>{job.experience}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {job.status === 'Active' ? 'Active' : 'Inactive'}
-                    </span>
-                    <Switch
-                      checked={job.status === 'Active'}
-                      onCheckedChange={() => handleStatusToggle(job.id, job.status)}
-                    />
-                  </div>
-                </div>
-                {job.salary && (
-                  <div className="mt-2 text-sm font-medium">
-                    {job.salary}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+      {/* Search and Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground transform -translate-y-1/2" />
+          <Input
+            placeholder="Search jobs, departments, locations..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-          {jobs.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No job openings found</p>
-              <Button onClick={openCreateModal}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Job Opening
+        <div className="flex items-center gap-2">
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            All ({jobs.length})
+          </Button>
+          <Button
+            variant={statusFilter === 'active' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('active')}
+          >
+            Active ({jobs.filter(j => j.status === 'Active').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('inactive')}
+          >
+            Inactive ({jobs.filter(j => j.status === 'Inactive').length})
+          </Button>
+          <Button
+            variant={statusFilter === 'draft' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter('draft')}
+          >
+            Draft ({jobs.filter(j => j.status === 'Draft').length})
+          </Button>
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      {selectedJobs.length > 0 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedJobs.length === filteredJobs.length}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm font-medium">
+                {selectedJobs.length} job{selectedJobs.length !== 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('activate')}
+              >
+                Activate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('deactivate')}
+              >
+                Deactivate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:bg-red-50"
+                onClick={() => handleBulkAction('delete')}
+              >
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedJobs([])}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          )}
-        </div>
-      </ScrollArea>
+          </div>
+        </Card>
+      )}
 
-      <JobModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onSubmit={editingJob ? handleEditJob : handleCreateJob}
-        initialData={editingJob}
-        mode={editingJob ? 'edit' : 'create'}
-      />
+      {/* Jobs Grid */}
+      {filteredJobs.length === 0 ? (
+        <div className="text-center py-12">
+          <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No job openings found</h3>
+          <p className="text-muted-foreground mb-6">
+            {searchQuery || statusFilter !== 'all'
+              ? "Try adjusting your search or filters"
+              : "Create your first job opening to get started"}
+          </p>
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Job Opening
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredJobs.map((job) => (
+            <JobCard key={job.id} job={job} />
+          ))}
+        </div>
+      )}
+
+      {/* Job Modal */}
+      {isModalOpen && (
+        <JobModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          initialData={editingJob}
+          onSubmit={editingJob ? handleEditJob : handleCreateJob}
+          mode={editingJob ? 'edit' : 'create'}
+        />
+      )}
     </div>
   );
 };

@@ -11,7 +11,9 @@ import {
   Users,
   FileCheck,
   UserCheck,
-  GitCompare
+  GitCompare,
+  LogOut,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +30,16 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRecruitment } from "@/contexts/RecruitmentContext";
 
@@ -60,17 +72,17 @@ const menuGroups: MenuGroup[] = [
         title: "Job Openings",
         path: "/job-openings",
         icon: <Briefcase size={18} />
-      },
-      {
-        title: "Recruitment Pipeline",
-        path: "/applied",
-        icon: <Users size={18} />
       }
     ]
   },
   {
-    label: "Interview",
+    label: "Recruitment",
     items: [
+      {
+        title: "Recruitment Pipeline",
+        path: "/applied",
+        icon: <Users size={18} />
+      },
       {
         title: "Interview Lobby",
         path: "/interview",
@@ -79,7 +91,7 @@ const menuGroups: MenuGroup[] = [
     ]
   },
   {
-    label: "Settings",
+    label: "Administration",
     items: [
       {
         title: "Admin & Config",
@@ -90,22 +102,50 @@ const menuGroups: MenuGroup[] = [
   }
 ];
 
+// Mock user data - would come from auth context
+const currentUser = {
+  name: "John Doe",
+  email: "john.doe@hiremau.com",
+  role: "HR Manager",
+  avatar: null,
+  initials: "JD"
+};
+
 export function AppSidebar() {
   const location = useLocation();
   const { state, setOpen } = useSidebar();
   const { setCurrentStage } = useRecruitment();
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const isActive = (path: string) => {
+    if (path === "/applied") {
+      // Special case for recruitment pipeline - match any pipeline stage
+      return ['/applied', '/screened', '/interviewed', '/final-review', '/shortlisted'].some(
+        stagePath => location.pathname.startsWith(stagePath)
+      );
+    }
+    return location.pathname.startsWith(path);
+  };
 
   const handleNavigation = (path: string) => {
     if (path === '/interview') {
       setCurrentStage('interviewed');
     }
+    // Close sidebar on mobile after navigation
+    if (state === "expanded" && window.innerWidth < 768) {
+      setOpen(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Add logout logic here
+    console.log("Logout clicked");
   };
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="shrink-0 border-r">
       <SidebarRail className="shrink-0" />
+
+      {/* Header with Logo */}
       <SidebarHeader className="border-b shrink-0">
         <div className={cn(
           "flex items-center transition-all duration-200 ease-in-out",
@@ -113,12 +153,12 @@ export function AppSidebar() {
         )}>
           <div
             className={cn(
-              "flex items-center gap-1 transition-all duration-200 ease-in-out cursor-pointer",
+              "flex items-center gap-2 transition-all duration-200 ease-in-out cursor-pointer",
               state === "expanded" ? "w-full" : ""
             )}
             onClick={() => state === "collapsed" && setOpen(true)}
           >
-            <div className="h-9 w-9 shrink-0">
+            <div className="h-8 w-8 shrink-0">
               <img
                 src="/icon.png"
                 alt="HireMau Logo"
@@ -126,7 +166,7 @@ export function AppSidebar() {
               />
             </div>
             {state === "expanded" && (
-              <span className="text-lg font-semibold tracking-tight" style={{ fontFamily: 'Arial, sans-serif', color: '#e0362e' }}>
+              <span className="text-lg font-semibold tracking-tight text-primary">
                 HireMau
               </span>
             )}
@@ -134,15 +174,15 @@ export function AppSidebar() {
           {state === "expanded" && (
             <SidebarTrigger
               className="h-7 w-7 hover:bg-muted/80 transition-colors duration-200 rounded-md flex items-center justify-center text-muted-foreground/60 shrink-0"
-              tooltip="Collapse Sidebar"
             />
           )}
         </div>
       </SidebarHeader>
 
+      {/* Navigation Content */}
       <SidebarContent
         className={cn(
-          "px-3 overflow-y-auto",
+          "px-3 overflow-y-auto flex-1",
           state === "collapsed" && "hover:cursor-pointer group"
         )}
         onClick={() => state === "collapsed" && setOpen(true)}
@@ -152,6 +192,7 @@ export function AppSidebar() {
             Click to expand sidebar
           </div>
         )}
+
         {menuGroups.map((group) => (
           <SidebarGroup key={group.label} className={cn(
             state === "collapsed" && "!p-0"
@@ -177,17 +218,15 @@ export function AppSidebar() {
                       <NavLink
                         to={item.path}
                         onClick={() => handleNavigation(item.path)}
-                        className={({ isActive }) =>
-                          cn(
-                            "flex items-center rounded-md transition-colors duration-200",
-                            state === "expanded"
-                              ? "px-2 gap-3 min-w-0"
-                              : "h-10 w-10 justify-center",
-                            "hover:bg-muted/50",
-                            isActive && "bg-muted font-medium text-foreground",
-                            !isActive && "text-muted-foreground"
-                          )
-                        }
+                        className={cn(
+                          "flex items-center rounded-md transition-colors duration-200",
+                          state === "expanded"
+                            ? "px-2 gap-3 min-w-0"
+                            : "h-10 w-10 justify-center",
+                          "hover:bg-muted/50",
+                          isActive(item.path) && "bg-muted font-medium text-foreground",
+                          !isActive(item.path) && "text-muted-foreground"
+                        )}
                       >
                         {item.icon}
                         {state === "expanded" && (
@@ -203,20 +242,99 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
+      {/* User Info Footer */}
       <SidebarFooter className="border-t shrink-0">
         <div className={cn(
-          "flex items-center transition-all duration-200 ease-in-out",
-          state === "expanded" ? "px-6 py-4" : "p-2 justify-center"
+          "transition-all duration-200 ease-in-out",
+          state === "expanded" ? "p-4" : "p-2"
         )}>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-muted/50" />
-            {state === "expanded" && (
-              <div className="min-w-0">
-                <div className="truncate text-sm font-medium">John Doe</div>
-                <div className="truncate text-xs text-muted-foreground">john@example.com</div>
-              </div>
-            )}
-          </div>
+          {state === "expanded" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-auto p-2 hover:bg-muted/50"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {currentUser.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="text-sm font-medium truncate w-full">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate w-full">
+                      {currentUser.email}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{currentUser.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser.role}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10"
+                  tooltip={`${currentUser.name} - ${currentUser.role}`}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {currentUser.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{currentUser.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser.role}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>
