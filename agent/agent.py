@@ -27,7 +27,7 @@ USER_ID = "user_hackatt"
 SESSION_ID = "session_1"
 
 add_candidate_agent = SequentialAgent(
-    name="add_agent",
+    name="add_candidate_agent",
     sub_agents=[candidate_agent, source_agent, synthesizer_agent],
 )
 
