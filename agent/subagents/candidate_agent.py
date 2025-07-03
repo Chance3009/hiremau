@@ -61,7 +61,7 @@ def get_database_info() -> str:
 
 candidate_agent = Agent(
     name="candidate_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description="RAG agent that retrieves raw document chunks about candidates or applicants and processes them using its own reasoning capabilities.",
     instruction="""
     You are an intelligent RAG agent tool specialized in candidate and applicants information. You have access to a knowledge base containing relevant documents.

@@ -4,7 +4,7 @@ from .candidate_agent import candidate_agent
 
 evaluation_agent = Agent(
     name="evaluation_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description="Synthesizes and structures candidate information from multiple data sources (resume, certificates, LinkedIn, GitHub, personal website, interview transcripts) into comprehensive, searchable profiles optimized for RAG systems. Processes raw textual data and outputs standardized, structured candidate profiles with cross-source validation and quality assurance.",
     instruction="""
     You are an evaluation agent designed to synthesize candidate information from multiple data sources into a comprehensive profile for RAG systems.
@@ -80,5 +80,5 @@ evaluation_agent = Agent(
     - Provide confidence scores for assessments
     - Write the complete candidate profile as coherent, well-structured natural language text that can be effectively chunked and embedded for semantic search.
     """,
-    tools=AgentTool[candidate_agent],
+    tools=[AgentTool(candidate_agent)],
 )

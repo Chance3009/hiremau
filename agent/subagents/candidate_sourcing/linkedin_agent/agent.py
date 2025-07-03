@@ -8,6 +8,15 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioServerParameters
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
+api_token = os.getenv("API_TOKEN")
+web_unlocker_zone = os.getenv("WEB_UNLOCKER_ZONE")
+
+print("API_TOKEN:", api_token)
+print("WEB_UNLOCKER_ZONE:", web_unlocker_zone)
+
 # Initialize BrightData MCP tools for LinkedIn
 mcp_tools = MCPToolset(
     connection_params=StdioServerParameters(
@@ -23,7 +32,7 @@ mcp_tools = MCPToolset(
 # LinkedIn Information Agent
 linkedin_agent = LlmAgent(
     name="LinkedInAgent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     instruction="""STOP! READ THIS CAREFULLY!
 
 You are FORBIDDEN from providing ANY LinkedIn data without calling the web_data_linkedin_person_profile tool first.

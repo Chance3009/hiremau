@@ -62,7 +62,7 @@ def get_database_info() -> str:
 # Define the agent
 company_agent = Agent(
     name="company_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description="RAG agent that retrieves raw document chunks about company information and job openings and processes them using its own reasoning capabilities.",
     instruction="""
     You are an intelligent RAG agent tool specialized in job openings and employment information. You have access to a knowledge base containing relevant documents.

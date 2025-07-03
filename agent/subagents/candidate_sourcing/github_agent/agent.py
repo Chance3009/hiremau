@@ -10,7 +10,7 @@ from .tools import get_github_info
 # GitHub Information Agent
 github_agent = LlmAgent(
     name="GitHubAgent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     instruction="""STOP! READ THIS CAREFULLY!
 
 You are FORBIDDEN from providing ANY GitHub data without calling the get_github_info tool first.

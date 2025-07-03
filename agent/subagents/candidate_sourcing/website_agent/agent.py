@@ -23,7 +23,7 @@ mcp_tools = MCPToolset(
 # Website Information Agent
 website_agent = LlmAgent(
     name="WebsiteAgent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     instruction="""STOP! READ THIS CAREFULLY!
 
 You are FORBIDDEN from providing ANY website data without calling the scrape_as_markdown tool first.

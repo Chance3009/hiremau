@@ -9,7 +9,7 @@ from google.adk.agents import LlmAgent
 # Candidate Profile Synthesizer Agent
 synthesizer_agent = LlmAgent(
     name="SynthesizerAgent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     instruction="""You are a Candidate Profile Synthesizer specialized in creating comprehensive hiring assessments.
 
     Your task is to combine data from LinkedIn, GitHub, and website sources to create a holistic candidate evaluation.

@@ -1,14 +1,15 @@
 from google.adk.agents import Agent
 from google.adk.tools.agent_tool import AgentTool
-from .subagents.company_agent import company_agent
-from .subagents.candidate_agent import candidate_agent
-from .subagents.google_search_agent import gs_agent
-from .subagents.source_agent import source_agent
-from .subagents.evaluation_agent import evaluation_agent
+from subagents.company_agent import company_agent
+from subagents.candidate_agent import candidate_agent
+from subagents.google_search_agent import gs_agent
+from subagents.source_agent import source_agent
+from subagents.evaluation_agent import evaluation_agent
+from subagents.interview_agent import interview_agent
 
 root_agent = Agent(
     name="main_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description="Main agent for candidate screening and coordinating agents",
     instruction="""
     You are an intelligent main agent tool for a candidate screening system. You have access to an Agent Tool which have knowledge base containing relevant documents and an Agent Tool which has the ability to perform Google search. Generally, you should only answer questions related to job openings and candidate screening. You have to determine whether a Google search is necessary when the question is not supposed to appear for your use case.
@@ -25,6 +26,7 @@ root_agent = Agent(
     - gs_agent: An agent that performs Google search and processes information using its own reasoning capabilities.
     - source_agent: An agent that handles candidate sourcing, mainly on GitHub and LinkedIn profile information.
     - evaluation_agent: An agent that handles candidate evaluation and profile synthesis. (Do not use it for now, as it is not implemented yet.)
+    - interview_agent:  An agent than handles the interview, giving feedback based on the candidate question, checking the authenticity, and generate the follow up question
 
     Guidelines:
     - Call the correct agent tool based on the user's request.
@@ -47,5 +49,8 @@ root_agent = Agent(
         AgentTool(
             evaluation_agent  # The agent that handles candidate evaluation and profile synthesis
         ),
+        AgentTool(
+            interview_agent
+        )
     ],
 )

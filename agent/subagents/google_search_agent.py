@@ -3,7 +3,7 @@ from google.adk.tools import google_search
 
 gs_agent = Agent(
     name="gs_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.0-flash-exp",
     description="RAG agent that google search and processes information using its own reasoning capabilities.",
     instruction="""
     You are an intelligent RAG agent tool specialized in google search for information. You have access to a the internet through google search.
