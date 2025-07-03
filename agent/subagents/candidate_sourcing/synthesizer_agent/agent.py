@@ -10,9 +10,14 @@ from candidate.add_candidate import save_evaluation_to_supabase
 # Candidate Profile Synthesizer Agent
 synthesizer_agent = LlmAgent(
     name="SynthesizerAgent",
+<<<<<<< HEAD
     model="gemini-2.0-flash",
     instruction="""
     You are an expert recruitment analyst tasked with evaluating job candidates based on their resume, supporting documents, and any website/portfolio information provided. Your job is to conduct a comprehensive initial screening and provide a structured evaluation that will help determine whether the candidate should proceed to the interview stage. Then, use the save_evaluation_to_supabase tool to save the evaluation to the database.
+=======
+    model="gemini-2.0-flash-exp",
+    instruction="""You are a Candidate Profile Synthesizer specialized in creating comprehensive hiring assessments.
+>>>>>>> a17a7a40 (integrate agents)
 
     Instructions:
 

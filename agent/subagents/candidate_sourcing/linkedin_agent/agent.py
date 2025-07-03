@@ -10,6 +10,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from dotenv import load_dotenv
+load_dotenv()
+
 api_token = os.getenv("API_TOKEN")
 web_unlocker_zone = os.getenv("WEB_UNLOCKER_ZONE")
 
@@ -31,6 +34,7 @@ mcp_tools = MCPToolset(
 # LinkedIn Information Agent
 linkedin_agent = LlmAgent(
     name="LinkedInAgent",
+    model="gemini-2.0-flash-exp",
     model="gemini-2.0-flash-exp",
     instruction="""STOP! READ THIS CAREFULLY!
 
