@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-chromadb
-google-cloud-firestore
-google-cloud-storage
-python-dotenv
-google-generativeai 
