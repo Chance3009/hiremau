@@ -80,5 +80,5 @@ evaluation_agent = Agent(
     - Provide confidence scores for assessments
     - Write the complete candidate profile as coherent, well-structured natural language text that can be effectively chunked and embedded for semantic search.
     """,
-    tools=AgentTool[candidate_agent],
+    tools=[AgentTool(candidate_agent)],
 )
