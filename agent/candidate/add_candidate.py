@@ -144,3 +144,89 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
     except Exception as e:
         logger.error(f"Exception during download or processing: {e}")
         return {'error': str(e)}
+
+def save_evaluation_to_supabase(
+    candidate_id: str,
+    candidate_name: str,
+    position_applied: str,
+    resume_summary: str,
+    years_of_experience: float,
+    education_background: str,
+    career_progression: str,
+    technical_skills: str,
+    software_proficiency: str,
+    industry_knowledge: str,
+    soft_skills_claimed: str,
+    certifications: str,
+    technical_competency_assessment: str,
+    experience_relevance: str,
+    communication_assessment: str,
+    standout_qualities: str,
+    potential_concerns: str,
+    strengths: str,
+    weaknesses: str,
+    red_flags: str,
+    growth_potential: str,
+    cultural_fit_indicators: str,
+    missing_required_skills: str,
+    transferable_skills: str,
+    learning_curve_assessment: str,
+    recommendation: str,
+    recommendation_reasoning: str,
+    interview_focus_areas: str
+) -> dict:
+    """
+    Save candidate evaluation data to the initial_screening_evaluation table in Supabase.
+    
+    Returns:
+        dict: Result of the operation with status and any error messages
+    """
+    try:
+        # Create the evaluation data dictionary from individual arguments
+        evaluation_data = {
+            "candidate_id": candidate_id,
+            "candidate_name": candidate_name,
+            "position_applied": position_applied,
+            "resume_summary": resume_summary,
+            "years_of_experience": years_of_experience,
+            "education_background": education_background,
+            "career_progression": career_progression,
+            "technical_skills": technical_skills,
+            "software_proficiency": software_proficiency,
+            "industry_knowledge": industry_knowledge,
+            "soft_skills_claimed": soft_skills_claimed,
+            "certifications": certifications,
+            "technical_competency_assessment": technical_competency_assessment,
+            "experience_relevance": experience_relevance,
+            "communication_assessment": communication_assessment,
+            "standout_qualities": standout_qualities,
+            "potential_concerns": potential_concerns,
+            "strengths": strengths,
+            "weaknesses": weaknesses,
+            "red_flags": red_flags,
+            "growth_potential": growth_potential,
+            "cultural_fit_indicators": cultural_fit_indicators,
+            "missing_required_skills": missing_required_skills,
+            "transferable_skills": transferable_skills,
+            "learning_curve_assessment": learning_curve_assessment,
+            "recommendation": recommendation,
+            "recommendation_reasoning": recommendation_reasoning,
+            "interview_focus_areas": interview_focus_areas
+        }
+        
+        # Insert the evaluation data into the initial_screening_evaluation table
+        result = supabase.table('initial_screening_evaluation').insert(evaluation_data).execute()
+        
+        logger.info(f"Successfully saved evaluation for candidate: {candidate_name}")
+        return {
+            'status': 'success',
+            'message': f"Evaluation saved for candidate {candidate_name}",
+            'data': result.data
+        }
+    except Exception as e:
+        logger.error(f"Error saving evaluation to Supabase: {e}")
+        return {
+            'status': 'error',
+            'message': f"Failed to save evaluation: {str(e)}"
+        }
+
