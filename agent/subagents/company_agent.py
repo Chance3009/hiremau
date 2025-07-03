@@ -1,4 +1,8 @@
 from google.adk.agents import Agent
+<<<<<<< HEAD
+=======
+from agent.company_rag.rag import similarity_search
+>>>>>>> e1b02efd (updated rab with supabase)
 
 def search_knowledge_base(query: str) -> str:
     """

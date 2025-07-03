@@ -1,6 +1,11 @@
 from google.adk.agents import Agent
+<<<<<<< HEAD
 
 
+=======
+from agent.candidate_rag.rag import similarity_search
+
+>>>>>>> e1b02efd (updated rab with supabase)
 def search_knowledge_base(query: str) -> str:
     """
     Search the knowledge base and return raw chunks for the agent to analyze.
@@ -15,20 +20,27 @@ def search_knowledge_base(query: str) -> str:
         if not documents:
             return "No relevant information found in the knowledge base."
         chunks = []
+<<<<<<< HEAD
         chunks.append(
             f"Search Results for: '{query}'\nFound {len(documents)} relevant chunks:\n")
+=======
+        chunks.append(f"Search Results for: '{query}'\nFound {len(documents)} relevant chunks:\n")
+>>>>>>> e1b02efd (updated rab with supabase)
         for i, doc in enumerate(documents, 1):
             chunks.append(f"Result {i}:\n{doc}")
         return "\n\n" + "="*50 + "\n\n".join(chunks)
     except Exception as e:
         return f"Error searching knowledge base: {str(e)}"
 
+<<<<<<< HEAD
 
 def add_candidate_document(name: str, url: str, uuid: str) -> dict:
     from candidate.add_candidate import add_candidate_document
     return add_candidate_document(name, url, uuid_str=uuid)
 
 
+=======
+>>>>>>> e1b02efd (updated rab with supabase)
 candidate_agent = Agent(
     name="candidate_agent",
     model="gemini-2.0-flash",
@@ -48,7 +60,10 @@ candidate_agent = Agent(
 
     Available tools:
     - search_knowledge_base: Tool for general queries 
+<<<<<<< HEAD
     - add_candidate_document: Tool for adding candidate documents to the database
+=======
+>>>>>>> e1b02efd (updated rab with supabase)
 
     Guidelines:
     - Be clear on what the main agent is asking you to do.
@@ -59,6 +74,9 @@ candidate_agent = Agent(
     """,
     tools=[
         search_knowledge_base,     # Search tool
+<<<<<<< HEAD
         add_candidate_document,    # Add candidate document tool
+=======
+>>>>>>> e1b02efd (updated rab with supabase)
     ],
 )
