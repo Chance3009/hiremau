@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import Layout from '@/components/layout/Layout';
 import Interview from '@/pages/Interview';
 import InterviewLobby from '@/pages/InterviewLobby';
+import InterviewScheduling from '@/pages/InterviewScheduling';
 import InterviewReport from '@/pages/InterviewReport';
 import CandidateIntake from '@/pages/CandidateIntake';
 import AppliedCandidates from '@/pages/AppliedCandidates';
@@ -56,9 +57,12 @@ function App() {
                     <Route path="interview">
                       <Route index element={<InterviewLobby />} />
                       <Route path="new" element={<Interview />} />
+                      <Route path="schedule" element={<InterviewScheduling />} />
                       <Route path=":id" element={<Interview />} />
                       <Route path=":id/report" element={<InterviewReport />} />
                     </Route>
+                    <Route path="interview-lobby" element={<InterviewLobby />} />
+                    <Route path="interviews/schedule" element={<InterviewScheduling />} />
                     <Route path="final-review" element={<FinalReview />} />
                     <Route path="shortlisted" element={<ShortlistedCandidates />} />
                     <Route path="candidate/:id" element={<CandidateView />} />

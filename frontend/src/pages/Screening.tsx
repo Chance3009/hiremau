@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Search, Filter, CalendarDays, Users, Star, Brain, MapPin, Building, UserCheck, VideoIcon, Bot, Mail, Phone, Plus, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Search, Filter, CalendarDays, Users, Star, Brain, MapPin, Building, UserCheck, VideoIcon, Bot, Mail, Phone, Plus, RefreshCw, Check, X, ChevronRight, LayoutGrid, List, Eye, Building2, GraduationCap, Briefcase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,6 +17,10 @@ import { useCandidateFiltering } from '@/hooks/useCandidateFiltering';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
 import { fetchEvents } from '@/services/eventService';
 import { toast } from '@/components/ui/use-toast';
+import { performCandidateAction } from '@/services/candidateService';
+import { getCurrentStage, getStageLabel, getStageColor, getAvailableActions, getActionLabel } from '@/lib/workflow';
+import type { WorkflowAction } from '@/lib/workflow';
+import { Progress } from "@/components/ui/progress";
 
 // Mock current user
 const currentUser = {

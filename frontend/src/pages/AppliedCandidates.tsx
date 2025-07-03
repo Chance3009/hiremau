@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle, Upload, ClipboardPaste, ArrowLeft, Download, Copy, MessageSquare } from 'lucide-react';
+import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle, Upload, ClipboardPaste, ArrowLeft, Download, Copy, MessageSquare, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -248,7 +248,7 @@ const AIInsightCard = ({ analysis, detailLevel }: { analysis: AIAnalysis; detail
     );
 };
 
-const CandidateCard = ({ candidate, onAction, detailLevel }) => {
+const CandidateCard = ({ candidate, onAction, detailLevel, isSelected, onSelect }) => {
     const [showDetails, setShowDetails] = useState(false);
     const navigate = useNavigate();
 
@@ -341,6 +341,17 @@ const CandidateCard = ({ candidate, onAction, detailLevel }) => {
 
     return (
         <Card className="relative hover:shadow-md transition-shadow">
+            {onSelect && (
+                <div className="absolute top-4 right-4 z-10">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onSelect(candidate.id)}
+                        className="rounded border-gray-300"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
             <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                     <div className="space-y-1">
@@ -405,7 +416,7 @@ const CandidateCard = ({ candidate, onAction, detailLevel }) => {
     );
 };
 
-const CandidateList = ({ candidates, onAction }) => {
+const CandidateList = ({ candidates, onAction, selectedCandidates, onSelectCandidate }) => {
     const navigate = useNavigate();
 
     return (
@@ -413,6 +424,7 @@ const CandidateList = ({ candidates, onAction }) => {
             <Table>
                 <TableHeader>
                     <TableRow>
+                        {onSelectCandidate && <TableHead className="w-12">Select</TableHead>}
                         <TableHead>Name</TableHead>
                         <TableHead>Position</TableHead>
                         <TableHead>Fit Score</TableHead>
@@ -428,6 +440,16 @@ const CandidateList = ({ candidates, onAction }) => {
                             key={candidate.id}
                             className="group relative"
                         >
+                            {onSelectCandidate && (
+                                <TableCell>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCandidates?.includes(candidate.id)}
+                                        onChange={() => onSelectCandidate(candidate.id)}
+                                        className="rounded border-gray-300"
+                                    />
+                                </TableCell>
+                            )}
                             <TableCell className="relative">
                                 <HoverCard>
                                     <HoverCardTrigger asChild>
@@ -577,6 +599,8 @@ const AppliedCandidates = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState('date');
     const [detailLevel, setDetailLevel] = useState<DetailLevel>('minimal');
+    const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+    const [bulkAction, setBulkAction] = useState<string>('');
     const navigate = useNavigate();
     const { activePositionId } = useRecruitment();
 
@@ -611,6 +635,47 @@ const AppliedCandidates = () => {
                 description: err.message || `Failed to perform action: ${action}`,
                 variant: "destructive",
             });
+        }
+    };
+
+    const handleBulkAction = async () => {
+        if (!bulkAction || selectedCandidates.length === 0) return;
+
+        try {
+            await Promise.all(
+                selectedCandidates.map(candidateId =>
+                    performCandidateAction(candidateId, bulkAction as WorkflowAction, 'user', `Bulk action: ${bulkAction}`)
+                )
+            );
+            toast({
+                title: "Success",
+                description: `${selectedCandidates.length} candidate(s) ${getActionLabel(bulkAction as WorkflowAction).toLowerCase()} successfully`,
+            });
+            setSelectedCandidates([]);
+            setBulkAction('');
+            refreshCandidates();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to perform bulk action",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleSelectCandidate = (candidateId: string) => {
+        setSelectedCandidates(prev =>
+            prev.includes(candidateId)
+                ? prev.filter(id => id !== candidateId)
+                : [...prev, candidateId]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (selectedCandidates.length === candidates.length) {
+            setSelectedCandidates([]);
+        } else {
+            setSelectedCandidates(candidates.map(c => c.id));
         }
     };
 
@@ -650,8 +715,58 @@ const AppliedCandidates = () => {
                 </div>
             </PageHeader>
 
+            {/* Bulk Actions Bar */}
+            {selectedCandidates.length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-medium">
+                                    {selectedCandidates.length} candidate(s) selected
+                                </span>
+                                <Select value={bulkAction} onValueChange={setBulkAction}>
+                                    <SelectTrigger className="w-[200px] bg-white">
+                                        <SelectValue placeholder="Select action" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="shortlist">Move to Screening</SelectItem>
+                                        <SelectItem value="reject">Reject All</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    onClick={handleBulkAction}
+                                    disabled={!bulkAction}
+                                    size="sm"
+                                >
+                                    Apply Action
+                                </Button>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedCandidates([])}
+                            >
+                                Clear Selection
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="flex justify-between items-center gap-4">
                 <div className="flex gap-4">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="select-all"
+                            checked={selectedCandidates.length === candidates.length && candidates.length > 0}
+                            onChange={handleSelectAll}
+                            className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="select-all" className="text-sm">
+                            Select All ({candidates.length})
+                        </Label>
+                    </div>
                     <div className="w-[200px]">
                         <Label htmlFor="sort">Sort By</Label>
                         <Select value={sortBy} onValueChange={setSortBy}>
@@ -730,22 +845,70 @@ const AppliedCandidates = () => {
                 </div>
             </div>
 
-            {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {candidates.map(candidate => (
-                        <CandidateCard
-                            key={candidate.id}
-                            candidate={candidate}
-                            variant="full"
-                            onAction={handleCandidateAction}
-                        />
-                    ))}
+            {/* Loading state */}
+            {loading && (
+                <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                    <span>Loading candidates...</span>
                 </div>
-            ) : (
-                <CandidateList
-                    candidates={candidates}
-                    onAction={handleCandidateAction}
-                />
+            )}
+
+            {/* Error state */}
+            {error && (
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="text-center">
+                            <p className="text-destructive mb-4">{error}</p>
+                            <Button onClick={refreshCandidates} variant="outline">
+                                Try Again
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Empty state */}
+            {!loading && !error && candidates.length === 0 && (
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="text-center">
+                            <p className="text-muted-foreground mb-4">
+                                {activeFilters.positionId
+                                    ? 'No applied candidates found for the selected position.'
+                                    : 'No applied candidates found. Add candidates to get started.'
+                                }
+                            </p>
+                            <RegisterDialog />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Candidates grid/list */}
+            {!loading && !error && candidates.length > 0 && (
+                <>
+                    {viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {candidates.map(candidate => (
+                                <CandidateCard
+                                    key={candidate.id}
+                                    candidate={candidate}
+                                    detailLevel={detailLevel}
+                                    onAction={handleCandidateAction}
+                                    isSelected={selectedCandidates.includes(candidate.id)}
+                                    onSelect={handleSelectCandidate}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <CandidateList
+                            candidates={candidates}
+                            onAction={handleCandidateAction}
+                            selectedCandidates={selectedCandidates}
+                            onSelectCandidate={handleSelectCandidate}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

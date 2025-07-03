@@ -1,741 +1,1028 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  ChevronLeft, Bot, MessageSquare, ThumbsUp, ThumbsDown,
-  Clock, User, AlertCircle, ChevronRight, Info, Plus, Mic, MicOff, RefreshCw,
-  Pencil, Check, X
-} from 'lucide-react';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Play,
+  Pause,
+  Square,
+  Clock,
+  User,
+  Brain,
+  Star,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  MessageSquare,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Share,
+  Save,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Plus,
+  Minus,
+  Eye,
+  FileText,
+  Download,
+  Upload,
+  Settings,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+  Phone,
+  Monitor,
+  Users,
+  Calendar,
+  MapPin,
+  Timer,
+  Target,
+  TrendingUp,
+  Award,
+  Zap,
+  Lightbulb,
+  Flag,
+  ThumbsUp,
+  ThumbsDown
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import InterviewAssistant from '@/components/interview/InterviewAssistant';
-import { useRecruitment } from '@/contexts/RecruitmentContext';
-import { Input } from '@/components/ui/input';
-import { PageHeader } from "@/components/ui/page-header";
-import { mockCandidates, mockInterviews } from '@/mocks/interviewData';
-import { Note } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+import { PageHeader } from '@/components/ui/page-header';
 
-// Types for suggested questions
-interface SuggestedQuestion {
+// Enhanced Interview Types
+interface Interview {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  position: string;
+  type: 'phone' | 'video' | 'in-person' | 'technical' | 'behavioral' | 'final';
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled' | 'no-show';
+  scheduledDate: string;
+  scheduledTime: string;
+  duration: number;
+  interviewer: {
+    id: string;
+    name: string;
+    role: string;
+    email: string;
+  };
+  questions: InterviewQuestion[];
+  evaluationCriteria: EvaluationCriterion[];
+  feedback?: InterviewFeedback;
+  aiAnalysis?: AIAnalysis;
+  startTime?: string;
+  endTime?: string;
+  actualDuration?: number;
+}
+
+interface InterviewQuestion {
   id: string;
   question: string;
-  category: string;
-  context: string;
-  tags: string[];
-  aiReason: string;
+  category: 'technical' | 'behavioral' | 'cultural' | 'experience';
+  difficulty: 'easy' | 'medium' | 'hard';
+  timeLimit?: number;
+  expectedAnswer?: string;
+  response?: string;
+  score?: number;
+  notes?: string;
+  timeSpent?: number;
+  skipped?: boolean;
 }
 
-interface MessageAIAnalysis {
-  type: string;
-  summary: string;
-  confidence: number;
-  keyPoints?: string[];
-  resumeMatch?: boolean;
+interface EvaluationCriterion {
+  criterion: string;
+  weight: number;
+  description: string;
+  maxScore: number;
+  currentScore?: number;
 }
 
-interface MessageEvent {
-  id: string;
-  type: 'question' | 'answer';
-  content: string;
-  timestamp: string;
-  category?: string;
-  rating?: number;
-  color?: string;
-  aiAnalysis?: MessageAIAnalysis;
-  quickLabels?: string[];
+interface InterviewFeedback {
+  technicalScore: number;
+  communicationScore: number;
+  culturalFitScore: number;
+  overallScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string;
+  notes: string;
+  decision: 'pass' | 'fail' | 'maybe';
 }
 
-const Interview: React.FC = () => {
+interface AIAnalysis {
+  sentimentAnalysis: {
+    confidence: number;
+    enthusiasm: number;
+    nervousness: number;
+  };
+  keywordExtraction: string[];
+  responseQuality: number;
+  communicationPatterns: {
+    clarity: number;
+    conciseness: number;
+    relevance: number;
+  };
+  redFlags: Array<{
+    type: string;
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+  }>;
+  suggestions: string[];
+}
+
+// Timer Component
+const InterviewTimer = ({
+  isRunning,
+  startTime,
+  duration,
+  onTimeUpdate
+}: {
+  isRunning: boolean;
+  startTime: string | null;
+  duration: number;
+  onTimeUpdate: (elapsed: number) => void;
+}) => {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isRunning && startTime) {
+      interval = setInterval(() => {
+        const now = new Date().getTime();
+        const start = new Date(startTime).getTime();
+        const elapsedMs = now - start;
+        const elapsedMin = Math.floor(elapsedMs / 60000);
+        setElapsed(elapsedMin);
+        onTimeUpdate(elapsedMin);
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, startTime, onTimeUpdate]);
+
+  const remaining = duration - elapsed;
+  const isOvertime = remaining < 0;
+  const progress = Math.min((elapsed / duration) * 100, 100);
+
+  return (
+    <Card className={cn("border-2", isOvertime ? "border-red-200" : "border-green-200")}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Timer className={cn("h-5 w-5", isOvertime ? "text-red-600" : "text-green-600")} />
+            <span className="font-medium">Interview Timer</span>
+          </div>
+          <Badge variant={isOvertime ? "destructive" : "default"}>
+            {isOvertime ? `+${Math.abs(remaining)}min over` : `${remaining}min left`}
+          </Badge>
+        </div>
+        <div className="space-y-2">
+          <Progress
+            value={progress}
+            className={cn("h-2", isOvertime && "bg-red-100")}
+          />
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{elapsed}min elapsed</span>
+            <span>{duration}min scheduled</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Question Component
+const QuestionCard = ({
+  question,
+  index,
+  total,
+  onResponse,
+  onScore,
+  onNext,
+  onPrevious,
+  isActive
+}: {
+  question: InterviewQuestion;
+  index: number;
+  total: number;
+  onResponse: (response: string) => void;
+  onScore: (score: number) => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  isActive: boolean;
+}) => {
+  const [response, setResponse] = useState(question.response || '');
+  const [score, setScore] = useState(question.score || 0);
+  const [notes, setNotes] = useState(question.notes || '');
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'bg-green-100 text-green-700';
+      case 'medium': return 'bg-yellow-100 text-yellow-700';
+      case 'hard': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'technical': return <Monitor className="h-4 w-4" />;
+      case 'behavioral': return <Users className="h-4 w-4" />;
+      case 'cultural': return <Target className="h-4 w-4" />;
+      case 'experience': return <Award className="h-4 w-4" />;
+      default: return <MessageSquare className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <Card className={cn("transition-all", isActive ? "ring-2 ring-primary" : "opacity-75")}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              Question {index + 1} of {total}
+            </Badge>
+            <Badge variant="outline" className={getDifficultyColor(question.difficulty)}>
+              {question.difficulty}
+            </Badge>
+            <div className="flex items-center gap-1">
+              {getCategoryIcon(question.category)}
+              <span className="text-sm text-muted-foreground capitalize">
+                {question.category}
+              </span>
+            </div>
+          </div>
+          {question.timeLimit && (
+            <Badge variant="outline">
+              <Clock className="h-3 w-3 mr-1" />
+              {question.timeLimit}min
+            </Badge>
+          )}
+        </div>
+        <CardTitle className="text-lg leading-relaxed">
+          {question.question}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {question.expectedAnswer && (
+          <div className="bg-blue-50 rounded-lg p-3">
+            <Label className="text-xs font-medium text-blue-700">Expected Answer Framework</Label>
+            <p className="text-sm text-blue-600 mt-1">{question.expectedAnswer}</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="response">Candidate Response</Label>
+          <Textarea
+            id="response"
+            value={response}
+            onChange={(e) => {
+              setResponse(e.target.value);
+              onResponse(e.target.value);
+            }}
+            placeholder="Record the candidate's response here..."
+            className="min-h-[100px]"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="score">Score (0-10)</Label>
+            <div className="flex items-center gap-2">
+              <Select
+                value={score.toString()}
+                onValueChange={(value) => {
+                  const newScore = parseInt(value);
+                  setScore(newScore);
+                  onScore(newScore);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 11 }, (_, i) => (
+                    <SelectItem key={i} value={i.toString()}>
+                      {i}/10 {i >= 8 ? '(Excellent)' : i >= 6 ? '(Good)' : i >= 4 ? '(Average)' : '(Poor)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1">
+                {score >= 8 ? (
+                  <ThumbsUp className="h-4 w-4 text-green-600" />
+                ) : score >= 6 ? (
+                  <Star className="h-4 w-4 text-yellow-600" />
+                ) : score > 0 ? (
+                  <ThumbsDown className="h-4 w-4 text-red-600" />
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional observations..."
+              className="min-h-[40px]"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center pt-2">
+          <Button
+            variant="outline"
+            onClick={onPrevious}
+            disabled={index === 0}
+            size="sm"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setResponse('');
+                setScore(0);
+                setNotes('');
+              }}
+            >
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reset
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+            >
+              <Flag className="h-4 w-4 mr-1" />
+              Flag
+            </Button>
+          </div>
+
+          <Button
+            onClick={onNext}
+            disabled={index === total - 1}
+            size="sm"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// AI Analysis Component
+const AIAnalysisPanel = ({ analysis }: { analysis: AIAnalysis | null }) => {
+  if (!analysis) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">AI analysis will appear here during the interview</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Brain className="h-5 w-5 text-primary" />
+          AI Analysis
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Sentiment Analysis */}
+        <div>
+          <Label className="text-sm font-medium">Sentiment Analysis</Label>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            <div className="text-center">
+              <div className="text-lg font-bold text-green-600">
+                {Math.round(analysis.sentimentAnalysis.confidence)}%
+              </div>
+              <div className="text-xs text-muted-foreground">Confidence</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-blue-600">
+                {Math.round(analysis.sentimentAnalysis.enthusiasm)}%
+              </div>
+              <div className="text-xs text-muted-foreground">Enthusiasm</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-orange-600">
+                {Math.round(analysis.sentimentAnalysis.nervousness)}%
+              </div>
+              <div className="text-xs text-muted-foreground">Nervousness</div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Communication Patterns */}
+        <div>
+          <Label className="text-sm font-medium">Communication Quality</Label>
+          <div className="space-y-2 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Clarity</span>
+              <div className="flex items-center gap-2">
+                <Progress value={analysis.communicationPatterns.clarity} className="w-16 h-2" />
+                <span className="text-sm font-medium">{Math.round(analysis.communicationPatterns.clarity)}%</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Conciseness</span>
+              <div className="flex items-center gap-2">
+                <Progress value={analysis.communicationPatterns.conciseness} className="w-16 h-2" />
+                <span className="text-sm font-medium">{Math.round(analysis.communicationPatterns.conciseness)}%</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Relevance</span>
+              <div className="flex items-center gap-2">
+                <Progress value={analysis.communicationPatterns.relevance} className="w-16 h-2" />
+                <span className="text-sm font-medium">{Math.round(analysis.communicationPatterns.relevance)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Red Flags */}
+        {analysis.redFlags.length > 0 && (
+          <div>
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Potential Concerns
+            </Label>
+            <div className="space-y-2 mt-2">
+              {analysis.redFlags.map((flag, index) => (
+                <div key={index} className="flex items-start gap-2 p-2 bg-red-50 rounded-lg">
+                  <AlertTriangle className={cn(
+                    "h-4 w-4 mt-0.5",
+                    flag.severity === 'high' ? 'text-red-600' :
+                      flag.severity === 'medium' ? 'text-orange-500' :
+                        'text-yellow-500'
+                  )} />
+                  <div>
+                    <div className="text-sm font-medium">{flag.type}</div>
+                    <div className="text-xs text-muted-foreground">{flag.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Suggestions */}
+        {analysis.suggestions.length > 0 && (
+          <div>
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-yellow-500" />
+              AI Suggestions
+            </Label>
+            <div className="space-y-1 mt-2">
+              {analysis.suggestions.map((suggestion, index) => (
+                <div key={index} className="text-sm p-2 bg-blue-50 rounded">
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main Interview Component
+const Interview = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { candidateId } = useParams();
+
+  // Interview State
+  const [interview, setInterview] = useState<Interview | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
-  const [messages, setMessages] = useState<MessageEvent[]>([]);
-  const [quickNote, setQuickNote] = useState('');
-  const [quickNotes, setQuickNotes] = useState<Note[]>([]);
-  const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
-  const [suggestedLabels, setSuggestedLabels] = useState<{ messageId: string; labels: string[] } | null>(null);
-  const [editingLabel, setEditingLabel] = useState<{ messageId: string; labelIndex: number; value: string } | null>(null);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
-  const [questionNote, setQuestionNote] = useState('');
-  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [interviewStatus, setInterviewStatus] = useState<'not-started' | 'in-progress' | 'paused' | 'completed'>('not-started');
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
+  const [overallFeedback, setOverallFeedback] = useState<Partial<InterviewFeedback>>({});
 
-  // Find the candidate from mock data
-  const candidate = mockCandidates.find(c => c.id === candidateId) || mockCandidates[0];
-
-  // Initialize messages from mock data
-  React.useEffect(() => {
-    const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
-      ...msg,
-      type: msg.type as 'question' | 'answer'
-    })) || [];
-    setMessages(initialMessages);
-  }, []);
-
-  const addMessage = (content: string, type: 'question' | 'answer') => {
-    const newMessage: MessageEvent = {
-      id: String(messages.length + 1),
-      type,
-      content,
-      timestamp: new Date().toLocaleTimeString(),
-      category: type === 'question' ? 'technical-experience' : undefined,
-      aiAnalysis: {
-        type: 'baseline',
-        summary: 'Processing response...',
-        confidence: 0.8
-      }
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-  };
-
-  const addQuickNote = (text: string) => {
-    const newNote: Note = {
-      text,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    setQuickNotes(prev => [...prev, newNote]);
-  };
-
-  const refreshSuggestedQuestions = () => {
-    setIsRefreshingQuestions(true);
-    // Simulate API call for new questions based on context
-    setTimeout(() => {
-      setSuggestedQuestions([
+  // Mock interview data - In real app, this would come from API
+  useEffect(() => {
+    // Simulate loading interview data
+    const mockInterview: Interview = {
+      id: id || '1',
+      candidateId: 'candidate-1',
+      candidateName: 'Alex Johnson',
+      position: 'Senior Frontend Developer',
+      type: 'video',
+      status: 'scheduled',
+      scheduledDate: '2024-03-20',
+      scheduledTime: '14:00',
+      duration: 60,
+      interviewer: {
+        id: 'interviewer-1',
+        name: 'John Smith',
+        role: 'Tech Lead',
+        email: 'john.smith@company.com'
+      },
+      questions: [
         {
-          id: '5',
-          question: 'How do you handle performance optimization in large React applications?',
-          category: 'technical',
-          context: 'Following up on scale handling discussion',
-          tags: ['Performance', 'Technical Depth'],
-          aiReason: 'Candidate mentioned handling 50k daily users, probe optimization approach'
+          id: 'q1',
+          question: 'Tell me about yourself and your experience with React.',
+          category: 'experience',
+          difficulty: 'easy',
+          timeLimit: 5,
+          expectedAnswer: 'Should cover background, React experience, recent projects'
         },
         {
-          id: '6',
-          question: 'Can you describe your experience with micro-frontend architecture challenges?',
+          id: 'q2',
+          question: 'How would you optimize the performance of a React application?',
           category: 'technical',
-          context: 'Deep dive into mentioned architecture',
-          tags: ['Architecture', 'Problem Solving'],
-          aiReason: 'Explore challenges and solutions in mentioned micro-frontend implementation'
+          difficulty: 'medium',
+          timeLimit: 10,
+          expectedAnswer: 'Code splitting, memoization, virtual scrolling, bundle optimization'
+        },
+        {
+          id: 'q3',
+          question: 'Describe a time when you had to resolve a conflict with a team member.',
+          category: 'behavioral',
+          difficulty: 'medium',
+          timeLimit: 8
         }
-      ]);
-      setIsRefreshingQuestions(false);
-    }, 1000);
-  };
+      ],
+      evaluationCriteria: [
+        { criterion: 'Technical Skills', weight: 40, description: 'Coding ability and technical knowledge', maxScore: 10 },
+        { criterion: 'Communication', weight: 30, description: 'Clarity and articulation', maxScore: 10 },
+        { criterion: 'Problem Solving', weight: 20, description: 'Analytical thinking', maxScore: 10 },
+        { criterion: 'Cultural Fit', weight: 10, description: 'Alignment with company values', maxScore: 10 }
+      ]
+    };
 
-  // Function to generate AI suggested labels based on the answer content and analysis
-  const generateSuggestedLabels = (messageId: string, content: string) => {
-    // Simulate AI analysis
-    setSuggestedLabels({
-      messageId,
-      labels: ['Technical Depth', 'Problem Solving', 'Architecture']
+    setInterview(mockInterview);
+  }, [id]);
+
+  // Interview Controls
+  const startInterview = () => {
+    setInterviewStatus('in-progress');
+    setInterview(prev => prev ? { ...prev, startTime: new Date().toISOString() } : null);
+    toast({
+      title: "Interview Started",
+      description: "Good luck! The interview is now in progress.",
     });
   };
 
-  // Function to add a label to a message
-  const addLabelToMessage = (messageId: string, label: string) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId) {
-        return {
-          ...msg,
-          quickLabels: [...(msg.quickLabels || []), label]
-        };
-      }
-      return msg;
-    }));
+  const pauseInterview = () => {
+    setInterviewStatus('paused');
+    toast({
+      title: "Interview Paused",
+      description: "You can resume when ready.",
+    });
   };
 
-  // Function to edit a label
-  const updateLabel = (messageId: string, labelIndex: number, newValue: string) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId && msg.quickLabels) {
-        const updatedLabels = [...msg.quickLabels];
-        updatedLabels[labelIndex] = newValue;
-        return {
-          ...msg,
-          quickLabels: updatedLabels
-        };
-      }
-      return msg;
-    }));
+  const completeInterview = () => {
+    setInterviewStatus('completed');
+    setInterview(prev => prev ? { ...prev, endTime: new Date().toISOString(), actualDuration: elapsedTime } : null);
+    toast({
+      title: "Interview Completed",
+      description: "Please complete your evaluation and feedback.",
+    });
   };
 
-  // Function to remove a label
-  const removeLabel = (messageId: string, labelIndex: number) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId && msg.quickLabels) {
-        const updatedLabels = msg.quickLabels.filter((_, idx) => idx !== labelIndex);
-        return {
-          ...msg,
-          quickLabels: updatedLabels
-        };
-      }
-      return msg;
-    }));
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'technical':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900';
-      case 'behavioral':
-        return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900';
-      case 'leadership':
-        return 'bg-purple-50 border-purple-200 dark:bg-purple-950 dark:border-purple-900';
-      default:
-        return 'bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-800';
-    }
-  };
-
-  const addQuestionNote = (questionId: string, note: string) => {
-    setSuggestedQuestions(prev => prev.map(q => {
-      if (q.id === questionId) {
-        return {
-          ...q,
-          notes: [...(q.notes || []), { text: note, timestamp: new Date().toLocaleTimeString() }]
-        };
-      }
-      return q;
-    }));
-    setQuestionNote('');
-    setSelectedQuestion(null);
-  };
-
-  const getMessageAnalysisColor = (message: any) => {
-    if (message.type === 'answer') {
-      const analysis = message.aiAnalysis;
-      if (!analysis) return 'bg-white dark:bg-gray-800 border-gray-200';
-
-      switch (analysis.type) {
-        case 'excellent':
-          return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900';
-        case 'good':
-          return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900';
-        case 'concern':
-          return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-900';
-        case 'mismatch':
-          return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-900';
-        default:
-          return 'bg-white dark:bg-gray-800 border-gray-200';
-      }
-    }
-    return 'bg-gray-50 border-gray-200 dark:bg-gray-900';
-  };
-
-  const getAnalysisBadge = (analysis: any) => {
-    if (!analysis) return null;
-
-    const badges = {
-      excellent: { label: 'Excellent', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-      good: { label: 'Good', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-      concern: { label: 'Needs Clarification', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
-      mismatch: { label: 'Resume Mismatch', class: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' }
-    };
-
-    return badges[analysis.type] || null;
-  };
-
-  // Simulated real-time transcript update with realistic responses
-  useEffect(() => {
-    if (isRecording) {
-      const realisticResponses = [
-        {
-          type: 'answer',
-          content: 'We also implemented a comprehensive monitoring system using New Relic and custom metrics to ensure performance at scale.',
-          category: 'technical-process',
-          aiAnalysis: {
-            type: 'positive',
-            summary: '✓ Shows depth in operational excellence',
-            confidence: 0.94
-          }
+  const simulateAIAnalysis = () => {
+    // Simulate AI analysis
+    setTimeout(() => {
+      setAiAnalysis({
+        sentimentAnalysis: {
+          confidence: 82,
+          enthusiasm: 75,
+          nervousness: 25
         },
-        {
-          type: 'answer',
-          content: 'One challenge we faced was managing state synchronization across micro-frontends. We solved this using a combination of Redux for global state and event-based communication.',
-          category: 'problem-solving',
-          aiAnalysis: {
-            type: 'positive',
-            summary: '✓ Demonstrates problem-solving and architectural thinking',
-            confidence: 0.96
+        keywordExtraction: ['React', 'JavaScript', 'TypeScript', 'Performance', 'Team collaboration'],
+        responseQuality: 78,
+        communicationPatterns: {
+          clarity: 85,
+          conciseness: 70,
+          relevance: 88
+        },
+        redFlags: [
+          {
+            type: 'Vague Answer',
+            severity: 'medium',
+            description: 'Answer lacked specific examples'
           }
-        }
-      ];
+        ],
+        suggestions: [
+          'Ask for more specific examples',
+          'Probe deeper into technical implementation',
+          'Candidate seems confident - good sign'
+        ]
+      });
+    }, 2000);
+  };
 
-      let index = 0;
-      const interval = setInterval(() => {
-        if (index < realisticResponses.length) {
-          const response = realisticResponses[index];
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            ...response,
-            timestamp: new Date().toLocaleTimeString()
-          }]);
-          index++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isRecording]);
+  if (!interview) {
+    return <div>Loading interview...</div>;
+  }
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <PageHeader
-          title={candidate.name}
-          subtitle={candidate.position}
-          className="gap-4"
-        >
-          <Badge>{candidate.status}</Badge>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
-              Skip Interview
-            </Button>
-            <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>
-              End Interview
-            </Button>
-          </div>
-        </PageHeader>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 grid grid-cols-12 gap-4 p-4 overflow-hidden">
-        {/* Left Column - Compact Profile */}
-        <div className="col-span-3">
-          <Card>
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{candidate.name}</CardTitle>
-                    <CardDescription>{candidate.position}</CardDescription>
-                  </div>
-                </div>
-                <HoverCard>
-                  <HoverCardTrigger>
-                    <Button variant="ghost" size="icon">
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-80">
-                    <ScrollArea className="h-80">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium">Experience</h4>
-                          <p className="text-sm text-muted-foreground">{candidate.experience}</p>
-                        </div>
-                        <Separator />
-                        <div>
-                          <h4 className="font-medium">Education</h4>
-                          <p className="text-sm text-muted-foreground">{candidate.education}</p>
-                        </div>
-                        <Separator />
-                        <div>
-                          <h4 className="font-medium">Skills</h4>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {candidate.skills.map((skill, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <Separator />
-                        <div>
-                          <h4 className="font-medium">AI Summary</h4>
-                          <div className="space-y-2 mt-1">
-                            <div>
-                              <p className="text-sm font-medium text-green-600">Strengths</p>
-                              <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {candidate.aiSummary?.strengths?.map((strength, index) => (
-                                  <li key={index}>{strength}</li>
-                                )) || []}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-yellow-600">Considerations</p>
-                              <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {candidate.aiSummary?.considerations?.map((consideration, index) => (
-                                  <li key={index}>{consideration}</li>
-                                )) || []}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </ScrollArea>
-                  </HoverCardContent>
-                </HoverCard>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Quick Stats</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 bg-muted rounded-md">
-                      <p className="text-xs text-muted-foreground">Experience</p>
-                      <p className="text-sm font-medium">5 years</p>
-                    </div>
-                    <div className="p-2 bg-muted rounded-md">
-                      <p className="text-xs text-muted-foreground">AI Match</p>
-                      <p className="text-sm font-medium">85%</p>
-                    </div>
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">HR Chat Assistant</label>
-                  <Card className="bg-muted">
-                    <CardContent className="p-3">
-                      <ScrollArea className="h-[200px]">
-                        <div className="space-y-2">
-                          {/* AI Chat messages would go here */}
-                          <p className="text-xs">Ask me anything about the candidate's background or for suggested questions.</p>
-                        </div>
-                      </ScrollArea>
-                      <div className="mt-2 flex gap-2">
-                        <Textarea placeholder="Ask AI assistant..." className="h-8 text-xs" />
-                        <Button size="sm" className="h-8">
-                          <Bot className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="space-y-6">
+      <PageHeader
+        title={`Interview: ${interview.candidateName}`}
+        subtitle={`${interview.position} • ${interview.type} interview • ${interview.duration} minutes`}
+      >
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="capitalize">
+            {interview.type}
+          </Badge>
+          <Badge variant={
+            interviewStatus === 'completed' ? 'default' :
+              interviewStatus === 'in-progress' ? 'secondary' :
+                interviewStatus === 'paused' ? 'outline' : 'outline'
+          }>
+            {interviewStatus.replace('-', ' ')}
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => navigate('/screening')}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back to Screening
+          </Button>
         </div>
+      </PageHeader>
 
-        {/* Middle Column - Real-time Transcript */}
-        <div className="col-span-6">
-          <Card className="h-full">
-            <CardHeader>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Interview Panel */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Interview Controls */}
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Interview Transcript</CardTitle>
-                <Button
-                  variant={isRecording ? "destructive" : "default"}
-                  size="sm"
-                  onClick={() => setIsRecording(!isRecording)}
-                >
-                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[calc(100vh-16rem)]">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "relative group",
-                        message.type === 'question' ? 'pl-4' : 'pl-8'
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        <div className={cn(
-                          "p-2 rounded-lg flex-1 border transition-colors duration-200",
-                          getMessageAnalysisColor(message)
-                        )}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">
-                              {message.timestamp}
-                            </span>
-                            {message.type === 'answer' && (
-                              <div className="flex items-center gap-2">
-                                {message.aiAnalysis && getAnalysisBadge(message.aiAnalysis) && (
-                                  <Badge
-                                    variant="secondary"
-                                    className={cn(
-                                      "text-xs font-medium",
-                                      getAnalysisBadge(message.aiAnalysis)?.class
-                                    )}
-                                  >
-                                    {getAnalysisBadge(message.aiAnalysis)?.label}
-                                  </Badge>
-                                )}
-                                <HoverCard>
-                                  <HoverCardTrigger>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                      <AlertCircle className="h-4 w-4" />
-                                    </Button>
-                                  </HoverCardTrigger>
-                                  <HoverCardContent>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium">AI Analysis</p>
-                                        {message.aiAnalysis?.confidence && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {Math.round(message.aiAnalysis.confidence * 100)}% confidence
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <p className="text-sm">{message.aiAnalysis?.summary}</p>
-                                      {message.aiAnalysis?.keyPoints && (
-                                        <div className="space-y-1">
-                                          <p className="text-xs font-medium">Key Points:</p>
-                                          <ul className="text-xs text-muted-foreground list-disc pl-4">
-                                            {message.aiAnalysis.keyPoints.map((point, idx) => (
-                                              <li key={idx}>{point}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                      {message.aiAnalysis?.resumeMatch !== undefined && (
-                                        <div className="flex items-center gap-2 text-xs">
-                                          <Badge variant="outline" className={cn(
-                                            message.aiAnalysis.resumeMatch
-                                              ? "bg-green-100 text-green-700"
-                                              : "bg-red-100 text-red-700"
-                                          )}>
-                                            {message.aiAnalysis.resumeMatch ? 'Matches Resume' : 'Resume Mismatch'}
-                                          </Badge>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </HoverCardContent>
-                                </HoverCard>
-                                <HoverCard openDelay={0} closeDelay={500}>
-                                  <HoverCardTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onMouseEnter={() => generateSuggestedLabels(message.id, message.content)}
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </HoverCardTrigger>
-                                  <HoverCardContent
-                                    side="right"
-                                    align="start"
-                                    className="w-72 p-3"
-                                  >
-                                    <div className="space-y-2">
-                                      <p className="text-sm font-medium">Suggested Labels</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {suggestedLabels?.messageId === message.id ? (
-                                          suggestedLabels.labels.length > 0 ? (
-                                            suggestedLabels.labels.map((label, idx) => (
-                                              <Badge
-                                                key={idx}
-                                                variant="outline"
-                                                className="cursor-pointer hover:bg-secondary transition-colors px-2 py-1"
-                                                onClick={() => addLabelToMessage(message.id, label)}
-                                              >
-                                                {label}
-                                              </Badge>
-                                            ))
-                                          ) : (
-                                            <p className="text-sm text-muted-foreground">No suggestions available</p>
-                                          )
-                                        ) : (
-                                          <p className="text-sm text-muted-foreground">Loading suggestions...</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </HoverCardContent>
-                                </HoverCard>
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm">{message.content}</p>
-                          {message.quickLabels && message.quickLabels.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {message.quickLabels.map((label, idx) => (
-                                <div key={idx} className="flex items-center gap-1">
-                                  {editingLabel?.messageId === message.id && editingLabel?.labelIndex === idx ? (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        className="h-6 text-xs"
-                                        value={editingLabel.value}
-                                        onChange={(e) => setEditingLabel({ ...editingLabel, value: e.target.value })}
-                                        onKeyPress={(e) => {
-                                          if (e.key === 'Enter') {
-                                            updateLabel(message.id, idx, editingLabel.value);
-                                          }
-                                        }}
-                                      />
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => updateLabel(message.id, idx, editingLabel.value)}
-                                      >
-                                        <Check className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => setEditingLabel(null)}
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <Badge variant="secondary" className="text-xs">
-                                        {label}
-                                      </Badge>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-4 w-4 opacity-0 group-hover:opacity-100"
-                                        onClick={() => setEditingLabel({ messageId: message.id, labelIndex: idx, value: label })}
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-4 w-4 opacity-0 group-hover:opacity-100"
-                                        onClick={() => removeLabel(message.id, idx)}
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isRecording && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="animate-pulse">●</span>
-                      Recording...
-                    </div>
+                <div className="flex items-center gap-4">
+                  {interviewStatus === 'not-started' && (
+                    <Button onClick={startInterview} className="gap-2">
+                      <Play className="h-4 w-4" />
+                      Start Interview
+                    </Button>
+                  )}
+
+                  {interviewStatus === 'in-progress' && (
+                    <>
+                      <Button onClick={pauseInterview} variant="outline" className="gap-2">
+                        <Pause className="h-4 w-4" />
+                        Pause
+                      </Button>
+                      <Button onClick={completeInterview} className="gap-2">
+                        <Square className="h-4 w-4" />
+                        Complete
+                      </Button>
+                    </>
+                  )}
+
+                  {interviewStatus === 'paused' && (
+                    <Button onClick={() => setInterviewStatus('in-progress')} className="gap-2">
+                      <Play className="h-4 w-4" />
+                      Resume
+                    </Button>
+                  )}
+
+                  {interviewStatus === 'completed' && (
+                    <Badge className="gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Interview Completed
+                    </Badge>
                   )}
                 </div>
-              </ScrollArea>
+
+                {/* Media Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsVideoOn(!isVideoOn)}
+                  >
+                    {isVideoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMuted(!isMuted)}
+                  >
+                    {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsRecording(!isRecording);
+                      if (!isRecording) simulateAIAnalysis();
+                    }}
+                  >
+                    <div className={cn(
+                      "h-2 w-2 rounded-full mr-2",
+                      isRecording ? "bg-red-500 animate-pulse" : "bg-gray-400"
+                    )} />
+                    {isRecording ? 'Recording' : 'Record'}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Questions Section */}
+          {interviewStatus !== 'not-started' && (
+            <Tabs defaultValue="questions" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="questions">Questions</TabsTrigger>
+                <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
+                <TabsTrigger value="notes">Final Notes</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="questions" className="space-y-4">
+                {interview.questions.map((question, index) => (
+                  <QuestionCard
+                    key={question.id}
+                    question={question}
+                    index={index}
+                    total={interview.questions.length}
+                    isActive={index === currentQuestionIndex}
+                    onResponse={(response) => {
+                      const updatedQuestions = [...interview.questions];
+                      updatedQuestions[index].response = response;
+                      setInterview({ ...interview, questions: updatedQuestions });
+                    }}
+                    onScore={(score) => {
+                      const updatedQuestions = [...interview.questions];
+                      updatedQuestions[index].score = score;
+                      setInterview({ ...interview, questions: updatedQuestions });
+                    }}
+                    onNext={() => setCurrentQuestionIndex(Math.min(currentQuestionIndex + 1, interview.questions.length - 1))}
+                    onPrevious={() => setCurrentQuestionIndex(Math.max(currentQuestionIndex - 1, 0))}
+                  />
+                ))}
+              </TabsContent>
+
+              <TabsContent value="evaluation" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Evaluation Criteria</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {interview.evaluationCriteria.map((criterion, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <Label className="font-medium">{criterion.criterion}</Label>
+                            <p className="text-sm text-muted-foreground">{criterion.description}</p>
+                          </div>
+                          <Badge variant="outline">Weight: {criterion.weight}%</Badge>
+                        </div>
+                        <Select
+                          value={criterion.currentScore?.toString() || ""}
+                          onValueChange={(value) => {
+                            const updatedCriteria = [...interview.evaluationCriteria];
+                            updatedCriteria[index].currentScore = parseInt(value);
+                            setInterview({ ...interview, evaluationCriteria: updatedCriteria });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select score" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: criterion.maxScore + 1 }, (_, i) => (
+                              <SelectItem key={i} value={i.toString()}>
+                                {i}/{criterion.maxScore}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="notes" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Final Feedback & Decision</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Strengths</Label>
+                        <Textarea
+                          placeholder="Key strengths observed..."
+                          value={overallFeedback.strengths?.join('\n') || ''}
+                          onChange={(e) => setOverallFeedback({
+                            ...overallFeedback,
+                            strengths: e.target.value.split('\n').filter(s => s.trim())
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Areas for Improvement</Label>
+                        <Textarea
+                          placeholder="Areas that need development..."
+                          value={overallFeedback.weaknesses?.join('\n') || ''}
+                          onChange={(e) => setOverallFeedback({
+                            ...overallFeedback,
+                            weaknesses: e.target.value.split('\n').filter(s => s.trim())
+                          })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Overall Recommendation</Label>
+                      <Textarea
+                        placeholder="Your overall assessment and recommendation..."
+                        value={overallFeedback.recommendations || ''}
+                        onChange={(e) => setOverallFeedback({
+                          ...overallFeedback,
+                          recommendations: e.target.value
+                        })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Final Decision</Label>
+                      <Select
+                        value={overallFeedback.decision || ""}
+                        onValueChange={(value: 'pass' | 'fail' | 'maybe') =>
+                          setOverallFeedback({ ...overallFeedback, decision: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select decision" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pass">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              Pass - Recommend for next stage
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="maybe">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                              Maybe - Requires discussion
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="fail">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              Fail - Do not proceed
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button className="flex-1">
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Draft
+                      </Button>
+                      <Button className="flex-1" disabled={!overallFeedback.decision}>
+                        <Send className="h-4 w-4 mr-2" />
+                        Submit Final Report
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
 
-        {/* Right Column - Suggested Questions & Quick Notes */}
-        <div className="col-span-3">
-          <div className="space-y-4 h-full">
-            {/* Suggested Questions */}
-            <Card className="h-[40%]">
-              <CardHeader className="py-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Suggested Questions</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={refreshSuggestedQuestions}
-                    disabled={isRefreshingQuestions}
-                    className="h-8 px-2"
-                  >
-                    <RefreshCw className={cn(
-                      "h-4 w-4",
-                      isRefreshingQuestions && "animate-spin"
-                    )} />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100%-3rem)] px-4">
-                  <div className="space-y-1">
-                    {suggestedQuestions.map((question) => (
-                      <HoverCard key={question.id}>
-                        <HoverCardTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-left h-auto py-1.5 px-2 text-xs font-normal"
-                          >
-                            <div className="line-clamp-1">
-                              {question.question}
-                            </div>
-                          </Button>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="left" className="w-80">
-                          <div className="space-y-2">
-                            <p className="text-sm">{question.question}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {question.tags.slice(0, 3).map((tag, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">{question.aiReason}</p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Timer */}
+          {interviewStatus !== 'not-started' && (
+            <InterviewTimer
+              isRunning={interviewStatus === 'in-progress'}
+              startTime={interview.startTime || null}
+              duration={interview.duration}
+              onTimeUpdate={setElapsedTime}
+            />
+          )}
 
-            {/* Quick Notes Section */}
-            <Card className="h-[60%]">
-              <CardHeader className="py-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Quick Notes</CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    if (quickNote.trim()) {
-                      setQuickNotes(prev => [...prev, {
-                        text: quickNote,
-                        timestamp: new Date().toLocaleTimeString()
-                      }]);
-                      setQuickNote('');
-                    }
-                  }}>
-                    Add Note
-                  </Button>
-                </div>
+          {/* Candidate Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Candidate Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Name</Label>
+                <p className="text-sm">{interview.candidateName}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Position</Label>
+                <p className="text-sm">{interview.position}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Interview Type</Label>
+                <Badge variant="outline" className="capitalize">
+                  {interview.type}
+                </Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Scheduled</Label>
+                <p className="text-sm">
+                  {interview.scheduledDate} at {interview.scheduledTime}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Analysis */}
+          {isRecording && (
+            <AIAnalysisPanel analysis={aiAnalysis} />
+          )}
+
+          {/* Progress Overview */}
+          {interviewStatus !== 'not-started' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Progress
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Type your quick note here..."
-                    className="text-sm h-20 mb-2"
-                    value={quickNote}
-                    onChange={(e) => setQuickNote(e.target.value)}
+              <CardContent className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Questions Answered</span>
+                    <span>{interview.questions.filter(q => q.response).length}/{interview.questions.length}</span>
+                  </div>
+                  <Progress
+                    value={(interview.questions.filter(q => q.response).length / interview.questions.length) * 100}
+                    className="h-2"
                   />
-                  <ScrollArea className="h-[calc(100%-7rem)]">
-                    <div className="space-y-2">
-                      {quickNotes.map((note, index) => (
-                        <div
-                          key={index}
-                          className="text-sm bg-muted p-2 rounded-md"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">
-                              {note.timestamp}
-                            </span>
-                          </div>
-                          <p className="mt-1">{note.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Questions Scored</span>
+                    <span>{interview.questions.filter(q => q.score !== undefined).length}/{interview.questions.length}</span>
+                  </div>
+                  <Progress
+                    value={(interview.questions.filter(q => q.score !== undefined).length / interview.questions.length) * 100}
+                    className="h-2"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Average Score</span>
+                    <span>
+                      {interview.questions.filter(q => q.score !== undefined).length > 0
+                        ? Math.round(
+                          interview.questions
+                            .filter(q => q.score !== undefined)
+                            .reduce((sum, q) => sum + (q.score || 0), 0) /
+                          interview.questions.filter(q => q.score !== undefined).length
+                        )
+                        : 0
+                      }/10
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
         </div>
       </div>
     </div>
