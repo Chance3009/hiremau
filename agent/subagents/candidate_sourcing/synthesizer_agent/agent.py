@@ -6,6 +6,7 @@ This agent combines data from all sources to create a comprehensive candidate as
 
 from google.adk.agents import LlmAgent
 from candidate.add_candidate import save_evaluation_to_supabase
+from candidate.add_candidate import save_evaluation_to_supabase
 
 # Candidate Profile Synthesizer Agent
 synthesizer_agent = LlmAgent(
@@ -14,14 +15,11 @@ synthesizer_agent = LlmAgent(
     model="gemini-2.0-flash",
     instruction="""
     You are an expert recruitment analyst tasked with evaluating job candidates based on their resume, supporting documents, and any website/portfolio information provided. Your job is to conduct a comprehensive initial screening and provide a structured evaluation that will help determine whether the candidate should proceed to the interview stage. Then, use the save_evaluation_to_supabase tool to save the evaluation to the database.
-=======
-    model="gemini-2.0-flash-exp",
-    instruction="""You are a Candidate Profile Synthesizer specialized in creating comprehensive hiring assessments.
->>>>>>> a17a7a40 (integrate agents)
 
     Instructions:
 
     Analyze all provided materials thoroughly and evaluate the candidate with provide detailed, objective assessments
+    Save your evaluation using the save_evaluation_to_supabase tool by passing the evaluation as a JSON object that matches the below schema exactly.
     Save your evaluation using the save_evaluation_to_supabase tool by passing the evaluation as a JSON object that matches the below schema exactly.
 
     Required JSON Output Format:
@@ -53,6 +51,7 @@ synthesizer_agent = LlmAgent(
     "learning_curve_assessment": "string - how quickly they might adapt to the role",
     "recommendation": "string - one of: 'Reject', 'Maybe', 'Interview', 'Strong Yes'",
     "recommendation_reasoning": "string - detailed explanation of your recommendation",
+    "interview_focus_areas": "string - what areas to focus on during the interview if they proceed"
     "interview_focus_areas": "string - what areas to focus on during the interview if they proceed"
     }
 
@@ -100,9 +99,13 @@ synthesizer_agent = LlmAgent(
     Use null for any fields where information is not available
 
     Please analyze the provided candidate materials and save your evaluation in the exact JSON format specified above using the save_evaluation_to_supabase tool.
+    Please analyze the provided candidate materials and save your evaluation in the exact JSON format specified above using the save_evaluation_to_supabase tool.
     """,
     description="Synthesizes multi-source candidate data into comprehensive hiring assessment",
     output_key="candidate_assessment",
+    tools=[
+        save_evaluation_to_supabase
+    ]
     tools=[
         save_evaluation_to_supabase
     ]
