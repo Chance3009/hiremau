@@ -9,7 +9,6 @@ This directory demonstrates how to set up and use Supabase as a backend service 
 ```
 new_backend/
 ├── requirements.txt         # Python dependencies
-├── supabase_client.py       # Supabase client setup (import this in your code)
 ├── supabase_example.py      # Example usage of Supabase client and queries
 ├── .env.example             # Example format of the environment file
 ```
@@ -55,8 +54,6 @@ Replace `your-supabase-url` and `your-supabase-api-key` with your actual Supabas
 Use the provided `supabase_client.py` to get a ready-to-use Supabase client:
 
 ```python
-from supabase_client import supabase
-
 # Example: Fetch all rows from the 'planets' table
 response = supabase.table("planets").select("*").execute()
 print(response.data)

@@ -1,5 +1,4 @@
 from google.adk.agents import Agent
-from agent.company_rag.rag import similarity_search
 
 def search_knowledge_base(query: str) -> str:
     """
@@ -9,6 +8,7 @@ def search_knowledge_base(query: str) -> str:
     Returns:
         str: Raw chunks from the knowledge base.
     """
+    from company.retrieve_company import similarity_search
     try:
         documents = similarity_search(query)
         if not documents:

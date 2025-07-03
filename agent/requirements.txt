@@ -20,3 +20,7 @@ chromadb>=1.0.13
 sentence-transformers>=4.1.0
 langchain>=0.3.26
 pillow>=11.2.1
+supabase
+flask
+requests
+flask_cors
