@@ -376,6 +376,42 @@ const Interview: React.FC = () => {
   }, [userId]);
 
   // Start/stop recording and timer
+  // --- AUDIO RECORDING LOGIC ---
+  const audioBufferRef = React.useRef<ArrayBuffer[]>([]);
+  const bufferTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Use the audio recorder hook
+  const { start, stop } = useAudioRecorder((pcmData) => {
+    audioBufferRef.current.push(pcmData);
+    // Buffer is sent on timer
+  });
+
+  // Function to send buffered audio to backend
+  const sendBufferedAudio = React.useCallback(async () => {
+    if (audioBufferRef.current.length === 0) return;
+    let totalLength = audioBufferRef.current.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+    const combinedBuffer = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of audioBufferRef.current) {
+      combinedBuffer.set(new Uint8Array(chunk), offset);
+      offset += chunk.byteLength;
+    }
+    try {
+      await fetch(`http://localhost:8000/send/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mime_type: 'audio/pcm',
+          data: arrayBufferToBase64(combinedBuffer.buffer),
+        }),
+      });
+    } catch (err) {
+      // Optionally handle error
+    }
+    audioBufferRef.current = [];
+  }, [userId]);
+
+  // Start/stop recording and timer
   useEffect(() => {
     if (isRecording) {
       start();
