@@ -1,9 +1,13 @@
+from flask_cors import CORS
+import requests
+from flask import Flask, request, jsonify
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import logging
 import datetime
 from typing import Optional
+import uuid
 
 # LangChain and transformer imports
 from langchain_community.document_loaders import PyPDFLoader
@@ -29,8 +33,10 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    logger.error("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    logger.error(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    raise ValueError(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -41,12 +47,10 @@ ocr_model = "gemini-2.5-flash"
 embedding = OllamaEmbeddings(model="nomic-embed-text")
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
-from flask import Flask, request, jsonify
-import requests
-from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
 
 def extract_image_info(image_path: str) -> str:
     prompt = """
@@ -77,8 +81,8 @@ def extract_image_info(image_path: str) -> str:
         model=ocr_model,
         contents=[
             types.Part.from_bytes(
-            data=image_bytes,
-            mime_type='image/jpeg',
+                data=image_bytes,
+                mime_type='image/jpeg',
             ),
             prompt
         ]
@@ -94,7 +98,8 @@ def extract_image_info(image_path: str) -> str:
     # )
     # return response['message']['content'].strip()
 
-def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Optional[str] = None) -> dict:
+
+def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Optional[str] = None) -> dict:
     if not url or not name:
         return {'error': 'Missing url or name'}
     try:
@@ -102,35 +107,59 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
         if r.status_code != 200:
             logger.error(f"Failed to download file from {url}")
             return {'error': 'Failed to download file'}
-        ext = os.path.splitext(url)[1].lower() or '.bin'
-        filename = f"{uuid}{ext}" if uuid else f"{name}{ext}"
+
+        # Clean the URL to remove query parameters before extracting extension
+        clean_url = url.split('?')[0]  # Remove query parameters
+        ext = os.path.splitext(clean_url)[1].lower() or '.bin'
+        filename = f"{uuid_str}{ext}" if uuid_str else f"{name}{ext}"
         with open(filename, 'wb') as f:
             f.write(r.content)
-        logger.info(f"Downloaded file saved as {filename} (uuid: {uuid})")
+        logger.info(f"Downloaded file saved as {filename} (uuid: {uuid_str})")
 
         # --- Process file: PDF ---
         if ext == '.pdf':
             loader = PyPDFLoader(filename)
             docs = loader.load()  # List[Document]
             logger.info(f"Loaded {len(docs)} PDF documents (all pages)")
-            # Store in Supabase (let the vectorstore compute embeddings)
-            vector_store = SupabaseVectorStore.from_documents(
-                docs,
-                embedding,
-                client=supabase,
-                table_name="candidate_table",
-                query_name="match_documents",
-                chunk_size=500,
-                document_id=uuid,
-                name=name,
-            )
+
+            # Update metadata to include candidate name and document_id
+            for doc in docs:
+                doc.metadata.update({
+                    "candidate_name": name,
+                    "file_type": "pdf",
+                    "upload_date": datetime.datetime.now().isoformat(),
+                    "document_id": uuid_str
+                })
+
+            # Generate embeddings and insert manually
+            for doc in docs:
+                # Generate embedding for this document
+                embedding_vector = embedding.embed_documents([doc.page_content])[
+                    0]
+
+                # Insert directly into Supabase with correct schema
+                try:
+                    result = supabase.table("candidate_table").insert({
+                        "content": doc.page_content,
+                        "metadata": doc.metadata,
+                        "embedding": embedding_vector,
+                        "document_id": uuid_str
+                    }).execute()
+                    logger.info(
+                        f"Successfully inserted document chunk with document_id: {uuid_str}")
+                except Exception as e:
+                    logger.error(f"Error inserting document chunk: {e}")
+                    raise e
+
             logger.info(f"Stored {len(docs)} PDF chunks in candidate_table.")
             os.remove(filename)
         elif ext in IMAGE_EXTENSIONS:
             info = extract_image_info(filename)
             stat = os.stat(filename)
-            creationdate = datetime.datetime.fromtimestamp(stat.st_ctime).isoformat()
-            moddate = datetime.datetime.fromtimestamp(stat.st_mtime).isoformat()
+            creationdate = datetime.datetime.fromtimestamp(
+                stat.st_ctime).isoformat()
+            moddate = datetime.datetime.fromtimestamp(
+                stat.st_mtime).isoformat()
             metadata = {
                 "page": 1,
                 "title": filename,
@@ -141,27 +170,40 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
                 "page_label": "1",
                 "total_pages": 1,
                 "creationdate": creationdate,
+                "candidate_name": name,
+                "file_type": "image",
+                "document_id": uuid_str
             }
             image_doc = Document(page_content=info, metadata=metadata)
             docs = [image_doc]
-            vector_store = SupabaseVectorStore.from_documents(
-                docs,
-                embedding,
-                client=supabase,
-                table_name="candidate_table",
-                query_name="match_candidate_documents",
-                chunk_size=500,
-                document_id=uuid,
-                name=name,
-            )
+
+            # Generate embedding and insert manually
+            embedding_vector = embedding.embed_documents([info])[0]
+
+            # Insert directly into Supabase with correct schema
+            try:
+                result = supabase.table("candidate_table").insert({
+                    "content": info,
+                    "metadata": metadata,
+                    "embedding": embedding_vector,
+                    "document_id": uuid_str
+                }).execute()
+                logger.info(
+                    f"Successfully inserted image document with document_id: {uuid_str}")
+            except Exception as e:
+                logger.error(f"Error inserting image document: {e}")
+                raise e
+
             logger.info(f"Stored image OCR document in candidate_table.")
             os.remove(filename)
         else:
             logger.warning(f"Unsupported file type: {ext}")
+            return {'error': f'Unsupported file type: {ext}'}
         return {'status': 'success', 'content': docs}
     except Exception as e:
         logger.error(f"Exception during download or processing: {e}")
         return {'error': str(e)}
+
 
 def save_evaluation_to_supabase(
     candidate_id: str,
@@ -195,7 +237,7 @@ def save_evaluation_to_supabase(
 ) -> dict:
     """
     Save candidate evaluation data to the initial_screening_evaluation table in Supabase.
-    
+
     Returns:
         dict: Result of the operation with status and any error messages
     """
@@ -231,11 +273,13 @@ def save_evaluation_to_supabase(
             "recommendation_reasoning": recommendation_reasoning,
             "interview_focus_areas": interview_focus_areas
         }
-        
+
         # Insert the evaluation data into the initial_screening_evaluation table
-        result = supabase.table('initial_screening_evaluation').insert(evaluation_data).execute()
-        
-        logger.info(f"Successfully saved evaluation for candidate: {candidate_name}")
+        result = supabase.table('initial_screening_evaluation').insert(
+            evaluation_data).execute()
+
+        logger.info(
+            f"Successfully saved evaluation for candidate: {candidate_name}")
         return {
             'status': 'success',
             'message': f"Evaluation saved for candidate {candidate_name}",
@@ -248,11 +292,13 @@ def save_evaluation_to_supabase(
             'message': f"Failed to save evaluation: {str(e)}"
         }
 
+
 def save_evaluation_to_rag(content: str, candidate_name: str):
     # Add metadata (timestamp, source, etc.)
     metadata = {
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "source": "evaluation",
+        "candidate_name": candidate_name
     }
     doc = Document(page_content=content, metadata=metadata)
     # Store in Supabase candidate_rag table
@@ -263,8 +309,5 @@ def save_evaluation_to_rag(content: str, candidate_name: str):
         table_name="candidate_rag",
         query_name="match_documents",
         chunk_size=500,
-        metadata=metadata,
-        name=candidate_name
     )
     logger.info("Saved evaluation to candidate_rag table.")
-    

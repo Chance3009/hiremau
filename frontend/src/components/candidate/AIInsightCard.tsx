@@ -6,15 +6,27 @@ import { type Candidate } from '@/mocks/candidateData';
 type DetailLevel = 'minimal' | 'standard' | 'detailed';
 
 interface AIInsightCardProps {
-    analysis: Candidate['aiAnalysis'];
+    analysis?: Candidate['aiAnalysis'];
     detailLevel: DetailLevel;
 }
 
 export const AIInsightCard: React.FC<AIInsightCardProps> = ({ analysis, detailLevel }) => {
+    if (!analysis) {
+        return (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="font-semibold">AI Analysis</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">No AI analysis available yet.</p>
+            </div>
+        );
+    }
+
     // Helper function to get AI summary
     const getAISummary = () => {
-        const strengths = analysis.insights.filter(i => i.type === 'strength');
-        const opportunities = analysis.insights.filter(i => i.type === 'opportunity');
+        const strengths = analysis.insights?.filter(i => i.type === 'strength') || [];
+        const opportunities = analysis.insights?.filter(i => i.type === 'opportunity') || [];
         return `${strengths[0]?.description || ''}. ${opportunities[0]?.description || ''}`;
     };
 
@@ -80,28 +92,30 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({ analysis, detailLe
                     </div>
 
                     {/* AI Summary */}
-                    <div>
-                        <h4 className="text-sm font-medium mb-2">AI Summary</h4>
-                        <div className="space-y-2">
-                            {analysis.insights.map((insight, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                    <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                    <span className="text-sm">{insight.description}</span>
-                                </div>
-                            ))}
+                    {analysis.insights?.length > 0 && (
+                        <div>
+                            <h4 className="text-sm font-medium mb-2">AI Summary</h4>
+                            <div className="space-y-2">
+                                {analysis.insights.map((insight, index) => (
+                                    <div key={index} className="flex items-start gap-2">
+                                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                        <span className="text-sm">{insight.description}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Risk Factors */}
-                    {analysis.riskFactors.length > 0 && (
+                    {analysis.riskFactors?.length > 0 && (
                         <div>
                             <h4 className="text-sm font-medium mb-2">Potential Concerns</h4>
                             <div className="space-y-2">
                                 {analysis.riskFactors.map((risk, index) => (
                                     <div key={index} className="flex items-start gap-2">
                                         <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
-                                                risk.severity === 'medium' ? 'text-yellow-500' :
-                                                    'text-muted-foreground'
+                                            risk.severity === 'medium' ? 'text-yellow-500' :
+                                                'text-muted-foreground'
                                             }`} />
                                         <span className="text-sm">{risk.description}</span>
                                     </div>
@@ -124,44 +138,48 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({ analysis, detailLe
 
             <div className="space-y-4">
                 {/* Skill Matches */}
-                <div className="space-y-3">
-                    {analysis.skillMatches.map((skill, index) => (
-                        <div key={index}>
-                            <div className="flex justify-between items-center mb-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">{skill.skill}</span>
-                                    {skill.required && (
-                                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Required</span>
-                                    )}
+                {analysis.skillMatches?.length > 0 && (
+                    <div className="space-y-3">
+                        {analysis.skillMatches.map((skill, index) => (
+                            <div key={index}>
+                                <div className="flex justify-between items-center mb-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">{skill.skill}</span>
+                                        {skill.required && (
+                                            <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Required</span>
+                                        )}
+                                    </div>
+                                    <span className="text-sm font-medium">{skill.score}%</span>
                                 </div>
-                                <span className="text-sm font-medium">{skill.score}%</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Progress value={skill.score} className="h-2 flex-1" />
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">{skill.experience}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Learning Path */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Recommended Learning Path</h4>
-                    <div className="space-y-2">
-                        {analysis.learningPath.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                                <div className={`h-2 w-2 rounded-full mt-1.5 ${item.priority === 'high' ? 'bg-destructive' :
-                                        item.priority === 'medium' ? 'bg-yellow-500' :
-                                            'bg-muted-foreground'
-                                    }`} />
-                                <div>
-                                    <p className="text-sm">{item.skill}</p>
-                                    <p className="text-xs text-muted-foreground">Est. {item.estimatedTimeToAcquire}</p>
+                                <div className="flex items-center gap-3">
+                                    <Progress value={skill.score} className="h-2 flex-1" />
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap">{skill.experience}</span>
                                 </div>
                             </div>
                         ))}
                     </div>
-                </div>
+                )}
+
+                {/* Learning Path */}
+                {analysis.learningPath?.length > 0 && (
+                    <div>
+                        <h4 className="text-sm font-medium mb-2">Recommended Learning Path</h4>
+                        <div className="space-y-2">
+                            {analysis.learningPath.map((item, index) => (
+                                <div key={index} className="flex items-start gap-2">
+                                    <div className={`h-2 w-2 rounded-full mt-1.5 ${item.priority === 'high' ? 'bg-destructive' :
+                                        item.priority === 'medium' ? 'bg-yellow-500' :
+                                            'bg-muted-foreground'
+                                        }`} />
+                                    <div>
+                                        <p className="text-sm">{item.skill}</p>
+                                        <p className="text-xs text-muted-foreground">Est. {item.estimatedTimeToAcquire}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
