@@ -541,4 +541,29 @@ export async function fetchCandidateInterviewData(candidateId: string): Promise<
         console.error('Error details:', error.message);
         throw error;
     }
+}
+
+export async function fetchFinalReviewCandidates(): Promise<Candidate[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/candidates/final-review`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Transform the candidates data to match the expected format
+        const candidates = result.candidates.map((candidate: any) => {
+            return {
+                ...transformCandidateData(candidate),
+                evaluationData: candidate.evaluation_data ? [candidate.evaluation_data] : [] // Wrap in array to match interface
+            };
+        });
+
+        return candidates;
+    } catch (error) {
+        console.error('Error fetching final review candidates:', error);
+        throw error;
+    }
 } 

@@ -61,6 +61,56 @@ async def create_candidate_with_processing(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/final-review")
+async def get_final_review_candidates():
+    """Get candidates in final_review stage with their initial screening evaluation data"""
+    try:
+        # First, get all candidates in final_review stage
+        candidates_response = candidate_service.supabase.table("candidates").select(
+            "*"
+        ).eq("stage", "final_review").execute()
+
+        if not candidates_response.data:
+            return JSONResponse(content={
+                "candidates": [],
+                "count": 0,
+                "message": "No candidates in final review stage"
+            })
+
+        candidates_with_evaluation = []
+
+        for candidate in candidates_response.data:
+            # Fetch evaluation data for each candidate
+            evaluation_response = candidate_service.supabase.table("initial_screening_evaluation").select(
+                "*"
+            ).eq("candidate_id", candidate["id"]).order("created_at", desc=True).limit(1).execute()
+
+            # Get the most recent evaluation
+            evaluation_data = evaluation_response.data[0] if evaluation_response.data else None
+
+            # Combine candidate data with evaluation
+            candidate_with_eval = {
+                **candidate,
+                "evaluation_data": evaluation_data,
+                "formatted_phone": candidate.get("phone", "").replace("+60", "").strip() if candidate.get("phone") else "",
+                "formatted_salary": f"RM {candidate.get('salary_expectations', 0):,.2f}" if candidate.get('salary_expectations') else None,
+                "country": "Malaysia",
+                "currency": "MYR"
+            }
+
+            candidates_with_evaluation.append(candidate_with_eval)
+
+        return JSONResponse(content={
+            "candidates": candidates_with_evaluation,
+            "count": len(candidates_with_evaluation),
+            "message": "Final review candidates retrieved successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching final review candidates: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/{candidate_id}")
 async def get_candidate_by_id(candidate_id: str):
     """Get candidate by ID with evaluation data"""

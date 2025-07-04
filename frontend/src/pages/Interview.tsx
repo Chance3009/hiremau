@@ -99,11 +99,11 @@ const Interview: React.FC = () => {
           }
 
           // Initialize messages from mock data (for now)
-          const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
-            ...msg,
-            type: msg.type as 'question' | 'answer'
-          })) || [];
-          setMessages(initialMessages);
+    const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
+      ...msg,
+      type: msg.type as 'question' | 'answer'
+    })) || [];
+    setMessages(initialMessages);
           console.log('Messages initialized:', initialMessages.length);
         } else {
           console.log('No interview data received');
@@ -440,7 +440,7 @@ const Interview: React.FC = () => {
                               candidate.ai_analysis.map((analysis, index) => (
                                 <div key={index} className="text-sm">
                                   <p className="text-muted-foreground">{analysis.summary || analysis.content}</p>
-                                </div>
+                            </div>
                               ))
                             ) : (
                               <p className="text-sm text-muted-foreground">No AI analysis available</p>
