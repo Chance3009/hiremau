@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
-import { fetchCandidates } from '@/services/candidateService';
+import { fetchCandidates, fetchCandidatesWithEvaluation } from '@/services/candidateService';
 
 interface Candidate {
     id: string;
@@ -51,7 +51,26 @@ export const useCandidateFiltering = (options: UseCandidateFilteringOptions = {}
             }
 
             console.log('Loading candidates with filters:', filters);
-            const data = await fetchCandidates(filters);
+
+            // Use the evaluation-enabled fetch function for applied candidates
+            const shouldFetchEvaluations = options.additionalFilters?.stage === 'applied';
+
+            let data;
+            if (shouldFetchEvaluations) {
+                // For applied candidates, fetch with evaluation data
+                data = await fetchCandidatesWithEvaluation(filters.stage);
+                // Apply other filters manually since the backend function only handles stage
+                if (filters.positionId || filters.eventId) {
+                    data = data.filter(candidate => {
+                        if (filters.positionId && candidate.job_id !== filters.positionId) return false;
+                        if (filters.eventId && candidate.event_id !== filters.eventId) return false;
+                        return true;
+                    });
+                }
+            } else {
+                data = await fetchCandidates(filters);
+            }
+
             setCandidates(data);
         } catch (err: any) {
             setError(err.message || 'Failed to load candidates');

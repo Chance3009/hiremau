@@ -155,39 +155,41 @@ interface Candidate {
 
 type DetailLevel = 'minimal' | 'standard' | 'detailed';
 
-const AIInsightCard = ({ analysis, evaluationData, detailLevel }: {
+const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, candidateName }: {
     analysis?: AIAnalysis;
     evaluationData?: EvaluationData;
-    detailLevel: DetailLevel
+    detailLevel: DetailLevel;
+    candidateId?: string;
+    candidateName?: string;
 }) => {
     const [realEvaluationData, setRealEvaluationData] = useState<EvaluationData | null>(null);
     const [loading, setLoading] = useState(false);
 
     // Use evaluation data if provided, otherwise try to fetch it
     useEffect(() => {
-        if (!evaluationData && analysis) {
+        if (!evaluationData && candidateId) {
             fetchEvaluationData();
         }
-    }, [evaluationData, analysis]);
+    }, [evaluationData, candidateId]);
 
     const fetchEvaluationData = async () => {
-        if (!analysis) return;
+        if (!candidateId) return;
 
         try {
             setLoading(true);
             // Try to get real evaluation data
-            const evaluation = await getCandidateEvaluation('candidate-id'); // You'll need to pass the actual candidate ID
+            const evaluation = await getCandidateEvaluation(candidateId);
 
             if (evaluation) {
                 setRealEvaluationData(evaluation);
             } else {
                 // Use mock data for demonstration
-                setRealEvaluationData(getMockEvaluationData('candidate-id', 'Candidate Name'));
+                setRealEvaluationData(getMockEvaluationData(candidateId, candidateName || 'Unknown Candidate'));
             }
         } catch (error) {
             console.error('Error fetching evaluation data:', error);
             // Use mock data as fallback
-            setRealEvaluationData(getMockEvaluationData('candidate-id', 'Candidate Name'));
+            setRealEvaluationData(getMockEvaluationData(candidateId, candidateName || 'Unknown Candidate'));
         } finally {
             setLoading(false);
         }
@@ -421,7 +423,13 @@ const CandidateCard = ({ candidate, onAction, detailLevel }) => {
                     ))}
                 </div>
 
-                <AIInsightCard analysis={candidate.aiAnalysis} evaluationData={candidate.evaluationData} detailLevel={detailLevel} />
+                <AIInsightCard
+                    analysis={candidate.aiAnalysis}
+                    evaluationData={candidate.evaluationData}
+                    detailLevel={detailLevel}
+                    candidateId={candidate.id}
+                    candidateName={candidate.name}
+                />
             </div>
         );
 

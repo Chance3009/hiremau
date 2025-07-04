@@ -224,7 +224,10 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
                     <div className="space-y-2">
                         <Label>Availability</Label>
                         <div className="text-sm text-muted-foreground">
-                            {candidate.availability.join(', ')} • {candidate.preferredTime}
+                            {Array.isArray(candidate.availability)
+                                ? candidate.availability.join(', ')
+                                : candidate.availability || 'Not specified'
+                            } • {candidate.preferredTime || 'Any time'}
                         </div>
                     </div>
 
