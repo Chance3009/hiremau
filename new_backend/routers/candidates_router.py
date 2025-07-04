@@ -676,3 +676,56 @@ async def get_stages_summary():
     except Exception as e:
         logger.error(f"Error getting stages summary: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{candidate_id}/interview-details", response_model=Dict[str, Any])
+async def store_interview_details(
+    candidate_id: str,
+    interview_details: Dict[str, Any]
+):
+    """Store interview scheduling details for a candidate"""
+    try:
+        from supabase_client import supabase
+
+        # Prepare interview record
+        interview_data = {
+            "candidate_id": candidate_id,
+            "scheduled_date": interview_details.get("date"),
+            "scheduled_time": interview_details.get("time"),
+            "interviewer": interview_details.get("interviewer"),
+            "room": interview_details.get("room"),
+            "status": interview_details.get("status", "scheduled"),
+            "scheduled_by": interview_details.get("scheduled_by", "user"),
+            "created_at": datetime.utcnow().isoformat(),
+            "notes": interview_details.get("notes", "")
+        }
+
+        # Try to insert into interview_schedules table (create if not exists)
+        try:
+            result = supabase.table("interview_schedules").insert(
+                interview_data).execute()
+            logger.info(f"Stored interview details: {result.data}")
+        except Exception as table_error:
+            logger.warning(
+                f"Could not store in interview_schedules table: {table_error}")
+            # Fallback: store in candidate notes or a generic table
+            notes_data = {
+                "candidate_id": candidate_id,
+                "note_type": "interview_schedule",
+                "content": json.dumps(interview_data),
+                "created_at": datetime.utcnow().isoformat()
+            }
+            supabase.table("candidate_notes").insert(notes_data).execute()
+
+        return {
+            "success": True,
+            "message": "Interview details stored successfully",
+            "interview_details": interview_data
+        }
+
+    except Exception as e:
+        logger.error(f"Error storing interview details: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Failed to store interview details: {str(e)}"
+        }

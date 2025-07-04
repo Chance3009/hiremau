@@ -13,6 +13,9 @@ class GitHubAPI:
         self.base_url = "https://api.github.com"
         self.session = requests.Session()
 
+        # Set timeout for all requests (connect timeout, read timeout)
+        self.timeout = (10, 30)  # 10 seconds to connect, 30 seconds to read
+
         # Use GitHub token if available for higher rate limits
         token = github_token or os.getenv("GITHUB_TOKEN")
         if token:
@@ -28,8 +31,12 @@ class GitHubAPI:
         try:
             # Get user data
             user_response = self.session.get(
-                f"{self.base_url}/users/{username}")
+                f"{self.base_url}/users/{username}",
+                timeout=self.timeout
+            )
             if user_response.status_code != 200:
+                print(
+                    f"GitHub API returned status {user_response.status_code} for user {username}")
                 return None
 
             user_data = user_response.json()
@@ -37,7 +44,8 @@ class GitHubAPI:
             # Get user's repositories
             repos_response = self.session.get(
                 f"{self.base_url}/users/{username}/repos",
-                params={"sort": "stars", "per_page": 10}
+                params={"sort": "stars", "per_page": 10},
+                timeout=self.timeout
             )
 
             repos_data = repos_response.json() if repos_response.status_code == 200 else []
@@ -80,8 +88,20 @@ class GitHubAPI:
                 contribution_stats=contribution_stats
             )
 
+        except requests.exceptions.Timeout:
+            print(f"Timeout error when fetching GitHub profile for {username}")
+            return None
+        except requests.exceptions.ConnectionError:
+            print(
+                f"Connection error when fetching GitHub profile for {username}")
+            return None
+        except requests.exceptions.RequestException as e:
+            print(
+                f"Request error when fetching GitHub profile for {username}: {e}")
+            return None
         except Exception as e:
-            print(f"Error fetching GitHub profile for {username}: {e}")
+            print(
+                f"Unexpected error fetching GitHub profile for {username}: {e}")
             return None
 
     def search_user_by_name(self, name: str) -> List[str]:
@@ -89,23 +109,49 @@ class GitHubAPI:
         try:
             response = self.session.get(
                 f"{self.base_url}/search/users",
-                params={"q": name, "per_page": 5}
+                params={"q": name, "per_page": 5},
+                timeout=self.timeout
             )
 
             if response.status_code != 200:
+                print(
+                    f"GitHub search API returned status {response.status_code}")
                 return []
 
             data = response.json()
             return [user["login"] for user in data.get("items", [])]
 
+        except requests.exceptions.Timeout:
+            print(
+                f"Timeout error when searching GitHub users with name: {name}")
+            return []
+        except requests.exceptions.ConnectionError:
+            print(
+                f"Connection error when searching GitHub users with name: {name}")
+            return []
+        except requests.exceptions.RequestException as e:
+            print(f"Request error when searching GitHub users: {e}")
+            return []
         except Exception as e:
-            print(f"Error searching GitHub users: {e}")
+            print(f"Unexpected error searching GitHub users: {e}")
             return []
 
     def check_rate_limit(self) -> Dict[str, Any]:
         """Check current rate limit status."""
         try:
-            response = self.session.get(f"{self.base_url}/rate_limit")
+            response = self.session.get(
+                f"{self.base_url}/rate_limit",
+                timeout=self.timeout
+            )
             return response.json() if response.status_code == 200 else {}
+        except requests.exceptions.Timeout:
+            print("Timeout error when checking GitHub rate limit")
+            return {}
+        except requests.exceptions.ConnectionError:
+            print("Connection error when checking GitHub rate limit")
+            return {}
+        except requests.exceptions.RequestException as e:
+            print(f"Request error when checking rate limit: {e}")
+            return {}
         except Exception:
             return {}

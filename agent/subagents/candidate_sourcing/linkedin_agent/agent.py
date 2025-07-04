@@ -11,17 +11,29 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize BrightData MCP tools for LinkedIn
-mcp_tools = MCPToolset(
-    connection_params=StdioServerParameters(
-        command='npx',
-        args=["-y", "@brightdata/mcp"],
-        env={
-            "API_TOKEN": os.getenv("API_TOKEN"),
-            "WEB_UNLOCKER_ZONE": os.getenv("WEB_UNLOCKER_ZONE")
-        }
+# Check if BrightData API token is available
+api_token = os.getenv("API_TOKEN")
+if not api_token:
+    print("WARNING: API_TOKEN not found in environment variables")
+    print("LinkedIn agent will not function properly without BrightData API token")
+
+# Initialize BrightData MCP tools for LinkedIn with error handling
+try:
+    mcp_tools = MCPToolset(
+        connection_params=StdioServerParameters(
+            command='npx',
+            args=["-y", "@brightdata/mcp"],
+            env={
+                "API_TOKEN": api_token,
+                "WEB_UNLOCKER_ZONE": os.getenv("WEB_UNLOCKER_ZONE", "")
+            }
+        )
     )
-)
+except Exception as e:
+    print(
+        f"ERROR: Failed to initialize BrightData MCP tools for LinkedIn: {e}")
+    print("LinkedIn agent will not function properly")
+    mcp_tools = None
 
 # LinkedIn Information Agent
 linkedin_agent = LlmAgent(
@@ -60,6 +72,9 @@ Return exactly: "No LinkedIn URL provided - cannot extract LinkedIn data"
 IF TOOL CALL FAILS:
 Return exactly: "LinkedIn data extraction failed - tool error"
 
+IF API_TOKEN NOT AVAILABLE:
+Return exactly: "LinkedIn data extraction failed - API token not configured"
+
 FORMAT ONLY REAL TOOL DATA AS:
 {
   "data_source": "web_data_linkedin_person_profile",
@@ -71,6 +86,6 @@ FORMAT ONLY REAL TOOL DATA AS:
 
 REMEMBER: NO TOOL CALL = NO DATA. FABRICATION = FORBIDDEN.""",
     description="FORCES use of BrightData MCP tools - NO fabrication allowed",
-    tools=[mcp_tools],
+    tools=[mcp_tools] if mcp_tools else [],
     output_key="linkedin_data",
 )

@@ -108,18 +108,34 @@ const transformCandidateData = (candidate: any): Candidate => {
 
 export async function fetchCandidateById(candidateId: string): Promise<Candidate | null> {
     try {
+        console.log(`Fetching candidate with ID: ${candidateId}`);
+
         // Use the simplified API endpoint
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`);
 
         if (!response.ok) {
             if (response.status === 404) {
+                console.log('Candidate not found');
                 return null;
             }
+            const errorText = await response.text();
+            console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const candidate = await response.json();
-        return transformCandidateData(candidate);
+        console.log('Raw candidate data from backend:', candidate);
+
+        // Ensure we have basic required fields
+        if (!candidate || !candidate.id) {
+            console.error('Invalid candidate data received:', candidate);
+            throw new Error('Invalid candidate data received from server');
+        }
+
+        const transformedCandidate = transformCandidateData(candidate);
+        console.log('Transformed candidate data:', transformedCandidate);
+
+        return transformedCandidate;
 
     } catch (error) {
         console.error('Error fetching candidate:', error);

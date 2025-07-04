@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, ChevronRight, Download, RefreshCw } from 'lucide-react';
+import { Plus, ChevronRight, Download, RefreshCw, VideoIcon, FileText, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { useCandidateFiltering } from '@/hooks/useCandidateFiltering';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
+import { performCandidateAction } from '@/services/candidateService';
+import { toast } from '@/components/ui/use-toast';
+import { getActionLabel } from '@/lib/workflow';
 
 const InterviewedCandidates = () => {
     const navigate = useNavigate();
@@ -23,15 +26,59 @@ const InterviewedCandidates = () => {
         refresh: refreshCandidates,
         activeFilters
     } = useCandidateFiltering({
-        additionalFilters: { stage: 'interviewed' },
+        additionalFilters: { stage: 'interview' },
         autoRefresh: false // Disable auto-refresh to prevent continuous calls
     });
+
+    const handleCandidateAction = async (candidateId: string, action: string) => {
+        try {
+            await performCandidateAction(candidateId, action, {
+                performed_by: 'user',
+                notes: `Performed action: ${action}`
+            });
+
+            toast({
+                title: "Action Completed",
+                description: `Successfully performed action: ${getActionLabel(action)}`,
+            });
+
+            // Navigate based on action
+            if (action === 'move_to_final') {
+                navigate('/final-review');
+            } else {
+                refreshCandidates();
+            }
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || `Failed to perform action: ${action}`,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const startInterview = (candidateId: string) => {
+        navigate(`/interview/${candidateId}`);
+    };
+
+    const markAsInterviewed = async (candidateId: string) => {
+        try {
+            // For now, we'll move them to final review since there's no "interviewed" stage
+            await handleCandidateAction(candidateId, 'move_to_final');
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || 'Failed to mark as interviewed',
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <div className="space-y-6">
             <PageHeader
-                title="Interviewed Candidates"
-                subtitle={`Review interview results and make final decisions ${activeFilters.positionId
+                title="Interview Scheduled"
+                subtitle={`Candidates scheduled for interviews and ready to be interviewed ${activeFilters.positionId
                     ? `• Filtered by position`
                     : '• Showing all positions'
                     }`}
@@ -82,12 +129,12 @@ const InterviewedCandidates = () => {
                         <div className="text-center">
                             <p className="text-muted-foreground mb-4">
                                 {activeFilters.positionId
-                                    ? 'No interviewed candidates found for the selected position.'
-                                    : 'No interviewed candidates found. Try selecting a specific position or check other stages.'
+                                    ? 'No candidates scheduled for interviews for the selected position.'
+                                    : 'No candidates scheduled for interviews. Schedule interviews from the screened candidates page.'
                                 }
                             </p>
-                            <Button onClick={() => navigate('/applied')} variant="outline">
-                                View Applied Candidates
+                            <Button onClick={() => navigate('/screened')} variant="outline">
+                                View Screened Candidates
                             </Button>
                         </div>
                     </CardContent>
@@ -97,33 +144,151 @@ const InterviewedCandidates = () => {
             {/* Candidates list */}
             {!loading && !error && candidates.length > 0 && (
                 <div className="grid gap-4">
-                    {candidates.map((candidate) => (
-                        <Card key={candidate.id} className="cursor-pointer hover:bg-accent/5">
-                            <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="text-lg">{candidate.name}</CardTitle>
-                                        <p className="text-muted-foreground">{candidate.position}</p>
+                    {candidates.map((candidate) => {
+                        // Extract evaluation data
+                        const evaluationData = candidate?.evaluationData || candidate?.evaluation_data;
+                        const hasEvaluation = evaluationData && Array.isArray(evaluationData) && evaluationData.length > 0;
+                        const evaluation = hasEvaluation ? evaluationData[0] : null;
+                        
+                        // Format additional information
+                        const formatExperience = () => {
+                            if (candidate.years_experience) {
+                                return `${candidate.years_experience} years`;
+                            }
+                            return candidate.experience || 'Not specified';
+                        };
+                        
+                        const formatSalary = () => {
+                            if (candidate.formatted_salary) {
+                                return candidate.formatted_salary;
+                            }
+                            if (candidate.salary_expectations) {
+                                return `RM ${candidate.salary_expectations.toLocaleString()}`;
+                            }
+                            return null;
+                        };
+                        
+                        return (
+                            <Card key={candidate.id} className="cursor-pointer hover:bg-accent/5">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <CardTitle className="text-lg truncate">{candidate.name}</CardTitle>
+                                                <Badge variant="secondary">Interview Scheduled</Badge>
+                                                {evaluation?.recommendation && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {evaluation.recommendation}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-muted-foreground text-sm">
+                                                {candidate.current_position || candidate.position || 'Position not specified'}
+                                            </p>
+                                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                                                <span>{formatExperience()}</span>
+                                                {formatSalary() && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>{formatSalary()}</span>
+                                                    </>
+                                                )}
+                                                {candidate.education && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>{candidate.education}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <Badge variant="secondary">Interviewed</Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex justify-between items-center">
-                                    <div className="text-sm text-muted-foreground">
-                                        {candidate.email}
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {/* Contact Information */}
+                                        <div className="flex items-center justify-between text-sm">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-muted-foreground">{candidate.email}</span>
+                                                {candidate.formatted_phone && (
+                                                    <span className="text-muted-foreground">{candidate.formatted_phone}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Skills */}
+                                        {candidate.skills && candidate.skills.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {candidate.skills.slice(0, 5).map((skill, index) => (
+                                                    <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5">
+                                                        {skill}
+                                                    </Badge>
+                                                ))}
+                                                {candidate.skills.length > 5 && (
+                                                    <span className="text-xs text-muted-foreground self-center">
+                                                        +{candidate.skills.length - 5} more
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Evaluation Summary */}
+                                        {hasEvaluation && evaluation && (
+                                            <div className="bg-muted/30 rounded-lg p-3 text-sm">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                                    <span className="font-medium text-green-700">AI Evaluation Complete</span>
+                                                </div>
+                                                {evaluation.recommendation_reasoning && (
+                                                    <p className="text-muted-foreground text-xs leading-relaxed">
+                                                        {evaluation.recommendation_reasoning.length > 150
+                                                            ? `${evaluation.recommendation_reasoning.substring(0, 150)}...`
+                                                            : evaluation.recommendation_reasoning}
+                                                    </p>
+                                                )}
+                                                {evaluation.strengths && (
+                                                    <div className="mt-2">
+                                                        <span className="text-green-600 font-medium text-xs">Key Strengths: </span>
+                                                        <span className="text-muted-foreground text-xs">
+                                                            {evaluation.strengths.split(',').slice(0, 2).join(', ')}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-2 pt-2">
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                onClick={() => startInterview(candidate.id)}
+                                                className="flex-1"
+                                            >
+                                                <VideoIcon className="h-4 w-4 mr-2" />
+                                                Start Interview
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleCandidateAction(candidate.id, 'move_to_final')}
+                                                className="flex-1"
+                                            >
+                                                <FileText className="h-4 w-4 mr-2" />
+                                                Complete Interview
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => navigate(`/candidate/${candidate.id}`)}
+                                            >
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => navigate(`/candidates/${candidate.id}`)}
-                                    >
-                                        View Details <ChevronRight className="h-4 w-4 ml-1" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -43,11 +43,26 @@ transformer_model = "Qwen/Qwen3-Embedding-0.6B"
 # ocr_model = "llava:13b"
 ocr_model = "gemini-2.5-flash"
 # embedding = HuggingFaceEmbeddings(model_name=transformer_model)
-embedding = OllamaEmbeddings(model="nomic-embed-text")
+
+# Initialize Ollama embeddings with error handling
+try:
+    embedding = OllamaEmbeddings(model="nomic-embed-text")
+    # Test the connection
+    test_text = "test"
+    embedding.embed_query(test_text)
+    logger.info("Ollama embeddings initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Ollama embeddings: {e}")
+    logger.error(
+        "Make sure Ollama is running and the 'nomic-embed-text' model is available")
+    logger.error("To fix this, run: ollama pull nomic-embed-text")
+    raise RuntimeError(f"Ollama embeddings initialization failed: {e}")
+
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
 app = Flask(__name__)
 CORS(app)
+
 
 def extract_image_info(image_path: str) -> str:
     prompt = """
@@ -72,35 +87,33 @@ def extract_image_info(image_path: str) -> str:
 
         The goal is to create a comprehensive record that preserves all potentially useful information for candidate assessment, regardless of the original document format.
     """
-    with open(image_path, 'rb') as f:
-        image_bytes = f.read()
-    response = client.models.generate_content(
-        model=ocr_model,
-        contents=[
-            types.Part.from_bytes(
-                data=image_bytes,
-                mime_type='image/jpeg',
-            ),
-            prompt
-        ]
-    )
-    return str(response.text) if response.text else ""
-    # response = ollama.chat(
-    #     model=ocr_model,
-    #     messages=[{
-    #         "role": "user",
-    #         "content": prompt,
-    #         "images": [image_path]
-    #     }],
-    # )
-    # return response['message']['content'].strip()
+
+    try:
+        with open(image_path, 'rb') as f:
+            image_bytes = f.read()
+        response = client.models.generate_content(
+            model=ocr_model,
+            contents=[
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type='image/jpeg',
+                ),
+                prompt
+            ]
+        )
+        return str(response.text) if response.text else ""
+    except Exception as e:
+        logger.error(f"Error processing image {image_path}: {e}")
+        return f"Error processing image: {str(e)}"
 
 
 def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Optional[str] = None) -> dict:
     if not url or not name:
         return {'error': 'Missing url or name'}
+
     try:
-        r = requests.get(url)
+        # Download file with timeout
+        r = requests.get(url, timeout=30)
         if r.status_code != 200:
             logger.error(f"Failed to download file from {url}")
             return {'error': 'Failed to download file'}
@@ -119,18 +132,30 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Op
             docs = loader.load()  # List[Document]
             logger.info(f"Loaded {len(docs)} PDF documents (all pages)")
 
-            vector_store = SupabaseVectorStore.from_documents(
-                docs,
-                embedding,
-                client=supabase,
-                table_name="candidate_table",
-                query_name="match_documents",
-                chunk_size=500,
-                document_id=uuid_str,
-                name=name,
-            )
-            logger.info(f"Stored {len(docs)} PDF chunks in candidate_table.")
-            os.remove(filename)
+            try:
+                vector_store = SupabaseVectorStore.from_documents(
+                    docs,
+                    embedding,
+                    client=supabase,
+                    table_name="candidate_table",
+                    query_name="match_documents",
+                    chunk_size=500,
+                    document_id=uuid_str,
+                    name=name,
+                )
+                logger.info(
+                    f"Stored {len(docs)} PDF chunks in candidate_table.")
+            except Exception as e:
+                logger.error(f"Error storing PDF in vector store: {e}")
+                # Clean up file on error
+                if os.path.exists(filename):
+                    os.remove(filename)
+                return {'error': f'Failed to store PDF in vector database: {str(e)}'}
+
+            # Clean up file after successful processing
+            if os.path.exists(filename):
+                os.remove(filename)
+
         elif ext in IMAGE_EXTENSIONS:
             info = extract_image_info(filename)
             stat = os.stat(filename)
@@ -154,24 +179,44 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Op
             }
             image_doc = Document(page_content=info, metadata=metadata)
             docs = [image_doc]
-            image_doc = Document(page_content=info, metadata=metadata)
-            docs = [image_doc]
-            vector_store = SupabaseVectorStore.from_documents(
-                docs,
-                embedding,
-                client=supabase,
-                table_name="candidate_table",
-                query_name="match_candidate_documents",
-                chunk_size=500,
-                document_id=uuid_str,
-                name=name,
-            )
-            logger.info(f"Stored image OCR document in candidate_table.")
-            os.remove(filename)
+
+            try:
+                vector_store = SupabaseVectorStore.from_documents(
+                    docs,
+                    embedding,
+                    client=supabase,
+                    table_name="candidate_table",
+                    query_name="match_candidate_documents",
+                    chunk_size=500,
+                    document_id=uuid_str,
+                    name=name,
+                )
+                logger.info(f"Stored image OCR document in candidate_table.")
+            except Exception as e:
+                logger.error(f"Error storing image in vector store: {e}")
+                # Clean up file on error
+                if os.path.exists(filename):
+                    os.remove(filename)
+                return {'error': f'Failed to store image in vector database: {str(e)}'}
+
+            # Clean up file after successful processing
+            if os.path.exists(filename):
+                os.remove(filename)
         else:
             logger.warning(f"Unsupported file type: {ext}")
+            # Clean up unsupported file
+            if os.path.exists(filename):
+                os.remove(filename)
             return {'error': f'Unsupported file type: {ext}'}
+
         return {'status': 'success', 'content': docs}
+
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout downloading file from {url}")
+        return {'error': 'Request timeout when downloading file'}
+    except requests.exceptions.ConnectionError:
+        logger.error(f"Connection error downloading file from {url}")
+        return {'error': 'Connection error when downloading file'}
     except Exception as e:
         logger.error(f"Exception during download or processing: {e}")
         return {'error': str(e)}
@@ -273,13 +318,18 @@ def save_evaluation_to_rag(content: str, candidate_name: str):
         "candidate_name": candidate_name
     }
     doc = Document(page_content=content, metadata=metadata)
-    # Store in Supabase candidate_rag table
-    vector_store = SupabaseVectorStore.from_documents(
-        [doc],
-        embedding,
-        client=supabase,
-        table_name="candidate_rag",
-        query_name="match_documents",
-        chunk_size=500,
-    )
-    logger.info("Saved evaluation to candidate_rag table.")
+
+    try:
+        # Store in Supabase candidate_rag table
+        vector_store = SupabaseVectorStore.from_documents(
+            [doc],
+            embedding,
+            client=supabase,
+            table_name="candidate_rag",
+            query_name="match_documents",
+            chunk_size=500,
+        )
+        logger.info("Saved evaluation to candidate_rag table.")
+    except Exception as e:
+        logger.error(f"Error saving evaluation to RAG: {e}")
+        raise e

@@ -779,7 +779,10 @@ const AppliedCandidates = () => {
     const handleCandidateAction = async (candidateId: string, action: WorkflowAction) => {
         try {
             // Call the backend API to perform the action
-            await performCandidateAction(candidateId, action, 'user', `Performed action: ${action}`);
+            await performCandidateAction(candidateId, action, {
+                performed_by: 'user',
+                notes: `Performed action: ${action}`
+            });
 
             // Show success message
             toast({
@@ -790,7 +793,7 @@ const AppliedCandidates = () => {
             // Navigate to appropriate page based on action
             if (action === 'shortlist') {
                 // Navigate to screening page
-                navigate('/screening');
+                navigate('/screened');
             } else if (action === 'schedule-interview') {
                 // Navigate to interview scheduling
                 navigate('/interviews/schedule');

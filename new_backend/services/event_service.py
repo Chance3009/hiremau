@@ -65,27 +65,56 @@ class EventService(BaseService):
     async def create_event(self, event: EventCreate) -> Event:
         """Create a new event"""
         try:
-            result = await self.supabase.query(
-                """
-                INSERT INTO events (
-                    title, date, time, location, status,
-                    positions, analytics_json
-                ) VALUES (
-                    :title, :date, :time, :location, :status,
-                    :positions, :analytics_json
-                ) RETURNING *
-                """,
-                values=event.dict()
-            ).execute()
-            return Event(**result.data[0])
+            # Convert the EventCreate model to a dictionary for insertion
+            event_data = event.dict()
+
+            # Handle event_positions if present
+            event_positions = event_data.pop('event_positions', [])
+
+            # Set default values and ensure proper formatting
+            event_data.setdefault('status', 'active')
+            event_data.setdefault('created_at', datetime.utcnow().isoformat())
+            event_data.setdefault('updated_at', datetime.utcnow().isoformat())
+
+            # Insert the event into the database
+            result = supabase.table("events").insert(event_data).execute()
+
+            if not result.data:
+                raise HTTPException(
+                    status_code=500, detail="Failed to create event")
+
+            created_event = result.data[0]
+            event_id = created_event['id']
+
+            # Insert event positions if provided
+            if event_positions:
+                for position in event_positions:
+                    position_data = {
+                        'event_id': event_id,
+                        'job_id': position.get('job_id'),
+                        'positions_available': position.get('positions_available', 1),
+                        'positions_filled': 0,
+                        'created_at': datetime.utcnow().isoformat(),
+                        'updated_at': datetime.utcnow().isoformat()
+                    }
+                    supabase.table("event_positions").insert(
+                        position_data).execute()
+
+            # Ensure required integer fields are set properly
+            created_event['registrations'] = created_event.get(
+                'registrations') or 0
+            created_event['interviews'] = created_event.get('interviews') or 0
+
+            return Event(**created_event)
         except Exception as e:
             logger.error(f"Error creating event: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to create event: {str(e)}")
 
     async def update_event(self, event_id: str, event: EventUpdate) -> Optional[Event]:
         """Update an existing event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
+            existing_event = self.get_event_by_id(event_id)
             if not existing_event:
                 return None
 
@@ -93,265 +122,276 @@ class EventService(BaseService):
             if not update_data:
                 return existing_event
 
-            set_clauses = []
-            for key, value in update_data.items():
-                if isinstance(value, str):
-                    set_clauses.append(f"{key} = '{value}'")
-                else:
-                    set_clauses.append(f"{key} = {value}")
+            # Add updated timestamp
+            update_data['updated_at'] = datetime.utcnow().isoformat()
 
-            query = f"""
-                UPDATE events
-                SET {', '.join(set_clauses)}
-                WHERE id = '{event_id}'
-                RETURNING *
-            """
-            result = await self.supabase.query(query).execute()
-            return Event(**result.data[0])
+            # Update using Supabase table operations
+            result = supabase.table("events").update(
+                update_data).eq("id", event_id).execute()
+
+            if not result.data:
+                return None
+
+            updated_event = result.data[0]
+            updated_event['registrations'] = updated_event.get(
+                'registrations') or 0
+            updated_event['interviews'] = updated_event.get('interviews') or 0
+
+            return Event(**updated_event)
         except Exception as e:
             logger.error(f"Error updating event: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to update event: {str(e)}")
 
     async def delete_event(self, event_id: str) -> bool:
         """Delete an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
+            existing_event = self.get_event_by_id(event_id)
             if not existing_event:
                 return False
 
-            await self.supabase.query(
-                f"DELETE FROM events WHERE id = '{event_id}'"
-            ).execute()
+            # Delete using Supabase table operations
+            result = supabase.table("events").delete().eq(
+                "id", event_id).execute()
             return True
         except Exception as e:
             logger.error(f"Error deleting event: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to delete event: {str(e)}")
 
     async def get_event_metrics(self, event_id: str) -> Optional[Dict]:
         """Get metrics for a specific event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
+            existing_event = self.get_event_by_id(event_id)
             if not existing_event:
                 return None
 
-            result = await self.supabase.query(
-                f"""
-                SELECT
-                    e.id,
-                    e.title,
-                    COUNT(DISTINCT er.id) as total_registrations,
-                    COUNT(DISTINCT ei.id) as total_interviews,
-                    COUNT(DISTINCT ep.id) as total_positions,
-                    COUNT(DISTINCT CASE WHEN ei.status = 'completed' THEN ei.id END) as completed_interviews
-                FROM events e
-                LEFT JOIN event_registrations er ON e.id = er.event_id
-                LEFT JOIN event_interviews ei ON e.id = ei.event_id
-                LEFT JOIN event_positions ep ON e.id = ep.event_id
-                WHERE e.id = '{event_id}'
-                GROUP BY e.id, e.title
-                """
-            ).execute()
-            return result.data[0] if result.data else None
+            # Get event basic info
+            event_info = {
+                'id': event_id,
+                'title': existing_event.title if hasattr(existing_event, 'title') else 'Event'
+            }
+
+            # Count registrations
+            try:
+                reg_result = supabase.table("event_registrations").select(
+                    "id", count="exact").eq("event_id", event_id).execute()
+                event_info['total_registrations'] = reg_result.count or 0
+            except:
+                event_info['total_registrations'] = 0
+
+            # Count interviews
+            try:
+                int_result = supabase.table("interviews").select(
+                    "id", count="exact").eq("event_id", event_id).execute()
+                event_info['total_interviews'] = int_result.count or 0
+            except:
+                event_info['total_interviews'] = 0
+
+            # Count positions
+            try:
+                pos_result = supabase.table("event_positions").select(
+                    "id", count="exact").eq("event_id", event_id).execute()
+                event_info['total_positions'] = pos_result.count or 0
+            except:
+                event_info['total_positions'] = 0
+
+            event_info['completed_interviews'] = 0  # Simplified for now
+
+            return event_info
         except Exception as e:
             logger.error(f"Error getting event metrics: {str(e)}")
-            raise
+            return None
 
     async def get_event_positions(self, event_id: str) -> Optional[List[Dict]]:
-        """Get all positions for a specific event"""
+        """Get all positions for an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
-            if not existing_event:
-                return None
+            result = supabase.table("event_positions").select(
+                "*", "jobs(id, title, description)"
+            ).eq("event_id", event_id).execute()
 
-            result = await self.supabase.query(
-                f"""
-                SELECT
-                    ep.*,
-                    j.title as job_title,
-                    j.department as job_department
-                FROM event_positions ep
-                JOIN jobs j ON ep.job_id = j.id
-                WHERE ep.event_id = '{event_id}'
-                ORDER BY ep.created_at DESC
-                """
-            ).execute()
-            return result.data
+            if result.data:
+                positions = []
+                for pos in result.data:
+                    position_data = {
+                        'id': pos['id'],
+                        'event_id': pos['event_id'],
+                        'job_id': pos['job_id'],
+                        'positions_available': pos.get('positions_available', 1),
+                        'positions_filled': pos.get('positions_filled', 0),
+                        'job_title': pos.get('jobs', {}).get('title', 'Unknown Position') if pos.get('jobs') else 'Unknown Position',
+                        'job_description': pos.get('jobs', {}).get('description', '') if pos.get('jobs') else '',
+                        'created_at': pos.get('created_at'),
+                        'updated_at': pos.get('updated_at')
+                    }
+                    positions.append(position_data)
+                return positions
+            return []
         except Exception as e:
             logger.error(f"Error getting event positions: {str(e)}")
-            raise
+            return []
 
     async def get_event_registrations(self, event_id: str) -> Optional[List[Dict]]:
-        """Get all registrations for a specific event"""
+        """Get all registrations for an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
-            if not existing_event:
-                return None
+            result = supabase.table("event_registrations").select(
+                "*", "candidates(id, name, email, phone, stage, status)"
+            ).eq("event_id", event_id).execute()
 
-            result = await self.supabase.query(
-                f"""
-                SELECT
-                    er.*,
-                    c.name as candidate_name,
-                    c.email as candidate_email,
-                    j.title as job_title
-                FROM event_registrations er
-                JOIN candidates c ON er.candidate_id = c.id
-                LEFT JOIN jobs j ON er.job_id = j.id
-                WHERE er.event_id = '{event_id}'
-                ORDER BY er.created_at DESC
-                """
-            ).execute()
-            return result.data
+            if result.data:
+                registrations = []
+                for reg in result.data:
+                    reg_data = {
+                        'id': reg['id'],
+                        'event_id': reg['event_id'],
+                        'candidate_id': reg['candidate_id'],
+                        'registration_date': reg.get('registration_date'),
+                        'status': reg.get('status', 'registered'),
+                        'notes': reg.get('notes', ''),
+                        'candidate': reg.get('candidates', {}),
+                        'created_at': reg.get('created_at'),
+                        'updated_at': reg.get('updated_at')
+                    }
+                    registrations.append(reg_data)
+                return registrations
+            return []
         except Exception as e:
             logger.error(f"Error getting event registrations: {str(e)}")
-            raise
+            return []
 
     async def register_candidate(self, event_id: str, registration: EventRegistrationCreate) -> Dict:
         """Register a candidate for an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
-            if not existing_event:
-                raise HTTPException(status_code=404, detail="Event not found")
+            registration_data = registration.dict()
+            registration_data['event_id'] = event_id
+            registration_data['registration_date'] = datetime.utcnow(
+            ).isoformat()
+            registration_data['status'] = 'registered'
+            registration_data['created_at'] = datetime.utcnow().isoformat()
+            registration_data['updated_at'] = datetime.utcnow().isoformat()
 
-            result = await self.supabase.query(
-                """
-                INSERT INTO event_registrations (
-                    event_id, candidate_id, job_id
-                ) VALUES (
-                    :event_id, :candidate_id, :job_id
-                ) RETURNING *
-                """,
-                values={
-                    "event_id": event_id,
-                    "candidate_id": registration.candidate_id,
-                    "job_id": registration.job_id
+            result = supabase.table("event_registrations").insert(
+                registration_data).execute()
+
+            if result.data:
+                return {
+                    'success': True,
+                    'registration_id': result.data[0]['id'],
+                    'message': 'Candidate registered successfully'
                 }
-            ).execute()
-            return result.data[0]
+            else:
+                raise HTTPException(
+                    status_code=500, detail="Failed to register candidate")
         except Exception as e:
             logger.error(f"Error registering candidate: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to register candidate: {str(e)}")
 
     async def schedule_interview(self, event_id: str, interview: EventInterviewCreate) -> Dict:
         """Schedule an interview for an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
-            if not existing_event:
-                raise HTTPException(status_code=404, detail="Event not found")
+            interview_data = interview.dict()
+            interview_data['event_id'] = event_id
+            interview_data['status'] = 'scheduled'
+            interview_data['created_at'] = datetime.utcnow().isoformat()
+            interview_data['updated_at'] = datetime.utcnow().isoformat()
 
-            result = await self.supabase.query(
-                """
-                INSERT INTO event_interviews (
-                    event_id, candidate_id, job_id, interviewer, scheduled_at
-                ) VALUES (
-                    :event_id, :candidate_id, :job_id, :interviewer, :scheduled_at
-                ) RETURNING *
-                """,
-                values={
-                    "event_id": event_id,
-                    "candidate_id": interview.candidate_id,
-                    "job_id": interview.job_id,
-                    "interviewer": interview.interviewer,
-                    "scheduled_at": interview.scheduled_at
+            result = supabase.table("interviews").insert(
+                interview_data).execute()
+
+            if result.data:
+                return {
+                    'success': True,
+                    'interview_id': result.data[0]['id'],
+                    'message': 'Interview scheduled successfully'
                 }
-            ).execute()
-            return result.data[0]
+            else:
+                raise HTTPException(
+                    status_code=500, detail="Failed to schedule interview")
         except Exception as e:
             logger.error(f"Error scheduling interview: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to schedule interview: {str(e)}")
 
     async def add_position(self, event_id: str, position: EventPositionCreate) -> Dict:
         """Add a position to an event"""
         try:
-            existing_event = await self.get_event_by_id(event_id)
-            if not existing_event:
-                raise HTTPException(status_code=404, detail="Event not found")
+            position_data = position.dict()
+            position_data['event_id'] = event_id
+            position_data['positions_filled'] = 0
+            position_data['created_at'] = datetime.utcnow().isoformat()
+            position_data['updated_at'] = datetime.utcnow().isoformat()
 
-            result = await self.supabase.query(
-                """
-                INSERT INTO event_positions (
-                    event_id, job_id, slots, filled, description
-                ) VALUES (
-                    :event_id, :job_id, :slots, :filled, :description
-                ) RETURNING *
-                """,
-                values={
-                    "event_id": event_id,
-                    "job_id": position.job_id,
-                    "slots": position.slots,
-                    "filled": position.filled,
-                    "description": position.description
+            result = supabase.table("event_positions").insert(
+                position_data).execute()
+
+            if result.data:
+                return {
+                    'success': True,
+                    'position_id': result.data[0]['id'],
+                    'message': 'Position added successfully'
                 }
-            ).execute()
-            return result.data[0]
+            else:
+                raise HTTPException(
+                    status_code=500, detail="Failed to add position")
         except Exception as e:
             logger.error(f"Error adding position: {str(e)}")
-            raise
+            raise HTTPException(
+                status_code=500, detail=f"Failed to add position: {str(e)}")
 
     async def get_upcoming_events(self) -> List[Dict[str, Any]]:
-        """Get all upcoming events"""
+        """Get upcoming events"""
         try:
-            result = await self.supabase.query(
-                """
-                SELECT *
-                FROM events
-                WHERE date >= CURRENT_DATE
-                AND status = 'upcoming'
-                ORDER BY date ASC
-                """
-            ).execute()
-            return result.data
+            current_date = datetime.utcnow().isoformat()
+            result = supabase.table("events").select(
+                "*").gte("date", current_date).order("date", desc=False).execute()
+            return result.data if result.data else []
         except Exception as e:
             logger.error(f"Error getting upcoming events: {str(e)}")
-            raise
+            return []
 
     async def get_past_events(self) -> List[Dict[str, Any]]:
-        """Get all past events"""
+        """Get past events"""
         try:
-            result = await self.supabase.query(
-                """
-                SELECT *
-                FROM events
-                WHERE date < CURRENT_DATE
-                ORDER BY date DESC
-                """
-            ).execute()
-            return result.data
+            current_date = datetime.utcnow().isoformat()
+            result = supabase.table("events").select(
+                "*").lt("date", current_date).order("date", desc=True).execute()
+            return result.data if result.data else []
         except Exception as e:
             logger.error(f"Error getting past events: {str(e)}")
-            raise
+            return []
 
     async def get_events_by_status(self, status: EventStatus) -> List[Dict[str, Any]]:
         """Get events by status"""
         try:
-            result = await self.supabase.query(
-                f"""
-                SELECT *
-                FROM events
-                WHERE status = '{status}'
-                ORDER BY date ASC
-                """
-            ).execute()
-            return result.data
+            result = supabase.table("events").select(
+                "*").eq("status", status.value).order("date", desc=False).execute()
+            return result.data if result.data else []
         except Exception as e:
             logger.error(f"Error getting events by status: {str(e)}")
-            raise
+            return []
 
     async def get_events_summary(self) -> Dict[str, Any]:
         """Get summary of all events"""
         try:
-            result = await self.supabase.query(
-                """
-                SELECT
-                    COUNT(*) as total_events,
-                    COUNT(CASE WHEN status = 'upcoming' THEN 1 END) as upcoming_events,
-                    COUNT(CASE WHEN status = 'ongoing' THEN 1 END) as ongoing_events,
-                    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_events,
-                    COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_events
-                FROM events
-                """
-            ).execute()
-            return result.data[0]
+            total_result = supabase.table("events").select(
+                "id", count="exact").execute()
+            active_result = supabase.table("events").select(
+                "id", count="exact").eq("status", "active").execute()
+
+            current_date = datetime.utcnow().isoformat()
+            upcoming_result = supabase.table("events").select(
+                "id", count="exact").gte("date", current_date).execute()
+
+            return {
+                'total_events': total_result.count or 0,
+                'active_events': active_result.count or 0,
+                'upcoming_events': upcoming_result.count or 0
+            }
         except Exception as e:
             logger.error(f"Error getting events summary: {str(e)}")
-            raise
+            return {
+                'total_events': 0,
+                'active_events': 0,
+                'upcoming_events': 0
+            }

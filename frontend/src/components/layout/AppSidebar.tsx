@@ -11,7 +11,11 @@ import {
   Users,
   FileCheck,
   UserCheck,
-  GitCompare
+  GitCompare,
+  CalendarPlus,
+  Monitor,
+  UserCheck2,
+  QrCode
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,6 +69,31 @@ const menuGroups: MenuGroup[] = [
         title: "Recruitment Pipeline",
         path: "/applied",
         icon: <Users size={18} />
+      }
+    ]
+  },
+  {
+    label: "Event Management",
+    items: [
+      {
+        title: "Event Creation",
+        path: "/event-creation",
+        icon: <CalendarPlus size={18} />
+      },
+      {
+        title: "QR Registration",
+        path: "/qr-registration",
+        icon: <QrCode size={18} />
+      },
+      {
+        title: "Event Operations",
+        path: "/event-operations",
+        icon: <Monitor size={18} />
+      },
+      {
+        title: "Fast Check-In",
+        path: "/fast-checkin",
+        icon: <UserCheck2 size={18} />
       }
     ]
   },

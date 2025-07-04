@@ -15,11 +15,11 @@ class StageManagementService:
     def __init__(self):
         # Define the stage flow and allowed transitions
         self.stage_transitions = {
-            # Allow direct shortlisting from applied
-            "applied": ["screening", "shortlisted", "rejected"],
-            "screening": ["shortlisted", "rejected", "interview"],
+            # Fixed: shortlist from applied should go to screened (screening phase)
+            "applied": ["screened", "rejected"],
+            "screened": ["shortlisted", "rejected", "interview"],
             "shortlisted": ["interview", "rejected"],
-            "interview": ["final_review", "rejected", "offer"],
+            "interview": ["final_review", "rejected"],
             "final_review": ["offer", "rejected"],
             "offer": ["hired", "rejected", "declined"],
             "hired": ["onboarded"],
@@ -31,7 +31,7 @@ class StageManagementService:
         # Define status mappings for each stage
         self.stage_status_mapping = {
             "applied": "active",
-            "screening": "under_review",
+            "screened": "under_review",  # Fixed: changed from screening to screened
             "shortlisted": "shortlisted",
             "interview": "interviewing",
             "final_review": "final_review",
@@ -45,7 +45,8 @@ class StageManagementService:
         # Define what data to fetch for each stage
         self.stage_data_requirements = {
             "applied": ["basic_info", "resume", "application_data"],
-            "screening": ["basic_info", "resume", "initial_evaluation"],
+            # Fixed: changed from screening to screened
+            "screened": ["basic_info", "resume", "initial_evaluation"],
             "shortlisted": ["basic_info", "resume", "initial_evaluation", "screening_notes"],
             "interview": ["basic_info", "resume", "initial_evaluation", "interview_schedule", "interview_notes"],
             "final_review": ["basic_info", "resume", "evaluations", "interview_feedback", "references"],
@@ -72,10 +73,12 @@ class StageManagementService:
             # Convert stages to actions
             actions = []
             for stage in allowed_stages:
-                if stage == "screening":
-                    actions.append("start_screening")
-                elif stage == "shortlisted":
+                if stage == "screened":
+                    # Fixed: shortlist action leads to screened stage
                     actions.append("shortlist")
+                elif stage == "shortlisted":
+                    # Fixed: separate action for shortlisted
+                    actions.append("move_to_shortlisted")
                 elif stage == "interview":
                     actions.append("schedule_interview")
                 elif stage == "final_review":
@@ -168,8 +171,9 @@ class StageManagementService:
     def _action_to_stage(self, action: str) -> Optional[str]:
         """Map action to stage"""
         action_stage_map = {
-            "start_screening": "screening",
-            "shortlist": "shortlisted",
+            "start_screening": "screened",
+            "shortlist": "screened",
+            "move_to_shortlisted": "shortlisted",
             "schedule_interview": "interview",
             "move_to_final": "final_review",
             "make_offer": "offer",
