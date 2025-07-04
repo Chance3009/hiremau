@@ -3,13 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from routers.jobs_router import router as jobs_router
-from routers.candidates_router import router as candidates_router
+from routers.candidates_router_simplified import router as candidates_router
 from routers.events_router import router as events_router
 from routers.interviews_router import router as interviews_router
 from routers.ai_router import router as ai_router
 from routers.dashboard_router import router as dashboard_router
 from routers.workflow_router import router as workflow_router
 from routers.evaluation_router import router as evaluation_router
+from routers.scheduling_router import router as scheduling_router
 import logging
 
 # Configure logging
@@ -140,6 +141,7 @@ app.include_router(ai_router)
 app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(workflow_router, prefix="/workflow", tags=["workflow"])
 app.include_router(evaluation_router)
+app.include_router(scheduling_router)
 
 
 @app.on_event("startup")

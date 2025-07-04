@@ -238,11 +238,32 @@ export async function getCandidateActions(candidateId: string): Promise<string[]
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
-
+        const actions = await response.json();
+        return actions;
     } catch (error) {
         console.error('Error fetching candidate actions:', error);
         return [];
+    }
+}
+
+// Add new function for fetching evaluation data
+export async function getCandidateEvaluation(candidateId: string): Promise<any> {
+    try {
+        console.log(`Fetching evaluation data for candidate: ${candidateId}`);
+
+        const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/evaluation`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Evaluation data received:', result);
+
+        return result;
+    } catch (error) {
+        console.error('Error fetching candidate evaluation:', error);
+        throw error;
     }
 }
 
@@ -486,5 +507,38 @@ export async function getCandidatesByStageFromSupabase(stage: string): Promise<C
     } catch (error) {
         console.error('Error in getCandidatesByStageFromSupabase:', error);
         return [];
+    }
+}
+
+export async function fetchCandidateInterviewData(candidateId: string): Promise<any> {
+    try {
+        console.log(`Fetching interview data for candidate: ${candidateId}`);
+        console.log(`API URL: ${API_BASE_URL}/candidates/${candidateId}/interview-data`);
+
+        const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/interview-data`);
+
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response ok: ${response.ok}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.log('Candidate not found');
+                return null;
+            }
+            const errorText = await response.text();
+            console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const interviewData = await response.json();
+        console.log('Interview data received:', interviewData);
+        console.log('Interview data keys:', Object.keys(interviewData));
+
+        return interviewData;
+
+    } catch (error) {
+        console.error('Error fetching candidate interview data:', error);
+        console.error('Error details:', error.message);
+        throw error;
     }
 } 

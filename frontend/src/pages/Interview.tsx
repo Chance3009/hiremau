@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from "@/components/ui/page-header";
 import { mockCandidates, mockInterviews } from '@/mocks/interviewData';
 import { Note } from '@/types';
+import { fetchCandidateInterviewData } from '@/services/candidateService';
 
 // Types for suggested questions
 interface SuggestedQuestion {
@@ -32,6 +33,7 @@ interface SuggestedQuestion {
   context: string;
   tags: string[];
   aiReason: string;
+  notes?: { text: string; timestamp: string }[];
 }
 
 interface MessageAIAnalysis {
@@ -67,18 +69,60 @@ const Interview: React.FC = () => {
   const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
   const [questionNote, setQuestionNote] = useState('');
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const [candidate, setCandidate] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find the candidate from mock data
-  const candidate = mockCandidates.find(c => c.id === candidateId) || mockCandidates[0];
-
-  // Initialize messages from mock data
+  // Load candidate interview data
   React.useEffect(() => {
-    const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
-      ...msg,
-      type: msg.type as 'question' | 'answer'
-    })) || [];
-    setMessages(initialMessages);
-  }, []);
+    console.log('useEffect called with candidateId:', candidateId);
+    const loadCandidateData = async () => {
+      if (!candidateId) {
+        console.log('No candidateId provided');
+        return;
+      }
+
+      try {
+        console.log('Starting to load candidate data for:', candidateId);
+        setLoading(true);
+
+        const interviewData = await fetchCandidateInterviewData(candidateId);
+        console.log('Received interview data:', interviewData);
+
+        if (interviewData) {
+          setCandidate(interviewData);
+          console.log('Candidate set successfully');
+
+          // Set suggested questions from API
+          if (interviewData?.suggested_questions) {
+            setSuggestedQuestions(interviewData.suggested_questions);
+            console.log('Suggested questions set:', interviewData.suggested_questions.length);
+          }
+
+          // Initialize messages from mock data (for now)
+          const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
+            ...msg,
+            type: msg.type as 'question' | 'answer'
+          })) || [];
+          setMessages(initialMessages);
+          console.log('Messages initialized:', initialMessages.length);
+        } else {
+          console.log('No interview data received');
+        }
+
+      } catch (error) {
+        console.error('Error loading candidate interview data:', error);
+        // Fallback to mock data
+        const fallbackCandidate = mockCandidates.find(c => c.id === candidateId) || mockCandidates[0];
+        console.log('Using fallback candidate:', fallbackCandidate);
+        setCandidate(fallbackCandidate);
+      } finally {
+        setLoading(false);
+        console.log('Loading completed');
+      }
+    };
+
+    loadCandidateData();
+  }, [candidateId]);
 
   const addMessage = (content: string, type: 'question' | 'answer') => {
     const newMessage: MessageEvent = {
@@ -276,6 +320,7 @@ const Interview: React.FC = () => {
           setMessages(prev => [...prev, {
             id: Date.now().toString(),
             ...response,
+            type: response.type as 'question' | 'answer',
             timestamp: new Date().toLocaleTimeString()
           }]);
           index++;
@@ -288,13 +333,42 @@ const Interview: React.FC = () => {
     }
   }, [isRecording]);
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-3rem)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading interview data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no candidate data
+  if (!candidate) {
+    return (
+      <div className="h-[calc(100vh-3rem)] flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-lg font-medium mb-2">Candidate not found</p>
+          <p className="text-muted-foreground mb-4">Unable to load interview data for this candidate.</p>
+          <Button onClick={() => navigate('/interview')} variant="outline">
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Back to Interviews
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[calc(100vh-3rem)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <PageHeader
           title={candidate.name}
-          subtitle={candidate.position}
+          subtitle={candidate.current_position || candidate.position}
           className="gap-4"
         >
           <Badge>{candidate.status}</Badge>
@@ -322,7 +396,7 @@ const Interview: React.FC = () => {
                   </div>
                   <div>
                     <CardTitle className="text-base">{candidate.name}</CardTitle>
-                    <CardDescription>{candidate.position}</CardDescription>
+                    <CardDescription>{candidate.current_position || 'No position specified'}</CardDescription>
                   </div>
                 </div>
                 <HoverCard>
@@ -336,18 +410,22 @@ const Interview: React.FC = () => {
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-medium">Experience</h4>
-                          <p className="text-sm text-muted-foreground">{candidate.experience}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {candidate.experience || `${candidate.years_experience || 0} years`}
+                          </p>
                         </div>
                         <Separator />
                         <div>
                           <h4 className="font-medium">Education</h4>
-                          <p className="text-sm text-muted-foreground">{candidate.education}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {candidate.education || 'Not specified'}
+                          </p>
                         </div>
                         <Separator />
                         <div>
                           <h4 className="font-medium">Skills</h4>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {candidate.skills.map((skill, index) => (
+                            {(candidate.skills || []).map((skill, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 {skill}
                               </Badge>
@@ -356,24 +434,17 @@ const Interview: React.FC = () => {
                         </div>
                         <Separator />
                         <div>
-                          <h4 className="font-medium">AI Summary</h4>
+                          <h4 className="font-medium">AI Analysis</h4>
                           <div className="space-y-2 mt-1">
-                            <div>
-                              <p className="text-sm font-medium text-green-600">Strengths</p>
-                              <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {candidate.aiSummary?.strengths?.map((strength, index) => (
-                                  <li key={index}>{strength}</li>
-                                )) || []}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-yellow-600">Considerations</p>
-                              <ul className="text-sm text-muted-foreground list-disc pl-4">
-                                {candidate.aiSummary?.considerations?.map((consideration, index) => (
-                                  <li key={index}>{consideration}</li>
-                                )) || []}
-                              </ul>
-                            </div>
+                            {candidate.ai_analysis && candidate.ai_analysis.length > 0 ? (
+                              candidate.ai_analysis.map((analysis, index) => (
+                                <div key={index} className="text-sm">
+                                  <p className="text-muted-foreground">{analysis.summary || analysis.content}</p>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No AI analysis available</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -389,11 +460,11 @@ const Interview: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2 bg-muted rounded-md">
                       <p className="text-xs text-muted-foreground">Experience</p>
-                      <p className="text-sm font-medium">5 years</p>
+                      <p className="text-sm font-medium">{candidate.years_experience || 0} years</p>
                     </div>
                     <div className="p-2 bg-muted rounded-md">
-                      <p className="text-xs text-muted-foreground">AI Match</p>
-                      <p className="text-sm font-medium">85%</p>
+                      <p className="text-xs text-muted-foreground">Stage</p>
+                      <p className="text-sm font-medium capitalize">{candidate.stage || 'Applied'}</p>
                     </div>
                   </div>
                 </div>

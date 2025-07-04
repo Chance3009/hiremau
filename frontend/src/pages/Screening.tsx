@@ -410,10 +410,11 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                 description: `Interview started for ${candidate.name}`,
             });
 
-            // Navigate to interview page
-            navigate(`/interview/${candidateId}`);
+            // Navigate to interview page - use interview-schedule route as defined in App.tsx
+            navigate(`/interview-schedule/${candidateId}`);
 
         } catch (err: any) {
+            console.error('Error starting interview:', err);
             toast({
                 title: "Error",
                 description: err.message || 'Failed to start interview',

@@ -16,7 +16,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Candidate } from '@/types';
 
 const CandidateView = () => {
-  const { candidateId } = useParams();
+  const { id: candidateId } = useParams();
   const navigate = useNavigate();
   const { setCurrentStage } = useRecruitment();
   const [activeTab, setActiveTab] = useState('resume');
@@ -27,6 +27,7 @@ const CandidateView = () => {
 
   useEffect(() => {
     if (!candidateId) {
+      console.error('No candidate ID provided in URL params');
       setError('No candidate ID provided');
       setLoading(false);
       return;
@@ -47,11 +48,22 @@ const CandidateView = () => {
           throw new Error('Candidate not found');
         }
 
-        // Validate required fields
-        if (!candidateData.id || !candidateData.name) {
+        // More lenient validation - only check for ID
+        if (!candidateData.id) {
           console.error('Invalid candidate data structure:', candidateData);
-          throw new Error('Invalid candidate data - missing required fields');
+          throw new Error('Invalid candidate data - missing ID');
         }
+
+        // Log the candidate data structure for debugging
+        console.log('Candidate data structure:', {
+          id: candidateData.id,
+          name: candidateData.name,
+          email: candidateData.email,
+          stage: candidateData.stage,
+          hasEvaluationData: !!candidateData.evaluation_data,
+          evaluationDataLength: candidateData.evaluation_data?.length || 0,
+          keys: Object.keys(candidateData)
+        });
 
         setCandidate(candidateData);
 
@@ -70,6 +82,12 @@ const CandidateView = () => {
         console.error('Error loading candidate:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load candidate data';
         setError(errorMessage);
+
+        // Try to still render candidate if we have partial data
+        if (candidateId) {
+          console.log('Attempting to render with minimal data due to error');
+          // We could set a minimal candidate object here if needed
+        }
       } finally {
         setLoading(false);
       }
@@ -280,7 +298,9 @@ const CandidateView = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">Candidate not found</p>
+          <p className="text-muted-foreground mb-2">Candidate not found</p>
+          <p className="text-sm text-gray-500">ID: {candidateId}</p>
+          <p className="text-sm text-gray-500">Error: {error}</p>
           <Button onClick={handleGoBack} variant="outline" className="mt-4">Go Back</Button>
         </div>
       </div>

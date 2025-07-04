@@ -792,11 +792,17 @@ const AppliedCandidates = () => {
 
             // Navigate to appropriate page based on action
             if (action === 'shortlist') {
-                // Navigate to screening page
+                // Navigate to screened page (shortlist moves to screened stage)
                 navigate('/screened');
-            } else if (action === 'schedule-interview') {
+            } else if (action === 'schedule_interview') {
                 // Navigate to interview scheduling
-                navigate('/interviews/schedule');
+                navigate('/interview-schedule');
+            } else if (action === 'move_to_shortlisted') {
+                // Navigate to shortlisted page
+                navigate('/shortlisted');
+            } else if (action === 'move_to_final') {
+                // Navigate to final review page
+                navigate('/final-review');
             } else {
                 // Refresh the current page for other actions
                 window.location.reload();
