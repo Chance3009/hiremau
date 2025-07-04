@@ -44,9 +44,25 @@ export const formatMalaysianCurrency = (amount: number): string => {
     }).format(amount);
 };
 
-export const fetchCandidates = async (): Promise<Candidate[]> => {
+export const fetchCandidates = async (filters?: CandidateFilters): Promise<Candidate[]> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/candidates/`);
+        let url = `${API_BASE_URL}/candidates/`;
+
+        // Add query parameters for filters
+        if (filters) {
+            const params = new URLSearchParams();
+            if (filters.stage) params.append('stage', filters.stage);
+            if (filters.status) params.append('status', filters.status);
+            if (filters.positionId) params.append('job_id', filters.positionId);
+            if (filters.eventId) params.append('event_id', filters.eventId);
+
+            const queryString = params.toString();
+            if (queryString) {
+                url += `?${queryString}`;
+            }
+        }
+
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -64,8 +80,34 @@ export const fetchCandidateById = async (candidateId: string): Promise<Candidate
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        return data;
+        const candidate = await response.json();
+
+        // Fetch evaluation data for this candidate
+        try {
+            const evaluationResponse = await fetch(`${API_BASE_URL}/candidates/${candidateId}/evaluation`);
+            if (evaluationResponse.ok) {
+                const evalResult = await evaluationResponse.json();
+                if (evalResult.success && evalResult.evaluation) {
+                    candidate.evaluationData = evalResult.evaluation;
+                }
+            }
+        } catch (evalError) {
+            console.error('Error fetching evaluation data:', evalError);
+            // Continue without evaluation data
+        }
+
+        // Fetch candidate files
+        try {
+            const filesResponse = await fetch(`${API_BASE_URL}/candidates/${candidateId}/files`);
+            if (filesResponse.ok) {
+                candidate.files = await filesResponse.json();
+            }
+        } catch (filesError) {
+            console.error('Error fetching candidate files:', filesError);
+            // Continue without files
+        }
+
+        return candidate;
     } catch (error) {
         console.error('Error fetching candidate:', error);
         throw error;

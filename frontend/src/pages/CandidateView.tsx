@@ -55,7 +55,10 @@ const CandidateView = () => {
 
   // Process evaluation data from the backend
   const getEvaluationData = () => {
-    if (!candidate?.evaluation_data || candidate.evaluation_data.length === 0) {
+    // Check both possible property names for evaluation data
+    const evaluationData = candidate?.evaluationData || candidate?.evaluation_data;
+
+    if (!evaluationData) {
       return {
         hasEvaluation: false,
         status: 'pending',
@@ -63,7 +66,8 @@ const CandidateView = () => {
       };
     }
 
-    const evaluation = candidate.evaluation_data[0]; // Get the latest evaluation
+    // Handle both array and object formats
+    const evaluation = Array.isArray(evaluationData) ? evaluationData[0] : evaluationData;
     return {
       hasEvaluation: true,
       status: 'completed',

@@ -77,6 +77,7 @@ add_candidate_agent = SequentialAgent(
 #     )
 #     return root_agent
 
+
 async def get_agent():
     root_agent = Agent(
         name="main_agent",
@@ -91,6 +92,12 @@ async def get_agent():
     )
     return root_agent
 
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy', 'service': 'agent'})
+
+
 @app.route('/add-doc', methods=['POST'])
 def run_agent():
     data = request.get_json(force=True) or {}
@@ -102,17 +109,20 @@ def run_agent():
         response = loop.run_until_complete(main(query))
         return jsonify({'response': response})
     except Exception as e:
+        print(f"Error in agent: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 async def main(query):
     session_serivce = InMemorySessionService()
-    await session_serivce.create_session(app_name= APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
+    await session_serivce.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
     root_agent = await get_agent()
-    runner = Runner(app_name=APP_NAME, agent = root_agent, session_service=session_serivce)
-    content = types.Content(role = "user", parts= [types.Part(text=query)])
+    runner = Runner(app_name=APP_NAME, agent=root_agent,
+                    session_service=session_serivce)
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     print("Running agent with query:", query)
-    events = runner.run_async (
-        new_message = content,
+    events = runner.run_async(
+        new_message=content,
         user_id=USER_ID,
         session_id=SESSION_ID,
     )

@@ -1,3 +1,6 @@
+from flask_cors import CORS
+import requests
+from flask import Flask, request, jsonify
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -25,23 +28,24 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    logger.error("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    logger.error(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    raise ValueError(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 embedding_model = "nomic-embed-text"
 ocr_model = "llava:13b"
 embeddings = OllamaEmbeddings(model=embedding_model)
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=200)
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
-from flask import Flask, request, jsonify
-import requests
-from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
 
 def extract_image_info(image_path: str) -> str:
     prompt = """
@@ -76,6 +80,7 @@ def extract_image_info(image_path: str) -> str:
     )
     return response['message']['content'].strip()
 
+
 def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Optional[str] = None) -> dict:
     if not url or not name:
         return {'error': 'Missing url or name'}
@@ -85,7 +90,9 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
         if r.status_code != 200:
             logger.error(f"Failed to download file from {url}")
             return {'error': 'Failed to download file'}
-        ext = os.path.splitext(url)[1].lower() or '.bin'
+        # Clean the URL to remove query parameters before extracting extension
+        clean_url = url.split('?')[0]  # Remove query parameters
+        ext = os.path.splitext(clean_url)[1].lower() or '.bin'
         filename = f"{uuid}{ext}" if uuid else f"{name}{ext}"
         with open(filename, 'wb') as f:
             f.write(r.content)
@@ -111,8 +118,10 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
         elif ext in IMAGE_EXTENSIONS:
             info = extract_image_info(filename)
             stat = os.stat(filename)
-            creationdate = datetime.datetime.fromtimestamp(stat.st_ctime).isoformat()
-            moddate = datetime.datetime.fromtimestamp(stat.st_mtime).isoformat()
+            creationdate = datetime.datetime.fromtimestamp(
+                stat.st_ctime).isoformat()
+            moddate = datetime.datetime.fromtimestamp(
+                stat.st_mtime).isoformat()
             metadata = {
                 "page": 1,
                 "title": filename,
