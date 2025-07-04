@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from root_agent import root_agent
 
+from fastapi import FastAPI, Request
+
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # Load Gemini API Key
@@ -176,5 +178,12 @@ def append_transcript_to_file(transcript: dict, user_id: int):
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
     print("Saving transcript to:", filename)
+
+
+@app.post("/api/notes")
+async def create_note(request: Request):
+    data = await request.json()
+    # Save data to database here
+    return {"status": "success", "note": data}
 
 print("✅ main.py loaded successfully")
