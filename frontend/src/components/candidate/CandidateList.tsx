@@ -1,108 +1,151 @@
-
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useState, useEffect } from 'react';
+import { getCandidatesByStage, type Candidate } from '@/services/candidateService';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Clock, X, MessageSquare, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
+import { Mail, Phone, Calendar, Building2, Eye } from 'lucide-react';
 
 interface CandidateListProps {
-  candidates: Array<{
-    id: string;
-    name: string;
-    position: string;
-    status: 'shortlist' | 'kiv' | 'reject' | 'new';
-    event?: string;
-    score?: number;
-    date?: string;
-  }>;
+  stage?: string;
 }
 
-const CandidateList: React.FC<CandidateListProps> = ({ candidates }) => {
-  const navigate = useNavigate();
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'shortlist':
-        return 'bg-green-100 text-green-700';
-      case 'kiv':
-        return 'bg-amber-100 text-amber-700';
-      case 'reject':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-blue-100 text-blue-700';
+const CandidateList: React.FC<CandidateListProps> = ({ stage = 'applied' }) => {
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+
+  useEffect(() => {
+    loadCandidates();
+  }, [stage]);
+
+  const loadCandidates = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getCandidatesByStage(stage);
+      setCandidates(data);
+    } catch (error) {
+      console.error('Error loading candidates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load candidates",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'shortlist':
-        return 'Shortlisted';
-      case 'kiv':
-        return 'Keep in View';
-      case 'reject':
-        return 'Rejected';
-      default:
-        return 'New';
-    }
-  };
-  
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'shortlist':
-        return <Check className="h-3 w-3 mr-1" />;
-      case 'kiv':
-        return <Clock className="h-3 w-3 mr-1" />;
-      case 'reject':
-        return <X className="h-3 w-3 mr-1" />;
-      default:
-        return null;
-    }
-  };
-  
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (candidates.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 border rounded-lg border-dashed">
+        <div className="text-center">
+          <h3 className="text-lg font-medium">No Candidates Found</h3>
+          <p className="text-sm text-muted-foreground">
+            There are no candidates in this stage yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Position</TableHead>
-            <TableHead>Event</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'card')} className="w-auto">
+          <TabsList>
+            <TabsTrigger value="list">List View</TabsTrigger>
+            <TabsTrigger value="card">Card View</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {viewMode === 'list' ? (
+        <div className="space-y-2">
           {candidates.map((candidate) => (
-            <TableRow key={candidate.id}>
-              <TableCell className="font-medium">{candidate.name}</TableCell>
-              <TableCell>{candidate.position}</TableCell>
-              <TableCell>{candidate.event || '-'}</TableCell>
-              <TableCell>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${getStatusColor(candidate.status)}`}>
-                  {getStatusIcon(candidate.status)}
-                  {getStatusText(candidate.status)}
-                </span>
-              </TableCell>
-              <TableCell>{candidate.score ? `${candidate.score}%` : '-'}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => navigate(`/candidate/${candidate.id}`)}>
-                    <Eye className="h-4 w-4" />
-                    <span className="sr-only">View</span>
-                  </Button>
-                  {candidate.status === 'shortlist' && (
-                    <Button size="sm" variant="ghost" onClick={() => navigate(`/interview/schedule/${candidate.id}`)}>
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="sr-only">Interview</span>
+            <Card key={candidate.id} className="hover:bg-muted/50 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-medium">{candidate.name}</h3>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Building2 className="h-4 w-4" />
+                        <span>{candidate.current_position}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        <span>{candidate.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        <span>{candidate.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(candidate.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{candidate.source}</Badge>
+                    <Button variant="ghost" size="icon">
+                      <Eye className="h-4 w-4" />
                     </Button>
-                  )}
+                  </div>
                 </div>
-              </TableCell>
-            </TableRow>
+              </CardContent>
+            </Card>
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {candidates.map((candidate) => (
+            <Card key={candidate.id} className="hover:bg-muted/50 transition-colors">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-medium">{candidate.name}</h3>
+                      <p className="text-sm text-muted-foreground">{candidate.current_position}</p>
+                    </div>
+                    <Badge variant="secondary">{candidate.source}</Badge>
+                  </div>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <span>{candidate.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span>{candidate.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(candidate.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <Button variant="outline" className="w-full">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -17,7 +17,7 @@ export async function fetchJobs(filters: JobFilters = {}) {
 
     // Construct URL properly for FastAPI
     const baseUrl = `${API_BASE_URL}/jobs`;
-    const url = params.toString() ? `${baseUrl}/?${params.toString()}` : `${baseUrl}/`;
+    const url = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
 
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch jobs');
@@ -25,13 +25,13 @@ export async function fetchJobs(filters: JobFilters = {}) {
 }
 
 export async function fetchJobById(id: string) {
-    const response = await fetch(`${API_BASE_URL}/jobs/${id}/`);
+    const response = await fetch(`${API_BASE_URL}/jobs/${id}`);
     if (!response.ok) throw new Error('Failed to fetch job');
     return response.json();
 }
 
 export async function createJob(data: Record<string, any>) {
-    const response = await fetch(`${API_BASE_URL}/jobs/`, {
+    const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -41,7 +41,7 @@ export async function createJob(data: Record<string, any>) {
 }
 
 export async function updateJob(id: string, data: Record<string, any>) {
-    const response = await fetch(`${API_BASE_URL}/jobs/${id}/`, {
+    const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -51,7 +51,7 @@ export async function updateJob(id: string, data: Record<string, any>) {
 }
 
 export async function deleteJob(id: string) {
-    const response = await fetch(`${API_BASE_URL}/jobs/${id}/`, {
+    const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete job');
