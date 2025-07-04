@@ -62,6 +62,7 @@ const FinalReview: React.FC = () => {
   });
   const [viewMode, setViewMode] = useState<'individual' | 'comparison'>('individual');
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Fetch final review candidates
   const loadCandidates = async () => {
@@ -124,6 +125,64 @@ const FinalReview: React.FC = () => {
   };
 
   const isSelected = (candidateId: string) => selectedForComparison.includes(candidateId);
+
+  const handleFinalDecision = async (decision: string) => {
+    if (!selectedCandidate) return;
+
+    try {
+      setActionLoading(decision);
+
+      // Map decision to stage and status
+      let newStage = '';
+      let newStatus = '';
+
+      switch (decision) {
+        case 'offer':
+          newStage = 'offer';
+          newStatus = 'offer_pending';
+          break;
+        case 'hold':
+          newStage = 'final_review';
+          newStatus = 'on_hold';
+          break;
+        case 'reject':
+          newStage = 'rejected';
+          newStatus = 'rejected';
+          break;
+        default:
+          throw new Error('Invalid decision');
+      }
+
+      // Call API to update candidate
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'}/candidates/${selectedCandidate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          stage: newStage,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update candidate: ${response.status}`);
+      }
+
+      // Show success message
+      alert(`Candidate ${decision === 'offer' ? 'moved to offer stage' : decision === 'hold' ? 'put on hold' : 'rejected'} successfully!`);
+
+      // Reload candidates to reflect changes
+      await loadCandidates();
+
+    } catch (error) {
+      console.error('Error updating candidate:', error);
+      alert(`Failed to ${decision} candidate. Please try again.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -495,6 +554,66 @@ const FinalReview: React.FC = () => {
                             Submit Review
                           </Button>
                         </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Final Decision Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Final Decision</CardTitle>
+                    <CardDescription>Make the final hiring decision for this candidate</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleFinalDecision('offer')}
+                          disabled={actionLoading !== null}
+                        >
+                          {actionLoading === 'offer' ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          ) : (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
+                          Make Offer
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                          onClick={() => handleFinalDecision('hold')}
+                          disabled={actionLoading !== null}
+                        >
+                          {actionLoading === 'hold' ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                          ) : (
+                            <Clock className="h-4 w-4 mr-2" />
+                          )}
+                          Put on Hold
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleFinalDecision('reject')}
+                          disabled={actionLoading !== null}
+                        >
+                          {actionLoading === 'reject' ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          ) : (
+                            <X className="h-4 w-4 mr-2" />
+                          )}
+                          Reject
+                        </Button>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg">
+                        <p><strong>Note:</strong></p>
+                        <ul className="mt-1 space-y-1 ml-4 list-disc">
+                          <li><strong>Make Offer:</strong> Move to offer stage and initiate offer process</li>
+                          <li><strong>Put on Hold:</strong> Keep candidate for future opportunities</li>
+                          <li><strong>Reject:</strong> Send rejection notification and close application</li>
+                        </ul>
                       </div>
                     </div>
                   </CardContent>
