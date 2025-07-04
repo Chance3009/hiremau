@@ -5,21 +5,25 @@ import logging
 import datetime
 from typing import Optional
 
-# LangChain and embedding imports
+# LangChain and transformer imports
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
 # OCR/vision model import
-import ollama
+# import ollama
+from google import genai
+from google.genai import types
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -30,10 +34,11 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-embedding_model = "nomic-embed-text"
-ocr_model = "llava:13b"
-embeddings = OllamaEmbeddings(model=embedding_model)
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+transformer_model = "Qwen/Qwen3-Embedding-0.6B"
+# ocr_model = "llava:13b"
+ocr_model = "gemini-2.5-flash"
+# embedding = HuggingFaceEmbeddings(model_name=transformer_model)
+embedding = OllamaEmbeddings(model="nomic-embed-text")
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
 from flask import Flask, request, jsonify
@@ -66,20 +71,32 @@ def extract_image_info(image_path: str) -> str:
 
         The goal is to create a comprehensive record that preserves all potentially useful information for candidate assessment, regardless of the original document format.
     """
-    response = ollama.chat(
+    with open(image_path, 'rb') as f:
+        image_bytes = f.read()
+    response = client.models.generate_content(
         model=ocr_model,
-        messages=[{
-            "role": "user",
-            "content": prompt,
-            "images": [image_path]
-        }],
+        contents=[
+            types.Part.from_bytes(
+            data=image_bytes,
+            mime_type='image/jpeg',
+            ),
+            prompt
+        ]
     )
-    return response['message']['content'].strip()
+    return str(response.text) if response.text else ""
+    # response = ollama.chat(
+    #     model=ocr_model,
+    #     messages=[{
+    #         "role": "user",
+    #         "content": prompt,
+    #         "images": [image_path]
+    #     }],
+    # )
+    # return response['message']['content'].strip()
 
 def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Optional[str] = None) -> dict:
     if not url or not name:
         return {'error': 'Missing url or name'}
-    image_docs = []
     try:
         r = requests.get(url)
         if r.status_code != 200:
@@ -91,14 +108,15 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
             f.write(r.content)
         logger.info(f"Downloaded file saved as {filename} (uuid: {uuid})")
 
-        # --- Process file: PDF or image ---
+        # --- Process file: PDF ---
         if ext == '.pdf':
             loader = PyPDFLoader(filename)
-            docs = loader.load()
+            docs = loader.load()  # List[Document]
             logger.info(f"Loaded {len(docs)} PDF documents (all pages)")
+            # Store in Supabase (let the vectorstore compute embeddings)
             vector_store = SupabaseVectorStore.from_documents(
                 docs,
-                embeddings,
+                embedding,
                 client=supabase,
                 table_name="candidate_table",
                 query_name="match_documents",
@@ -106,7 +124,7 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
                 document_id=uuid,
                 name=name,
             )
-            logger.info(f"Stored {len(docs)} PDF docs in candidate_table.")
+            logger.info(f"Stored {len(docs)} PDF chunks in candidate_table.")
             os.remove(filename)
         elif ext in IMAGE_EXTENSIONS:
             info = extract_image_info(filename)
@@ -124,11 +142,11 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid: Option
                 "total_pages": 1,
                 "creationdate": creationdate,
             }
-            doc = Document(page_content=info, metadata=metadata)
-            image_docs = [doc]
+            image_doc = Document(page_content=info, metadata=metadata)
+            docs = [image_doc]
             vector_store = SupabaseVectorStore.from_documents(
-                image_docs,
-                embeddings,
+                docs,
+                embedding,
                 client=supabase,
                 table_name="candidate_table",
                 query_name="match_candidate_documents",
@@ -230,3 +248,23 @@ def save_evaluation_to_supabase(
             'message': f"Failed to save evaluation: {str(e)}"
         }
 
+def save_evaluation_to_rag(content: str, candidate_name: str):
+    # Add metadata (timestamp, source, etc.)
+    metadata = {
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "source": "evaluation",
+    }
+    doc = Document(page_content=content, metadata=metadata)
+    # Store in Supabase candidate_rag table
+    vector_store = SupabaseVectorStore.from_documents(
+        [doc],
+        embedding,
+        client=supabase,
+        table_name="candidate_rag",
+        query_name="match_documents",
+        chunk_size=500,
+        metadata=metadata,
+        name=candidate_name
+    )
+    logger.info("Saved evaluation to candidate_rag table.")
+    

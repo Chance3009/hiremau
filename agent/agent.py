@@ -82,7 +82,7 @@ async def get_agent():
         name="main_agent",
         model="gemini-2.0-flash",
         description="Main agent for candidate screening and coordinating agent tools",
-        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document.",
+        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document. Pass the JSON to the add_candidate_agent tool.",
         tools=[
             AgentTool(
                 add_candidate_agent

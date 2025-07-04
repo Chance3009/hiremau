@@ -38,7 +38,7 @@ candidate_agent = Agent(
     3. Provide comprehensive, accurate answers based on the retrieved content as fast as possible
 
     Your approach if the main agent ask you to add a candidate document to the database:
-    1. Use the add_candidate_document tool to add the document to the database.
+    1. Use the add_candidate_document tool by passing the name, url, and uuid from the main agent to add the document to the database.
     2. You will receive a JSON response from the add_candidate_document tool. If the response is successful, read the content of the response.
     3. In your response, mention the name of the candidate and mention the full URL if there is any social media information provided. If not, reply "No social media information provided". Do not say anything else.
 
