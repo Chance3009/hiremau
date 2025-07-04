@@ -7,13 +7,12 @@ from supabase import create_client, Client
 import logging
 import datetime
 from typing import Optional
-import uuid
 
 # LangChain and transformer imports
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_core.documents import Document
-from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import OllamaEmbeddings
 
 # OCR/vision model import
@@ -47,10 +46,8 @@ ocr_model = "gemini-2.5-flash"
 embedding = OllamaEmbeddings(model="nomic-embed-text")
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
-
 app = Flask(__name__)
 CORS(app)
-
 
 def extract_image_info(image_path: str) -> str:
     prompt = """
@@ -122,35 +119,16 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Op
             docs = loader.load()  # List[Document]
             logger.info(f"Loaded {len(docs)} PDF documents (all pages)")
 
-            # Update metadata to include candidate name and document_id
-            for doc in docs:
-                doc.metadata.update({
-                    "candidate_name": name,
-                    "file_type": "pdf",
-                    "upload_date": datetime.datetime.now().isoformat(),
-                    "document_id": uuid_str
-                })
-
-            # Generate embeddings and insert manually
-            for doc in docs:
-                # Generate embedding for this document
-                embedding_vector = embedding.embed_documents([doc.page_content])[
-                    0]
-
-                # Insert directly into Supabase with correct schema
-                try:
-                    result = supabase.table("candidate_table").insert({
-                        "content": doc.page_content,
-                        "metadata": doc.metadata,
-                        "embedding": embedding_vector,
-                        "document_id": uuid_str
-                    }).execute()
-                    logger.info(
-                        f"Successfully inserted document chunk with document_id: {uuid_str}")
-                except Exception as e:
-                    logger.error(f"Error inserting document chunk: {e}")
-                    raise e
-
+            vector_store = SupabaseVectorStore.from_documents(
+                docs,
+                embedding,
+                client=supabase,
+                table_name="candidate_table",
+                query_name="match_documents",
+                chunk_size=500,
+                document_id=uuid_str,
+                name=name,
+            )
             logger.info(f"Stored {len(docs)} PDF chunks in candidate_table.")
             os.remove(filename)
         elif ext in IMAGE_EXTENSIONS:
@@ -176,24 +154,18 @@ def add_candidate_document(name: Optional[str], url: Optional[str], uuid_str: Op
             }
             image_doc = Document(page_content=info, metadata=metadata)
             docs = [image_doc]
-
-            # Generate embedding and insert manually
-            embedding_vector = embedding.embed_documents([info])[0]
-
-            # Insert directly into Supabase with correct schema
-            try:
-                result = supabase.table("candidate_table").insert({
-                    "content": info,
-                    "metadata": metadata,
-                    "embedding": embedding_vector,
-                    "document_id": uuid_str
-                }).execute()
-                logger.info(
-                    f"Successfully inserted image document with document_id: {uuid_str}")
-            except Exception as e:
-                logger.error(f"Error inserting image document: {e}")
-                raise e
-
+            image_doc = Document(page_content=info, metadata=metadata)
+            docs = [image_doc]
+            vector_store = SupabaseVectorStore.from_documents(
+                docs,
+                embedding,
+                client=supabase,
+                table_name="candidate_table",
+                query_name="match_candidate_documents",
+                chunk_size=500,
+                document_id=uuid_str,
+                name=name,
+            )
             logger.info(f"Stored image OCR document in candidate_table.")
             os.remove(filename)
         else:
