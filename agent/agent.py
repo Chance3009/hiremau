@@ -31,59 +31,13 @@ add_candidate_agent = SequentialAgent(
     sub_agents=[candidate_agent, source_agent, synthesizer_agent],
 )
 
-# async def get_agent():
-#     root_agent = Agent(
-#         name="main_agent",
-#         model="gemini-2.0-flash",
-#         description="Main agent for candidate screening and coordinating agent tools",
-#         instruction="""
-#         You are an intelligent main agent tool for a candidate screening system. You have access to an Agent Tool which have knowledge base containing relevant documents and an Agent Tool which has the ability to perform Google search. Generally, you should only answer questions related to job openings and candidate screening. You have to determine whether a Google search is necessary when the question is not supposed to appear for your use case.
-
-#         Your approach:
-#         1. When the user give commands, choose the appropriate agent tools to perform the task.
-#         2. If none of the agent tools can handle the request, try Google search as the final resort.
-#         3. Provide a clear and concise response indicating if no relevant information is available.
-#         4. If the user asks for candidate social media (including GitHub and LinkedIn) profile information, use the source_agent to gather and process that information.
-
-#         Available tools:
-#         - company_agent: RAG agent that retrieves raw document chunks regarding job openings and company information and processes them using its own reasoning capabilities.
-#         - candidate_agent: RAG agent that retrieves raw document chunks regarding candidates and processes them using its own reasoning capabilities.
-#         - gs_agent: An agent that performs Google search and processes information using its own reasoning capabilities.
-#         - source_agent: An agent that handles candidate sourcing, mainly on GitHub and LinkedIn profile information.
-#         - evaluation_agent: An agent that handles candidate evaluation and profile synthesis. (Do not use it for now, as it is not implemented yet.)
-
-#         Guidelines:
-#         - Call the correct agent tool based on the user's request.
-#         """,
-#         sub_agents=[
-#         ],
-#         tools=[
-#             AgentTool(
-#                 company_agent  # The agent that handles company-related queries (job openings, etc).
-#             ),
-#             AgentTool(
-#                 candidate_agent  # The agent that handles candidate-related queries
-#             ),
-#             AgentTool(
-#                 source_agent  # The agent that handles candidate sourcing, mainly on GitHub and LinkedIn profile information
-#             ),
-#             AgentTool(
-#                 gs_agent # The agent that handles Google search operations
-#             ),
-#             AgentTool(
-#                 evaluation_agent  # The agent that handles candidate evaluation and profile synthesis
-#             ),
-#         ],
-#     )
-#     return root_agent
-
 
 async def get_agent():
     root_agent = Agent(
         name="main_agent",
         model="gemini-2.0-flash",
         description="Main agent for candidate screening and coordinating agent tools",
-        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document. Pass the JSON to the add_candidate_agent tool.",
+        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document. Pass the JSON to the candidate_agent tool.",
         tools=[
             AgentTool(
                 add_candidate_agent
@@ -104,10 +58,35 @@ def run_agent():
     # The query will be the JSON payload itself
     query = str(data)
     try:
+        # Create a fresh event loop for this request
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        response = loop.run_until_complete(main(query))
-        return jsonify({'response': response})
+
+        try:
+            response = loop.run_until_complete(main(query))
+            return jsonify({'response': response})
+        except Exception as e:
+            print(f"Error during execution: {str(e)}")
+            raise e
+        finally:
+            # Properly clean up all tasks and close the loop
+            try:
+                # Cancel all pending tasks
+                pending = asyncio.all_tasks(loop)
+                if pending:
+                    for task in pending:
+                        task.cancel()
+
+                    # Wait for all tasks to complete cancellation
+                    loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+
+                # Close the loop
+                loop.close()
+            except Exception as cleanup_error:
+                print(f"Error during cleanup: {cleanup_error}")
+
     except Exception as e:
         print(f"Error in agent: {str(e)}")
         return jsonify({'error': str(e)}), 500
