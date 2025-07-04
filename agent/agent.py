@@ -27,7 +27,7 @@ USER_ID = "user_hackatt"
 SESSION_ID = "session_1"
 
 add_candidate_agent = SequentialAgent(
-    name="add_agent",
+    name="add_candidate_agent",
     sub_agents=[candidate_agent, source_agent, synthesizer_agent],
 )
 
@@ -83,7 +83,7 @@ async def get_agent():
         name="main_agent",
         model="gemini-2.0-flash",
         description="Main agent for candidate screening and coordinating agent tools",
-        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document.",
+        instruction="You a are a helpful assistant. If you received a request with a JSON to add a candidate document, use the add_candidate_document tool to add the document to the database. The JSON should contain the name, url, and uuid of the document. Pass the JSON to the add_candidate_agent tool.",
         tools=[
             AgentTool(
                 add_candidate_agent
