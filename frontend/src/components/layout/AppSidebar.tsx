@@ -128,7 +128,7 @@ export function AppSidebar() {
 
   const handleNavigation = (path: string) => {
     if (path === '/interview') {
-      setCurrentStage('interviewed');
+      setCurrentStage('interview');
     }
   };
 

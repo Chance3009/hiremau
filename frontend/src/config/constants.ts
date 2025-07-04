@@ -14,7 +14,7 @@ export const API_CONFIG = {
 export const RECRUITMENT_STAGES = [
     "applied",
     "screened",
-    "interviewed",
+    "interview",
     "final-review",
     "shortlisted"
 ] as const;
@@ -33,7 +33,7 @@ export const STAGE_CONFIG = {
         description: "Schedule or conduct interviews",
         actions: ["schedule-interview", "start-interview", "reject"]
     },
-    interviewed: {
+    interview: {
         label: "Interview",
         description: "Review interview results and compare candidates",
         actions: ["move-to-final", "request-another-interview", "reject"]

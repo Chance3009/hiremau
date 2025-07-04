@@ -255,8 +255,8 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
                 await refreshCandidates();
             }
 
-            // Navigate to interviewed page to see the scheduled candidate
-            navigate('/interviewed');
+            // Navigate to interview page to see the scheduled candidate
+            navigate('/interview');
 
         } catch (err: any) {
             console.error('Error scheduling interview:', err);
@@ -410,8 +410,8 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                 description: `Interview started for ${candidate.name}`,
             });
 
-            // Navigate to interview page - use interview-schedule route as defined in App.tsx
-            navigate(`/interview-schedule/${candidateId}`);
+            // Navigate to interview page
+            navigate(`/interview/${candidateId}`);
 
         } catch (err: any) {
             console.error('Error starting interview:', err);

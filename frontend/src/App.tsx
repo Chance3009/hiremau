@@ -68,7 +68,11 @@ function App() {
                     <Route path="qr-registration" element={<QRRegistrationDisplay />} />
                     <Route path="applied" element={<AppliedCandidates />} />
                     <Route path="screened" element={<Screening />} />
-                    <Route path="interview" element={<InterviewedCandidates />} />
+                    <Route path="interview">
+                      <Route index element={<InterviewedCandidates />} />
+                      <Route path=":id" element={<Interview />} />
+                      <Route path=":id/report" element={<InterviewReport />} />
+                    </Route>
                     <Route path="interview-schedule">
                       <Route index element={<InterviewLobby />} />
                       <Route path="new" element={<Interview />} />

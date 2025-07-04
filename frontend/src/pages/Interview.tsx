@@ -58,7 +58,7 @@ interface MessageEvent {
 
 const Interview: React.FC = () => {
   const navigate = useNavigate();
-  const { candidateId } = useParams();
+  const { id: candidateId } = useParams();
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<MessageEvent[]>([]);
   const [quickNote, setQuickNote] = useState('');
@@ -373,7 +373,7 @@ const Interview: React.FC = () => {
         >
           <Badge>{candidate.status}</Badge>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
+            <Button variant="outline" onClick={() => navigate('/interview')}>
               Skip Interview
             </Button>
             <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>

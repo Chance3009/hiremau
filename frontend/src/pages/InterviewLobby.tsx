@@ -18,7 +18,7 @@ const InterviewLobby = () => {
     const [selectedEvent, setSelectedEvent] = useState<string>('all');
 
     const startInterview = (id: string) => {
-        setCurrentStage('interviewed');
+        setCurrentStage('interview');
         navigate(`/interview/${id}`);
     };
 

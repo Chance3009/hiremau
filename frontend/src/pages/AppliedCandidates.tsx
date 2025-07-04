@@ -795,8 +795,8 @@ const AppliedCandidates = () => {
                 // Navigate to screened page (shortlist moves to screened stage)
                 navigate('/screened');
             } else if (action === 'schedule_interview') {
-                // Navigate to interview scheduling
-                navigate('/interview-schedule');
+                // Navigate to interview list
+                navigate('/interview');
             } else if (action === 'move_to_shortlisted') {
                 // Navigate to shortlisted page
                 navigate('/shortlisted');
