@@ -1,3 +1,15 @@
+// API Configuration
+export const API_CONFIG = {
+    BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001',
+    ENDPOINTS: {
+        CANDIDATES: '/candidates',
+        EVENTS: '/events',
+        JOBS: '/jobs',
+        INTERVIEWS: '/interviews',
+        EVALUATIONS: '/evaluations'
+    }
+} as const;
+
 // Recruitment stages in order
 export const RECRUITMENT_STAGES = [
     "applied",

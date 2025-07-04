@@ -10,72 +10,66 @@ import { toast } from '@/hooks/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
+import { createCandidate } from '@/services/candidateService';
+
+interface CreatedCandidate {
+  id: string;
+  success: boolean;
+  message: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  stage?: string;
+  status?: string;
+}
 
 const CandidateIntake = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastCreatedCandidate, setLastCreatedCandidate] = useState<CreatedCandidate | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Mock candidates list
-  const candidates = [
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      position: 'Frontend Developer',
-      status: 'shortlist' as const,
-      event: 'UPM Career Fair 2025',
-      score: 85,
-      date: '2025-05-20'
-    },
-    {
-      id: '2',
-      name: 'Sam Taylor',
-      position: 'UX Designer',
-      status: 'shortlist' as const,
-      event: 'UPM Career Fair 2025',
-      score: 82,
-      date: '2025-05-20'
-    },
-    {
-      id: '3',
-      name: 'Morgan Smith',
-      position: 'Backend Developer',
-      status: 'kiv' as const,
-      event: 'Tech Recruit Summit',
-      score: 73,
-      date: '2025-05-19'
-    },
-    {
-      id: '4',
-      name: 'Jordan Lee',
-      position: 'Product Manager',
-      status: 'reject' as const,
-      event: 'Tech Recruit Summit',
-      score: 62,
-      date: '2025-05-18'
-    },
-    {
-      id: '5',
-      name: 'Taylor Wilson',
-      position: 'Frontend Developer',
-      status: 'new' as const,
-      event: 'Engineering Talent Day',
-      date: '2025-05-22'
-    }
-  ];
+  const handleFormSubmit = async (formData: FormData) => {
+    try {
+      setIsSubmitting(true);
+      console.log('Form submitted:', formData);
 
-  const handleFormSubmit = (data: any) => {
-    console.log('Candidate data submitted:', data);
-    // In a real app, this would process the resume, send to API, etc.
-    setShowSummary(true);
-    toast({
-      title: "Resume Processed",
-      description: "Candidate information has been analyzed.",
-    });
+      // Log FormData entries for debugging
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+
+      // Create candidate with file uploads
+      const candidate = await createCandidate(formData);
+      setLastCreatedCandidate(candidate);
+
+      // Get candidate name from form data
+      const candidateData = JSON.parse(formData.get('candidate_data') as string);
+
+      toast({
+        title: "Success",
+        description: `Candidate ${candidateData.name} registered successfully`,
+      });
+
+      // Show the summary
+      setShowSummary(true);
+
+    } catch (error) {
+      console.error('Error submitting candidate:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to register candidate",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleStatusChange = (status: 'shortlist' | 'kiv' | 'reject') => {
+  const handleStatusChange = async (status: 'shortlist' | 'kiv' | 'reject') => {
+    // This will be implemented later when we handle workflow transitions
     const messages = {
       shortlist: "Candidate has been shortlisted for interview",
       kiv: "Candidate has been marked for further review",
@@ -87,12 +81,18 @@ const CandidateIntake = () => {
       description: messages[status],
     });
 
-    // Reset the form after a decision is made
     setShowSummary(false);
+    setLastCreatedCandidate(null);
   };
 
   const handleNotesChange = (notes: string) => {
-    // This would update the candidate record in a real app
+    // This will be implemented later when we handle candidate updates
+    console.log('Notes updated:', notes);
+  };
+
+  const handleNewRegistration = () => {
+    setShowSummary(false);
+    setLastCreatedCandidate(null);
   };
 
   return (
@@ -102,8 +102,8 @@ const CandidateIntake = () => {
         subtitle="Register new candidates for the recruitment process"
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/candidates')}>
-            Back to Candidates
+          <Button variant="outline" onClick={() => navigate('/recruitment-pipeline')}>
+            Back to Pipeline
           </Button>
         </div>
       </PageHeader>
@@ -117,21 +117,76 @@ const CandidateIntake = () => {
         <TabsContent value="register" className="pt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <CandidateIntakeForm onSubmit={handleFormSubmit} />
+              <CandidateIntakeForm
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSubmitting}
+              />
             </div>
 
             <div>
-              {showSummary ? (
-                <ResumeSummary
-                  onStatusChange={handleStatusChange}
-                  onNotesChange={handleNotesChange}
-                />
+              {showSummary && lastCreatedCandidate ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-green-600">Registration Successful!</CardTitle>
+                    <CardDescription>
+                      Candidate has been registered and is now in the "Applied" stage
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="font-medium">Candidate Details:</h3>
+                      <div className="text-sm space-y-1">
+                        <p><strong>Name:</strong> {lastCreatedCandidate.name}</p>
+                        <p><strong>Email:</strong> {lastCreatedCandidate.email}</p>
+                        <p><strong>Phone:</strong> {lastCreatedCandidate.phone}</p>
+                        <p><strong>Stage:</strong> <span className="capitalize">{lastCreatedCandidate.stage}</span></p>
+                        <p><strong>Status:</strong> <span className="capitalize">{lastCreatedCandidate.status}</span></p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-2">
+                      <h4 className="font-medium">Next Steps:</h4>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusChange('shortlist')}
+                        >
+                          Shortlist
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStatusChange('kiv')}
+                        >
+                          Keep in View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleStatusChange('reject')}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleNewRegistration}
+                      >
+                        Register Another Candidate
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="h-full flex items-center justify-center border rounded-lg border-dashed p-12 text-center">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-medium">No Resume Processed</h3>
+                    <h3 className="text-lg font-medium">Ready to Register</h3>
                     <p className="text-sm text-muted-foreground">
-                      Submit candidate information to see the resume analysis and AI evaluation.
+                      Fill in the candidate information to register them for the recruitment process.
                     </p>
                   </div>
                 </div>
@@ -150,15 +205,7 @@ const CandidateIntake = () => {
             </Tabs>
           </div>
 
-          {viewMode === 'list' ? (
-            <CandidateList candidates={candidates} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {candidates.map((candidate) => (
-                <CandidateCard key={candidate.id} candidate={candidate} variant="full" />
-              ))}
-            </div>
-          )}
+          <CandidateList />
         </TabsContent>
       </Tabs>
     </div>

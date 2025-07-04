@@ -2,18 +2,57 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, ChevronRight, X, Check, LayoutGrid, List, Mail, Phone, Calendar, Building2, GraduationCap, Briefcase, Star, Eye, Brain, Sparkles, Target, LineChart, AlertCircle, Upload, ClipboardPaste, ArrowLeft, Download, Copy, MessageSquare } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Building2,
+    GraduationCap,
+    Briefcase,
+    Calendar,
+    Star,
+    Brain,
+    Target,
+    LineChart,
+    Sparkles,
+    AlertCircle,
+    Check,
+    X,
+    ChevronRight,
+    MessageSquare,
+    Filter,
+    Search,
+    Download,
+    MoreHorizontal,
+    QrCode,
+    Plus,
+    LayoutGrid,
+    List,
+    Eye,
+    Upload,
+    ClipboardPaste,
+    ArrowLeft,
+    Copy
+} from 'lucide-react';
 import CandidateIntakeForm from '@/components/candidate/CandidateIntakeForm';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from '@/components/ui/use-toast';
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
@@ -21,9 +60,45 @@ import { createCandidate, updateCandidate, deleteCandidate, performCandidateActi
 import { getCurrentStage, getStageLabel, getStageColor, getAvailableActions, getActionLabel } from '@/lib/workflow';
 import { useCandidateFiltering } from '@/hooks/useCandidateFiltering';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
+import { getCandidateEvaluation, getMockEvaluationData } from '@/services/evaluationService';
 import type { WorkflowAction } from '@/lib/workflow';
 
-// Enhanced mock data with AI analysis fields
+// Interface for the evaluation data from initial_screening_evaluation table
+interface EvaluationData {
+    id: string;
+    candidate_id: string;
+    candidate_name: string;
+    position_applied: string;
+    evaluation_date: string;
+    resume_summary: string;
+    years_of_experience: number;
+    education_background: string;
+    career_progression: string;
+    technical_skills: string;
+    software_proficiency: string;
+    industry_knowledge: string;
+    soft_skills_claimed: string;
+    certifications: string;
+    technical_competency_assessment: string;
+    experience_relevance: string;
+    communication_assessment: string;
+    standout_qualities: string;
+    potential_concerns: string;
+    strengths: string;
+    weaknesses: string;
+    red_flags: string;
+    growth_potential: string;
+    cultural_fit_indicators: string;
+    missing_required_skills: string;
+    transferable_skills: string;
+    learning_curve_assessment: string;
+    recommendation: 'Reject' | 'Maybe' | 'Interview' | 'Strong Yes';
+    recommendation_reasoning: string;
+    interview_focus_areas: string;
+    created_at: string;
+    updated_at: string;
+}
+
 interface SkillMatch {
     skill: string;
     score: number;
@@ -75,177 +150,239 @@ interface Candidate {
     tags: string[];
     screeningNotes: string;
     aiAnalysis: AIAnalysis;
+    evaluationData?: EvaluationData; // Add the evaluation data
 }
 
 type DetailLevel = 'minimal' | 'standard' | 'detailed';
 
-const AIInsightCard = ({ analysis, detailLevel }: { analysis: AIAnalysis; detailLevel: DetailLevel }) => {
-    // Helper function to get AI summary
-    const getAISummary = () => {
-        const strengths = analysis.insights.filter(i => i.type === 'strength');
-        const opportunities = analysis.insights.filter(i => i.type === 'opportunity');
-        return `${strengths[0]?.description || ''}. ${opportunities[0]?.description || ''}`;
+const AIInsightCard = ({ analysis, evaluationData, detailLevel }: {
+    analysis?: AIAnalysis;
+    evaluationData?: EvaluationData;
+    detailLevel: DetailLevel
+}) => {
+    const [realEvaluationData, setRealEvaluationData] = useState<EvaluationData | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    // Use evaluation data if provided, otherwise try to fetch it
+    useEffect(() => {
+        if (!evaluationData && analysis) {
+            fetchEvaluationData();
+        }
+    }, [evaluationData, analysis]);
+
+    const fetchEvaluationData = async () => {
+        if (!analysis) return;
+
+        try {
+            setLoading(true);
+            // Try to get real evaluation data
+            const evaluation = await getCandidateEvaluation('candidate-id'); // You'll need to pass the actual candidate ID
+
+            if (evaluation) {
+                setRealEvaluationData(evaluation);
+            } else {
+                // Use mock data for demonstration
+                setRealEvaluationData(getMockEvaluationData('candidate-id', 'Candidate Name'));
+            }
+        } catch (error) {
+            console.error('Error fetching evaluation data:', error);
+            // Use mock data as fallback
+            setRealEvaluationData(getMockEvaluationData('candidate-id', 'Candidate Name'));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (detailLevel === 'minimal') {
+    // Use the evaluation data we have (either passed in or fetched)
+    const currentEvaluationData = evaluationData || realEvaluationData;
+    const hasEvaluationData = currentEvaluationData && currentEvaluationData.recommendation;
+    const hasAnalysisData = analysis && analysis.overallMatch;
+
+    // If no data is available and we're not loading, show loading state
+    if (!hasEvaluationData && !hasAnalysisData && !loading) {
         return (
             <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
-                    <Brain className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold">AI Match</h3>
+                    <Brain className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="font-semibold text-muted-foreground">AI Evaluation</h3>
                 </div>
-                <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium">Overall Match</span>
-                        <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
-                    </div>
-                    <Progress value={analysis.overallMatch} className="h-2" />
-                    <p className="text-sm text-muted-foreground mt-2">{getAISummary()}</p>
+                <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">Evaluation in progress...</p>
                 </div>
             </div>
         );
     }
 
-    if (detailLevel === 'standard') {
+    if (loading) {
         return (
             <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
-                    <Brain className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold">AI Analysis</h3>
+                    <Brain className="h-5 w-5 text-muted-foreground animate-pulse" />
+                    <h3 className="font-semibold text-muted-foreground">AI Evaluation</h3>
+                </div>
+                <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">Loading evaluation...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Helper function to get recommendation score
+    const getRecommendationScore = (recommendation: string) => {
+        switch (recommendation) {
+            case 'Strong Yes': return 90;
+            case 'Interview': return 75;
+            case 'Maybe': return 50;
+            case 'Reject': return 25;
+            default: return 0;
+        }
+    };
+
+    // Helper function to get recommendation color
+    const getRecommendationColor = (recommendation: string) => {
+        switch (recommendation) {
+            case 'Strong Yes': return 'text-green-600';
+            case 'Interview': return 'text-blue-600';
+            case 'Maybe': return 'text-yellow-600';
+            case 'Reject': return 'text-red-600';
+            default: return 'text-muted-foreground';
+        }
+    };
+
+    // If we have evaluation data, use it; otherwise fall back to analysis
+    if (hasEvaluationData) {
+        const score = getRecommendationScore(currentEvaluationData.recommendation);
+
+        return (
+            <div className="space-y-4 border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <Brain className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold">AI Evaluation</h3>
+                    </div>
+                    <Badge className={`${getRecommendationColor(currentEvaluationData.recommendation)} border-0`}>
+                        {currentEvaluationData.recommendation}
+                    </Badge>
                 </div>
 
-                <div className="space-y-4">
-                    {/* Overall Match */}
+                <div className="space-y-3">
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium">Overall Match</span>
-                            <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
+                            <span className="text-sm font-medium">Overall Score</span>
+                            <span className="text-sm font-medium">{score}%</span>
                         </div>
-                        <Progress value={analysis.overallMatch} className="h-2" />
+                        <Progress value={score} className="h-2" />
                     </div>
 
-                    {/* Culture & Growth */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <Target className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">Culture Fit</span>
+                    {detailLevel !== 'minimal' && (
+                        <>
+                            <div>
+                                <h4 className="text-sm font-medium mb-1">Resume Summary</h4>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {currentEvaluationData.resume_summary}
+                                </p>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Progress value={analysis.cultureFit} className="h-2" />
-                                <span className="text-sm font-medium">{analysis.cultureFit}%</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <LineChart className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">Growth Potential</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Progress value={analysis.growthPotential} className="h-2" />
-                                <span className="text-sm font-medium">{analysis.growthPotential}%</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* AI Summary */}
-                    <div>
-                        <h4 className="text-sm font-medium mb-2">AI Summary</h4>
-                        <div className="space-y-2">
-                            {analysis.insights.map((insight, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                    <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                    <span className="text-sm">{insight.description}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Risk Factors */}
-                    {analysis.riskFactors.length > 0 && (
-                        <div>
-                            <h4 className="text-sm font-medium mb-2">Potential Concerns</h4>
-                            <div className="space-y-2">
-                                {analysis.riskFactors.map((risk, index) => (
-                                    <div key={index} className="flex items-start gap-2">
-                                        <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${risk.severity === 'high' ? 'text-destructive' :
-                                            risk.severity === 'medium' ? 'text-yellow-500' :
-                                                'text-muted-foreground'
-                                            }`} />
-                                        <span className="text-sm">{risk.description}</span>
+                            {detailLevel === 'detailed' && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                            <span className="font-medium">Experience:</span>
+                                            <span className="ml-1">{currentEvaluationData.years_of_experience} years</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Education:</span>
+                                            <span className="ml-1 line-clamp-1">{currentEvaluationData.education_background}</span>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-medium mb-1">Key Strengths</h4>
+                                        <p className="text-xs text-muted-foreground line-clamp-2">
+                                            {currentEvaluationData.strengths}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-medium mb-1">Interview Focus</h4>
+                                        <p className="text-xs text-muted-foreground line-clamp-2">
+                                            {currentEvaluationData.interview_focus_areas}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
         );
     }
 
-    // Detailed view
-    return (
-        <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
-            <div className="flex items-center gap-2 mb-2">
-                <Brain className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Detailed Skills Analysis</h3>
-            </div>
-
-            <div className="space-y-4">
-                {/* Overall Match */}
-                <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium">Overall Match</span>
-                        <span className="text-sm font-semibold text-primary">{analysis.overallMatch}%</span>
-                    </div>
-                    <Progress value={analysis.overallMatch} className="h-2" />
+    // Fallback to analysis data if available
+    if (hasAnalysisData) {
+        return (
+            <div className="space-y-4 border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-semibold">AI Analysis</h3>
                 </div>
 
-                {/* Detailed Skill Matches */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Skills Breakdown</h4>
-                    <div className="space-y-3">
-                        {analysis.skillMatches.map((skill) => (
-                            <div key={skill.skill} className="space-y-1">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium">{skill.skill}</span>
-                                        {skill.required && (
-                                            <Badge variant="secondary" className="text-xs">Required</Badge>
-                                        )}
-                                    </div>
-                                    <span className="text-sm font-medium">{skill.score}%</span>
-                                </div>
-                                <Progress value={skill.score} className="h-1.5" />
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>{skill.experience} experience</span>
-                                </div>
-                            </div>
-                        ))}
+                <div className="space-y-3">
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Overall Match</span>
+                            <span className="text-sm font-medium">{analysis.overallMatch}%</span>
+                        </div>
+                        <Progress value={analysis.overallMatch} className="h-2" />
                     </div>
-                </div>
 
-                {/* Development Areas */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Recommended Development</h4>
-                    <div className="space-y-2">
-                        {analysis.learningPath.map((item, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                                <GraduationCap className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    {detailLevel !== 'minimal' && (
+                        <>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                    <span className="text-sm font-medium">{item.skill}</span>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs">{item.priority} priority</Badge>
-                                        <span className="text-xs text-muted-foreground">Est. {item.estimatedTimeToAcquire}</span>
-                                    </div>
+                                    <span className="font-medium">Culture Fit:</span>
+                                    <span className="ml-1">{analysis.cultureFit}%</span>
+                                </div>
+                                <div>
+                                    <span className="font-medium">Growth Potential:</span>
+                                    <span className="ml-1">{analysis.growthPotential}%</span>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+
+                            {detailLevel === 'detailed' && (
+                                <>
+                                    <div>
+                                        <h4 className="text-sm font-medium mb-1">Top Skills</h4>
+                                        <div className="flex flex-wrap gap-1">
+                                            {analysis.skillMatches.slice(0, 3).map((skill, idx) => (
+                                                <Badge key={idx} variant="outline" className="text-xs">
+                                                    {skill.skill} ({skill.score}%)
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-medium mb-1">Key Insights</h4>
+                                        <div className="space-y-1">
+                                            {analysis.insights.slice(0, 2).map((insight, idx) => (
+                                                <p key={idx} className="text-xs text-muted-foreground">
+                                                    • {insight.description}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
+
+    // Should not reach here, but just in case
+    return null;
 };
 
 const CandidateCard = ({ candidate, onAction, detailLevel }) => {
@@ -279,12 +416,12 @@ const CandidateCard = ({ candidate, onAction, detailLevel }) => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                    {candidate.skills.map(skill => (
+                    {candidate.skills?.map(skill => (
                         <Badge key={skill} variant="outline">{skill}</Badge>
                     ))}
                 </div>
 
-                <AIInsightCard analysis={candidate.aiAnalysis} detailLevel={detailLevel} />
+                <AIInsightCard analysis={candidate.aiAnalysis} evaluationData={candidate.evaluationData} detailLevel={detailLevel} />
             </div>
         );
 
@@ -360,8 +497,14 @@ const CandidateCard = ({ candidate, onAction, detailLevel }) => {
                             <Tooltip>
                                 <TooltipTrigger>
                                     <div className="flex items-center gap-2 justify-end">
-                                        <span className="text-2xl font-bold text-primary">{candidate.aiAnalysis.overallMatch}%</span>
-                                        <Brain className="h-5 w-5 text-primary" />
+                                        {candidate.aiAnalysis ? (
+                                            <>
+                                                <span className="text-2xl font-bold text-primary">{candidate.aiAnalysis.overallMatch}%</span>
+                                                <Brain className="h-5 w-5 text-primary" />
+                                            </>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground">No AI analysis yet</span>
+                                        )}
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -500,6 +643,42 @@ const CandidateList = ({ candidates, onAction }) => {
 const RegisterDialog = () => {
     const [mode, setMode] = useState<'form' | 'qr'>('form');
     const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFormSubmit = async (formData: FormData) => {
+        try {
+            setIsSubmitting(true);
+            console.log('Form submitted:', formData);
+
+            // Log FormData entries for debugging
+            for (const [key, value] of formData.entries()) {
+                console.log(`${key}:`, value);
+            }
+
+            // Create candidate with file uploads
+            const result = await createCandidate(formData);
+
+            if (result.success) {
+                toast({
+                    title: "Success",
+                    description: "Candidate registered successfully",
+                });
+                // Refresh the page or trigger a re-fetch
+                window.location.reload();
+            } else {
+                throw new Error(result.message || 'Failed to register candidate');
+            }
+        } catch (error) {
+            console.error('Error registering candidate:', error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to register candidate",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <Dialog>
@@ -559,13 +738,10 @@ const RegisterDialog = () => {
                             </div>
                         </div>
                     ) : (
-                        <CandidateIntakeForm onSubmit={(data) => {
-                            console.log('Form submitted:', data);
-                            toast({
-                                title: "Candidate registered",
-                                description: "The candidate has been successfully registered.",
-                            });
-                        }} />
+                        <CandidateIntakeForm
+                            onSubmit={handleFormSubmit}
+                            isSubmitting={isSubmitting}
+                        />
                     )}
                 </div>
             </DialogContent>
@@ -597,14 +773,23 @@ const AppliedCandidates = () => {
             // Call the backend API to perform the action
             await performCandidateAction(candidateId, action, 'user', `Performed action: ${action}`);
 
-            // Refresh the candidates list using the hook
-            refreshCandidates();
-
             // Show success message
             toast({
                 title: "Action Completed",
                 description: `Successfully performed action: ${getActionLabel(action)}`,
             });
+
+            // Navigate to appropriate page based on action
+            if (action === 'shortlist') {
+                // Navigate to screening page
+                navigate('/screening');
+            } else if (action === 'schedule-interview') {
+                // Navigate to interview scheduling
+                navigate('/interviews/schedule');
+            } else {
+                // Refresh the current page for other actions
+                window.location.reload();
+            }
         } catch (err: any) {
             toast({
                 title: "Error",
