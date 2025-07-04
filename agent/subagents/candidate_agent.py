@@ -1,5 +1,6 @@
 from google.adk.agents import Agent
 
+
 def search_knowledge_base(query: str) -> str:
     """
     Search the knowledge base and return raw chunks for the agent to analyze.
@@ -14,16 +15,19 @@ def search_knowledge_base(query: str) -> str:
         if not documents:
             return "No relevant information found in the knowledge base."
         chunks = []
-        chunks.append(f"Search Results for: '{query}'\nFound {len(documents)} relevant chunks:\n")
+        chunks.append(
+            f"Search Results for: '{query}'\nFound {len(documents)} relevant chunks:\n")
         for i, doc in enumerate(documents, 1):
             chunks.append(f"Result {i}:\n{doc}")
         return "\n\n" + "="*50 + "\n\n".join(chunks)
     except Exception as e:
         return f"Error searching knowledge base: {str(e)}"
 
+
 def add_candidate_document(name: str, url: str, uuid: str) -> dict:
     from candidate.add_candidate import add_candidate_document
-    return add_candidate_document(name, url, uuid)
+    return add_candidate_document(name, url, uuid_str=uuid)
+
 
 candidate_agent = Agent(
     name="candidate_agent",

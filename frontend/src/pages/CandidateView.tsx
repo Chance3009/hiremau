@@ -9,9 +9,9 @@ import ResumeSummary from '@/components/candidate/ResumeSummary';
 import AIAnalysis from '@/components/interview/AIAnalysis';
 import EvaluationCard from '@/components/candidate/EvaluationCard';
 import { cn } from "@/lib/utils";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from '@/components/ui/page-header';
 import { useRecruitment } from "@/contexts/RecruitmentContext";
-import { fetchCandidateById, updateCandidate, performCandidateAction } from '@/services/candidateService';
+import { fetchCandidateById, getCandidateActions, performCandidateAction } from '@/services/candidateService';
 import { toast } from '@/components/ui/use-toast';
 import { Candidate } from '@/types';
 
@@ -26,7 +26,11 @@ const CandidateView = () => {
   const [allowedActions, setAllowedActions] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!candidateId) return;
+    if (!candidateId) {
+      setError('No candidate ID provided');
+      setLoading(false);
+      return;
+    }
 
     const loadCandidateData = async () => {
       setLoading(true);
@@ -35,16 +39,17 @@ const CandidateView = () => {
       try {
         // Fetch candidate data with evaluation
         const candidateData = await fetchCandidateById(candidateId);
+        if (!candidateData) {
+          throw new Error('Candidate not found');
+        }
         setCandidate(candidateData);
 
         // Fetch allowed actions
-        const response = await fetch(`http://localhost:8001/candidates/${candidateId}/actions`);
-        if (response.ok) {
-          const actions = await response.json();
-          setAllowedActions(actions);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to load candidate data');
+        const actions = await getCandidateActions(candidateId);
+        setAllowedActions(actions);
+      } catch (err: unknown) {
+        console.error('Error loading candidate:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load candidate data');
       } finally {
         setLoading(false);
       }
@@ -58,7 +63,7 @@ const CandidateView = () => {
     // Check both possible property names for evaluation data
     const evaluationData = candidate?.evaluationData || candidate?.evaluation_data;
 
-    if (!evaluationData) {
+    if (!evaluationData || (Array.isArray(evaluationData) && evaluationData.length === 0)) {
       return {
         hasEvaluation: false,
         status: 'pending',
@@ -68,6 +73,15 @@ const CandidateView = () => {
 
     // Handle both array and object formats
     const evaluation = Array.isArray(evaluationData) ? evaluationData[0] : evaluationData;
+
+    if (!evaluation) {
+      return {
+        hasEvaluation: false,
+        status: 'pending',
+        message: 'Evaluation in progress...'
+      };
+    }
+
     return {
       hasEvaluation: true,
       status: 'completed',
@@ -111,44 +125,35 @@ const CandidateView = () => {
 
   const handleStatusChange = async (action: string) => {
     if (!candidate) return;
+
     try {
-      const response = await fetch(`http://localhost:8001/candidates/${candidate.id}/actions/${action}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          performed_by: 'user',
-          notes: `Action performed: ${action}`
-        })
+      const result = await performCandidateAction(candidate.id, action, {
+        performed_by: 'user',
+        notes: `Action performed: ${action}`
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to perform action');
-      }
-
-      const result = await response.json();
 
       // Refresh candidate data to get updated status
       const updatedCandidate = await fetchCandidateById(candidate.id);
       setCandidate(updatedCandidate);
 
       // Update allowed actions
-      const actionsResponse = await fetch(`http://localhost:8001/candidates/${candidate.id}/actions`);
-      if (actionsResponse.ok) {
-        const actions = await actionsResponse.json();
-        setAllowedActions(actions);
-      }
+      const actions = await getCandidateActions(candidate.id);
+      setAllowedActions(actions);
 
       toast({
         title: "Status Updated",
         description: result.message || `Action ${action} completed successfully`,
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to update status');
+
+      // Don't redirect - stay on current page
+      console.log(`Candidate moved to new stage: ${updatedCandidate?.stage}`);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update status';
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: err.message || 'Failed to update status',
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -175,6 +180,38 @@ const CandidateView = () => {
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
+  };
+
+  const getActionButtonStyle = (action: string) => {
+    switch (action) {
+      case 'shortlist':
+        return 'default';
+      case 'reject':
+        return 'destructive';
+      case 'schedule_interview':
+        return 'secondary';
+      case 'start_screening':
+        return 'default';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'shortlist':
+        return <CheckCircle className="h-4 w-4 mr-2" />;
+      case 'reject':
+        return <XCircle className="h-4 w-4 mr-2" />;
+      case 'schedule_interview':
+        return <MessageSquare className="h-4 w-4 mr-2" />;
+      default:
+        return null;
+    }
+  };
+
+  const formatActionName = (action: string) => {
+    return action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   if (loading) {
@@ -397,13 +434,11 @@ const CandidateView = () => {
                   <Button
                     key={action}
                     className="w-full"
-                    variant={action === 'shortlist' ? 'default' : action === 'reject' ? 'destructive' : 'secondary'}
+                    variant={getActionButtonStyle(action)}
                     onClick={() => handleStatusChange(action)}
                   >
-                    {action === 'shortlist' && <CheckCircle className="h-4 w-4 mr-2" />}
-                    {action === 'reject' && <XCircle className="h-4 w-4 mr-2" />}
-                    {action === 'schedule_interview' && <MessageSquare className="h-4 w-4 mr-2" />}
-                    {action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {getActionIcon(action)}
+                    {formatActionName(action)}
                   </Button>
                 ))}
 

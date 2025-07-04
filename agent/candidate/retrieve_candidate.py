@@ -15,8 +15,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    logger.error("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    logger.error(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
+    raise ValueError(
+        "SUPABASE_URL and SUPABASE_KEY must be set in the environment variables.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -30,6 +32,7 @@ vector_store = SupabaseVectorStore(
     table_name="candidate_table",
     query_name="match_candidate_documents",
 )
+
 
 def similarity_search(query: str) -> List[str]:
     """

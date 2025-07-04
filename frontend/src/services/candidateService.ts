@@ -67,88 +67,96 @@ export const fetchCandidates = async (filters?: CandidateFilters): Promise<Candi
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        return data;
+        return data.map(transformCandidateData);
     } catch (error) {
         console.error('Error fetching candidates:', error);
         throw error;
     }
 };
 
-export const fetchCandidateById = async (candidateId: string): Promise<Candidate> => {
+// Helper function to transform candidate data
+const transformCandidateData = (candidate: any): Candidate => {
+    return {
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email,
+        phone: candidate.phone,
+        formatted_phone: formatMalaysianPhone(candidate.phone),
+        current_position: candidate.current_position,
+        years_experience: candidate.years_experience,
+        education: candidate.education,
+        stage: candidate.stage || 'applied',
+        country: candidate.country || 'Malaysia',
+        currency: candidate.currency || 'MYR',
+        salary_expectations: candidate.salary_expectations,
+        formatted_salary: candidate.salary_expectations ? formatMalaysianCurrency(candidate.salary_expectations) : undefined,
+        availability: candidate.availability,
+        preferred_work_type: candidate.preferred_work_type,
+        source: candidate.source || 'direct',
+        skills: Array.isArray(candidate.skills) ? candidate.skills : [],
+        linkedin_url: candidate.linkedin_url,
+        github_url: candidate.github_url,
+        resume_files: Array.isArray(candidate.resume_files) ? candidate.resume_files : [],
+        evaluation_data: Array.isArray(candidate.evaluation_data) ? candidate.evaluation_data : [],
+        ai_analysis: Array.isArray(candidate.ai_analysis) ? candidate.ai_analysis : [],
+        created_at: candidate.created_at,
+        updated_at: candidate.updated_at,
+        evaluationData: Array.isArray(candidate.evaluation_data) ? candidate.evaluation_data :
+            Array.isArray(candidate.ai_analysis) ? candidate.ai_analysis : [],
+    };
+};
+
+export async function fetchCandidateById(candidateId: string): Promise<Candidate | null> {
     try {
+        // Use the simplified API endpoint
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`);
+
         if (!response.ok) {
+            if (response.status === 404) {
+                return null;
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const candidate = await response.json();
+        return transformCandidateData(candidate);
 
-        // Fetch evaluation data for this candidate
-        try {
-            const evaluationResponse = await fetch(`${API_BASE_URL}/candidates/${candidateId}/evaluation`);
-            if (evaluationResponse.ok) {
-                const evalResult = await evaluationResponse.json();
-                if (evalResult.success && evalResult.evaluation) {
-                    candidate.evaluationData = evalResult.evaluation;
-                }
-            }
-        } catch (evalError) {
-            console.error('Error fetching evaluation data:', evalError);
-            // Continue without evaluation data
-        }
-
-        // Fetch candidate files
-        try {
-            const filesResponse = await fetch(`${API_BASE_URL}/candidates/${candidateId}/files`);
-            if (filesResponse.ok) {
-                candidate.files = await filesResponse.json();
-            }
-        } catch (filesError) {
-            console.error('Error fetching candidate files:', filesError);
-            // Continue without files
-        }
-
-        return candidate;
     } catch (error) {
         console.error('Error fetching candidate:', error);
         throw error;
     }
-};
+}
 
-export const fetchCandidatesByStage = async (stage: string): Promise<Candidate[]> => {
+export async function fetchCandidatesByStage(stage: string): Promise<Candidate[]> {
     try {
-        const response = await fetch(`${API_BASE_URL}/candidates/?stage=${stage}`);
+        const response = await fetch(`${API_BASE_URL}/candidates?stage=${encodeURIComponent(stage)}`);
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        return data;
+
+        const candidates = await response.json();
+        return candidates.map(transformCandidateData);
+
     } catch (error) {
         console.error('Error fetching candidates by stage:', error);
         throw error;
     }
-};
+}
 
 export const createCandidate = async (formData: FormData): Promise<{ success: boolean; id: string; message: string }> => {
     try {
-        // Log the form data for debugging
-        console.log('Form data entries:');
-        for (const [key, value] of formData.entries()) {
-            console.log(`${key}:`, value);
-        }
-
         const response = await fetch(`${API_BASE_URL}/candidates/`, {
             method: 'POST',
             body: formData,
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error response:', errorData);
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
             throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('Success response:', result);
         return {
             success: true,
             id: result.id,
@@ -160,72 +168,67 @@ export const createCandidate = async (formData: FormData): Promise<{ success: bo
     }
 };
 
-export const updateCandidate = async (candidateId: string, candidateData: Partial<Candidate>): Promise<Candidate> => {
+export async function updateCandidate(candidateId: string, updates: Partial<Candidate>): Promise<boolean> {
     try {
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(candidateData),
+            body: JSON.stringify(updates),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        return data;
+        return true;
+
     } catch (error) {
         console.error('Error updating candidate:', error);
         throw error;
     }
-};
+}
 
-export const performCandidateAction = async (
-    candidateId: string,
-    action: string,
-    performedBy: string = 'user',
-    notes: string = ''
-): Promise<{ success: boolean; message: string }> => {
+export async function performCandidateAction(candidateId: string, action: string, data?: any): Promise<any> {
     try {
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/actions/${action}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                performed_by: performedBy,
-                notes: notes
-            }),
+            body: JSON.stringify(data || {}),
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
             throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        return data;
+        return await response.json();
+
     } catch (error) {
-        console.error('Error performing candidate action:', error);
+        console.error(`Error performing action ${action}:`, error);
         throw error;
     }
-};
+}
 
-export const getCandidateActions = async (candidateId: string): Promise<string[]> => {
+export async function getCandidateActions(candidateId: string): Promise<string[]> {
     try {
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/actions`);
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        return data;
+
+        return await response.json();
+
     } catch (error) {
         console.error('Error fetching candidate actions:', error);
         return [];
     }
-};
+}
 
 export const getStagesSummary = async (): Promise<{ success: boolean; stage_counts: Record<string, number>; total_active: number }> => {
     try {
@@ -408,4 +411,64 @@ export const fetchCandidatesWithEvaluation = async (stage?: string): Promise<Can
         console.error('Error fetching candidates with evaluation:', error);
         throw error;
     }
-}; 
+};
+
+// Legacy Supabase methods for backward compatibility (if needed)
+export async function getCandidateDetails(candidateId: string): Promise<Candidate | null> {
+    try {
+        const { data, error } = await supabase
+            .from('candidates')
+            .select(`
+                *,
+                initial_screening_evaluation (
+                    id,
+                    overall_score,
+                    recommendation,
+                    resume_summary,
+                    experience_relevance,
+                    technical_competency_assessment,
+                    cultural_fit_indicators,
+                    strengths,
+                    weaknesses,
+                    missing_required_skills,
+                    standout_qualities,
+                    potential_concerns,
+                    recommendation_reasoning,
+                    interview_focus_areas,
+                    created_at
+                )
+            `)
+            .eq('id', candidateId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching candidate details:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error in getCandidateDetails:', error);
+        return null;
+    }
+}
+
+export async function getCandidatesByStageFromSupabase(stage: string): Promise<Candidate[]> {
+    try {
+        const { data, error } = await supabase
+            .from('candidates')
+            .select('*')
+            .eq('stage', stage)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching candidates by stage:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error in getCandidatesByStageFromSupabase:', error);
+        return [];
+    }
+} 
