@@ -22,26 +22,90 @@ import { cn } from '@/lib/utils';
 import { PageHeader } from "@/components/ui/page-header";
 import { mockInterviewReports, mockCandidates } from '@/mocks/interviewData';
 import { fetchInterviews, createInterview, updateInterview, deleteInterview } from '@/services/interviewService';
+import { supabase } from '@/lib/supabaseClient';
 
 const InterviewReport: React.FC = () => {
     const navigate = useNavigate();
     const { reportId } = useParams();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [interviews, setInterviews] = useState<any[]>([]);
+    const [sessionData, setSessionData] = useState(null);
+    const [summary, setSummary] = useState(null);
 
     // Get the report from mock data
     const report = mockInterviewReports.find(r => r.id === reportId) || mockInterviewReports[0];
     const candidate = mockCandidates.find(c => c.id === report.candidateId);
 
+    // Function to fetch session JSON from Supabase
+    async function fetchSessionJsonFromSupabase(filePath: string) {
+        const { data, error } = await supabase
+            .storage
+            .from('interview-sessions')
+            .createSignedUrl(filePath, 60);
+
+        if (error || !data?.signedUrl) {
+            throw new Error('Could not get signed file URL');
+        }
+
+        const response = await fetch(data.signedUrl);
+        if (!response.ok) {
+            throw new Error('Failed to fetch file');
+        }
+        const jsonData = await response.json();
+        return jsonData;
+    }
+
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-        fetchInterviews()
-            .then(setInterviews)
-            .catch(err => setError(err.message || 'Unknown error'))
-            .finally(() => setLoading(false));
-    }, []);
+        const loadInterviewData = async () => {
+            try {
+                setLoading(true);
+                
+                // 1. Fetch session data from Supabase
+                const filePath = `sessions/interview-session-${reportId}.json`;
+                const sessionData = await fetchSessionJsonFromSupabase(filePath);
+                setSessionData(sessionData);
+                
+                // 2. Get AI summary using the endpoint from main.py
+                const response = await fetch('http://localhost:8010/summarize_interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sessionData),
+                });
+                
+                const result = await response.json();
+                if (result.summary) {
+                    setSummary(result.summary);
+                } else if (result.error) {
+                    setError(result.error);
+                }
+                
+            } catch (err) {
+                setError(err.message || 'Failed to load interview data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadInterviewData();
+    }, [reportId]);
+
+    // Display loading state
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div>Loading interview report...</div>
+            </div>
+        );
+    }
+
+    // Display error state
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="text-red-500">Error: {error}</div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -59,6 +123,32 @@ const InterviewReport: React.FC = () => {
 
             <div className="flex-1 space-y-4 p-4">
                 <div className="grid gap-4">
+                    {/* AI Summary */}
+                    {summary && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg font-medium">AI Interview Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="whitespace-pre-wrap">{summary}</div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Session Data (for debugging) */}
+                    {sessionData && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg font-medium">Session Data</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="text-xs overflow-auto">
+                                    {JSON.stringify(sessionData, null, 2)}
+                                </pre>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Interview Details */}
                     <Card>
                         <CardHeader>

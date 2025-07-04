@@ -88,7 +88,7 @@ const Interview: React.FC = () => {
     const userId = candidateId || '1'; 
 
     useEffect(() => {
-      const eventSource = new EventSource(`http://localhost:8000/events/${userId}`);
+      const eventSource = new EventSource(`http://localhost:8010/events/${userId}`);
     
       eventSource.onmessage = (event) => {
         try {
@@ -361,43 +361,7 @@ const Interview: React.FC = () => {
       offset += chunk.byteLength;
     }
     try {
-      await fetch(`http://localhost:8000/send/${userId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mime_type: 'audio/pcm',
-          data: arrayBufferToBase64(combinedBuffer.buffer),
-        }),
-      });
-    } catch (err) {
-      // Optionally handle error
-    }
-    audioBufferRef.current = [];
-  }, [userId]);
-
-  // Start/stop recording and timer
-  // --- AUDIO RECORDING LOGIC ---
-  const audioBufferRef = React.useRef<ArrayBuffer[]>([]);
-  const bufferTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  // Use the audio recorder hook
-  const { start, stop } = useAudioRecorder((pcmData) => {
-    audioBufferRef.current.push(pcmData);
-    // Buffer is sent on timer
-  });
-
-  // Function to send buffered audio to backend
-  const sendBufferedAudio = React.useCallback(async () => {
-    if (audioBufferRef.current.length === 0) return;
-    let totalLength = audioBufferRef.current.reduce((acc, chunk) => acc + chunk.byteLength, 0);
-    const combinedBuffer = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of audioBufferRef.current) {
-      combinedBuffer.set(new Uint8Array(chunk), offset);
-      offset += chunk.byteLength;
-    }
-    try {
-      await fetch(`http://localhost:8000/send/${userId}`, {
+      await fetch(`http://localhost:8010/send/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -449,21 +413,45 @@ const Interview: React.FC = () => {
         aiConfidence: msg.aiAnalysis?.confidence,
       })) : [],
     };
+    
     const jsonString = JSON.stringify(dataToSave, null, 2);
-    const file = new File([jsonString], `interview-session-${Date.now()}.json`, { type: "application/json" });
+    const fileName = `interview-session-${Date.now()}.json`;
+    const filePath = `sessions/${fileName}`;
+    const file = new File([jsonString], fileName, { type: "application/json" });
 
-    const { data, error } = await supabase.storage
+    // 1. Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('interview-sessions')
-      .upload(`sessions/interview-session-${Date.now()}.json`, file, {
+      .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
       });
 
-    if (error) {
-      console.error('Upload error:', error);
-    } else {
-      console.log('File uploaded:', data);
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
     }
+
+    console.log('File uploaded:', uploadData);
+
+    // 2. Insert record into interview table
+    const { data: insertData, error: insertError } = await supabase
+      .from('interview')
+      .insert([
+        {
+          candidate_id: candidateId,
+          transcript_json_file: filePath,
+          created_at: new Date().toISOString(),
+        }
+      ]);
+
+    if (insertError) {
+      console.error('Database insert error:', insertError);
+      throw insertError;
+    }
+
+    console.log('Interview record inserted:', insertData);
+    return filePath; // Return the file path for reference
   }
 
   return (
@@ -480,7 +468,17 @@ const Interview: React.FC = () => {
             <Button variant="outline" onClick={() => navigate('/interviewed/1/evaluation')}>
               Skip Interview
             </Button>
-            <Button onClick={() => navigate(`/interview/${candidateId}/report`)}>
+            <Button 
+              onClick={async () => {
+                try {
+                  const filePath = await saveSessionToSupabase();
+                  console.log('Session saved with file path:', filePath);
+                  navigate(`/interview/${candidateId}/report`);
+                } catch (err) {
+                  console.error('Error ending interview:', err);
+                }
+              }}
+            >
               End Interview
             </Button>
           </div>

@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import warnings
+import uvicorn
 
 from pathlib import Path
 from dotenv import load_dotenv
