@@ -24,6 +24,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { mockCandidates, mockInterviews } from '@/mocks/interviewData';
 import { Note } from '@/types';
 import { useAudioRecorder, arrayBufferToBase64 } from '@/hooks/useAudioRecorder';
+import { supabase } from '@/lib/supabaseClient'; // adjust path if needed
+
+
 
 // Types for suggested questions
 interface SuggestedQuestion {
@@ -74,13 +77,13 @@ const Interview: React.FC = () => {
   const candidate = mockCandidates.find(c => c.id === candidateId) || mockCandidates[0];
 
   // Initialize messages from mock data
-  React.useEffect(() => {
-    const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
-      ...msg,
-      type: msg.type as 'question' | 'answer'
-    })) || [];
-    setMessages(initialMessages);
-  }, []);
+  // React.useEffect(() => {
+  //   const initialMessages = mockInterviews[0]?.messages?.map(msg => ({
+  //     ...msg,
+  //     type: msg.type as 'question' | 'answer'
+  //   })) || [];
+  //   setMessages(initialMessages);
+  // }, []);
 
     const userId = candidateId || '1'; 
 
@@ -110,7 +113,7 @@ const Interview: React.FC = () => {
                   aiAnalysis: {
                     type: message.confidence_score > 75 ? 'excellent' : 'concern',
                     summary: message.feedback || "Spoken response",
-                    confidence: message.confidence_score,
+                    confidence: (message.confidence_score || 75) / 100,
                     keyPoints: message.keyPoints || [],
                     resumeMatch: message.resumeMatch,
                   },
@@ -130,7 +133,7 @@ const Interview: React.FC = () => {
                   aiAnalysis: {
                     type: message.confidence_score > 75 ? 'excellent' : 'concern',
                     summary: message.feedback || "Spoken response",
-                    confidence: message.confidence_score,
+                    confidence: (message.confidence_score || 75) / 100,
                     keyPoints: message.keyPoints || [],
                     resumeMatch: message.resumeMatch,
                   },
@@ -385,6 +388,8 @@ const Interview: React.FC = () => {
       }
       // Send any remaining audio
       sendBufferedAudio();
+      // Save session to Supabase when mic is turned off
+      saveSessionToSupabase();
     }
     // Cleanup on unmount
     return () => {
@@ -396,6 +401,34 @@ const Interview: React.FC = () => {
     };
   }, [isRecording, start, stop, sendBufferedAudio]);
   // --- END AUDIO RECORDING LOGIC ---
+
+  async function saveSessionToSupabase() {
+    const dataToSave = {
+      quickNotes: Array.isArray(quickNotes) ? quickNotes : [],
+      messages: Array.isArray(messages) ? messages.map(msg => ({
+        type: msg.type,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        aiSummary: msg.aiAnalysis?.summary,
+        aiConfidence: msg.aiAnalysis?.confidence,
+      })) : [],
+    };
+    const jsonString = JSON.stringify(dataToSave, null, 2);
+    const file = new File([jsonString], `interview-session-${Date.now()}.json`, { type: "application/json" });
+
+    const { data, error } = await supabase.storage
+      .from('interview-sessions')
+      .upload(`sessions/interview-session-${Date.now()}.json`, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+    } else {
+      console.log('File uploaded:', data);
+    }
+  }
 
   return (
     <div className="h-[calc(100vh-3rem)] flex flex-col">
