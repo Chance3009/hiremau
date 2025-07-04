@@ -187,6 +187,13 @@ async def create_note(request: Request):
     # Save data to database here
     return {"status": "success", "note": data}
 
+
+@app.post("/api/notes")
+async def create_note(request: Request):
+    data = await request.json()
+    # Save data to database here
+    return {"status": "success", "note": data}
+
 # Define the route for the interview summary
 @app.post("/summarize_interview")
 async def summarize_interview(request: Request):
