@@ -52,12 +52,13 @@ export const useCandidateFiltering = (options: UseCandidateFilteringOptions = {}
 
             console.log('Loading candidates with filters:', filters);
 
-            // Use the evaluation-enabled fetch function for applied candidates
-            const shouldFetchEvaluations = options.additionalFilters?.stage === 'applied';
+            // Use the evaluation-enabled fetch function for applied and final_review candidates
+            const shouldFetchEvaluations = options.additionalFilters?.stage === 'applied' ||
+                options.additionalFilters?.stage === 'final_review';
 
             let data;
             if (shouldFetchEvaluations) {
-                // For applied candidates, fetch with evaluation data
+                // For applied and final_review candidates, fetch with evaluation data
                 data = await fetchCandidatesWithEvaluation(filters.stage);
                 // Apply other filters manually since the backend function only handles stage
                 if (filters.positionId || filters.eventId) {

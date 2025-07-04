@@ -224,8 +224,8 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
                 </div>
                 <div className="text-center py-4">
                     <p className="text-sm text-muted-foreground">Loading evaluation...</p>
-                </div>
-            </div>
+                        </div>
+                    </div>
         );
     }
 
@@ -258,23 +258,23 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
         return (
             <div className="space-y-4 border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                         <Brain className="h-5 w-5 text-blue-600" />
                         <h3 className="font-semibold">AI Evaluation</h3>
-                    </div>
+                            </div>
                     <Badge className={`${getRecommendationColor(currentEvaluationData.recommendation)} border-0`}>
                         {currentEvaluationData.recommendation}
                     </Badge>
-                </div>
+                        </div>
 
                 <div className="space-y-3">
-                    <div>
+                        <div>
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-sm font-medium">Overall Score</span>
                             <span className="text-sm font-medium">{score}%</span>
-                        </div>
+                            </div>
                         <Progress value={score} className="h-2" />
-                    </div>
+                            </div>
 
                     {detailLevel !== 'minimal' && (
                         <>
@@ -283,22 +283,22 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
                                 <p className="text-xs text-muted-foreground line-clamp-2">
                                     {currentEvaluationData.resume_summary}
                                 </p>
-                            </div>
+                    </div>
 
                             {detailLevel === 'detailed' && (
                                 <>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
+                    <div>
                                             <span className="font-medium">Experience:</span>
                                             <span className="ml-1">{currentEvaluationData.years_of_experience} years</span>
-                                        </div>
+                                </div>
                                         <div>
                                             <span className="font-medium">Education:</span>
                                             <span className="ml-1 line-clamp-1">{currentEvaluationData.education_background}</span>
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
 
-                                    <div>
+                        <div>
                                         <h4 className="text-sm font-medium mb-1">Key Strengths</h4>
                                         <p className="text-xs text-muted-foreground line-clamp-2">
                                             {currentEvaluationData.strengths}
@@ -310,7 +310,7 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
                                         <p className="text-xs text-muted-foreground line-clamp-2">
                                             {currentEvaluationData.interview_focus_areas}
                                         </p>
-                                    </div>
+                            </div>
                                 </>
                             )}
                         </>
@@ -322,34 +322,34 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
 
     // Fallback to analysis data if available
     if (hasAnalysisData) {
-        return (
+    return (
             <div className="space-y-4 border rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2">
                     <Brain className="h-5 w-5 text-blue-600" />
                     <h3 className="font-semibold">AI Analysis</h3>
-                </div>
+            </div>
 
                 <div className="space-y-3">
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium">Overall Match</span>
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium">Overall Match</span>
                             <span className="text-sm font-medium">{analysis.overallMatch}%</span>
-                        </div>
-                        <Progress value={analysis.overallMatch} className="h-2" />
                     </div>
+                    <Progress value={analysis.overallMatch} className="h-2" />
+                </div>
 
                     {detailLevel !== 'minimal' && (
                         <>
                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div>
+                <div>
                                     <span className="font-medium">Culture Fit:</span>
                                     <span className="ml-1">{analysis.cultureFit}%</span>
-                                </div>
+                                    </div>
                                 <div>
                                     <span className="font-medium">Growth Potential:</span>
                                     <span className="ml-1">{analysis.growthPotential}%</span>
                                 </div>
-                            </div>
+                                </div>
 
                             {detailLevel === 'detailed' && (
                                 <>
@@ -360,27 +360,27 @@ const AIInsightCard = ({ analysis, evaluationData, detailLevel, candidateId, can
                                                 <Badge key={idx} variant="outline" className="text-xs">
                                                     {skill.skill} ({skill.score}%)
                                                 </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
+                        ))}
+                    </div>
+                </div>
 
-                                    <div>
+                <div>
                                         <h4 className="text-sm font-medium mb-1">Key Insights</h4>
                                         <div className="space-y-1">
                                             {analysis.insights.slice(0, 2).map((insight, idx) => (
                                                 <p key={idx} className="text-xs text-muted-foreground">
                                                     • {insight.description}
                                                 </p>
-                                            ))}
-                                        </div>
-                                    </div>
+                        ))}
+                    </div>
+                </div>
                                 </>
                             )}
                         </>
                     )}
-                </div>
             </div>
-        );
+        </div>
+    );
     }
 
     // Should not reach here, but just in case
@@ -779,7 +779,10 @@ const AppliedCandidates = () => {
     const handleCandidateAction = async (candidateId: string, action: WorkflowAction) => {
         try {
             // Call the backend API to perform the action
-            await performCandidateAction(candidateId, action, 'user', `Performed action: ${action}`);
+            await performCandidateAction(candidateId, action, {
+                performed_by: 'user',
+                notes: `Performed action: ${action}`
+            });
 
             // Show success message
             toast({
@@ -789,11 +792,17 @@ const AppliedCandidates = () => {
 
             // Navigate to appropriate page based on action
             if (action === 'shortlist') {
-                // Navigate to screening page
-                navigate('/screening');
-            } else if (action === 'schedule-interview') {
-                // Navigate to interview scheduling
-                navigate('/interviews/schedule');
+                // Navigate to screened page (shortlist moves to screened stage)
+                navigate('/screened');
+            } else if (action === 'schedule_interview') {
+                // Navigate to interview list
+                navigate('/interview');
+            } else if (action === 'move_to_shortlisted') {
+                // Navigate to shortlisted page
+                navigate('/shortlisted');
+            } else if (action === 'move_to_final') {
+                // Navigate to final review page
+                navigate('/final-review');
             } else {
                 // Refresh the current page for other actions
                 window.location.reload();

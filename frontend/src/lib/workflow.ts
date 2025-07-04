@@ -1,9 +1,10 @@
 // Workflow utility functions for stage mapping and action handling
 
-export type WorkflowStage = 'applied' | 'screened' | 'interviewed' | 'final-review' | 'shortlisted';
-export type WorkflowAction = 'shortlist' | 'reject' | 'schedule-interview' | 'start-interview' | 'move-to-final' | 'make-offer';
+// Updated to match database constraint exactly
+export type WorkflowStage = 'applied' | 'screened' | 'interview' | 'shortlisted' | 'final_review' | 'offer' | 'hired' | 'rejected' | 'declined' | 'onboarded';
+export type WorkflowAction = 'shortlist' | 'reject' | 'schedule_interview' | 'move_to_shortlisted' | 'move_to_final' | 'make_offer' | 'hire' | 'mark_declined' | 'complete_onboarding';
 
-// Stage configuration matching the backend
+// Stage configuration matching the database constraint
 export const STAGE_CONFIG = {
     applied: {
         label: 'Applied',
@@ -13,27 +14,57 @@ export const STAGE_CONFIG = {
     },
     screened: {
         label: 'Screened',
-        description: 'Schedule or conduct interviews',
+        description: 'Candidates ready for interview scheduling',
         color: 'bg-yellow-100 text-yellow-700',
-        actions: ['schedule-interview', 'start-interview', 'reject'] as WorkflowAction[]
+        actions: ['schedule_interview', 'move_to_shortlisted', 'reject'] as WorkflowAction[]
     },
-    interviewed: {
-        label: 'Interviewed',
-        description: 'Review interview results',
+    interview: {
+        label: 'Interview',
+        description: 'Candidates scheduled for interviews',
         color: 'bg-purple-100 text-purple-700',
-        actions: ['move-to-final', 'reject'] as WorkflowAction[]
-    },
-    'final-review': {
-        label: 'Final Review',
-        description: 'Make final hiring decisions',
-        color: 'bg-orange-100 text-orange-700',
-        actions: ['make-offer', 'reject'] as WorkflowAction[]
+        actions: ['move_to_final', 'reject'] as WorkflowAction[]
     },
     shortlisted: {
         label: 'Shortlisted',
-        description: 'Ready for offer',
+        description: 'Top candidates for final review',
         color: 'bg-green-100 text-green-700',
-        actions: ['make-offer'] as WorkflowAction[]
+        actions: ['schedule_interview', 'move_to_final', 'reject'] as WorkflowAction[]
+    },
+    final_review: {
+        label: 'Final Review',
+        description: 'Final hiring decisions',
+        color: 'bg-orange-100 text-orange-700',
+        actions: ['make_offer', 'reject'] as WorkflowAction[]
+    },
+    offer: {
+        label: 'Offer',
+        description: 'Offer extended to candidate',
+        color: 'bg-indigo-100 text-indigo-700',
+        actions: ['hire', 'mark_declined', 'reject'] as WorkflowAction[]
+    },
+    hired: {
+        label: 'Hired',
+        description: 'Candidate accepted offer',
+        color: 'bg-emerald-100 text-emerald-700',
+        actions: ['complete_onboarding'] as WorkflowAction[]
+    },
+    rejected: {
+        label: 'Rejected',
+        description: 'Candidate rejected',
+        color: 'bg-red-100 text-red-700',
+        actions: [] as WorkflowAction[]
+    },
+    declined: {
+        label: 'Declined',
+        description: 'Candidate declined offer',
+        color: 'bg-gray-100 text-gray-700',
+        actions: [] as WorkflowAction[]
+    },
+    onboarded: {
+        label: 'Onboarded',
+        description: 'Candidate onboarded',
+        color: 'bg-teal-100 text-teal-700',
+        actions: [] as WorkflowAction[]
     }
 };
 
@@ -41,10 +72,13 @@ export const STAGE_CONFIG = {
 export const ACTION_LABELS = {
     'shortlist': 'Shortlist',
     'reject': 'Reject',
-    'schedule-interview': 'Schedule Interview',
-    'start-interview': 'Start Interview',
-    'move-to-final': 'Move to Final Review',
-    'make-offer': 'Make Offer'
+    'schedule_interview': 'Schedule Interview',
+    'move_to_shortlisted': 'Move to Shortlisted',
+    'move_to_final': 'Move to Final Review',
+    'make_offer': 'Make Offer',
+    'hire': 'Hire',
+    'mark_declined': 'Mark Declined',
+    'complete_onboarding': 'Complete Onboarding'
 };
 
 // Get stage info
@@ -78,30 +112,46 @@ export function mapStatusToStage(status: string): WorkflowStage {
         case 'new':
         case 'applied':
             return 'applied';
-        case 'shortlist':
+        case 'screening':
         case 'screened':
             return 'screened';
         case 'interview-scheduled':
         case 'interviewing':
-        case 'interviewed':
-            return 'interviewed';
-        case 'final-review':
-            return 'final-review';
-        case 'offer-made':
+        case 'interview':
+            return 'interview';
         case 'shortlisted':
             return 'shortlisted';
+        case 'final-review':
+        case 'final_review':
+            return 'final_review';
+        case 'offer-made':
+        case 'offer':
+            return 'offer';
+        case 'hired':
+            return 'hired';
+        case 'rejected':
+            return 'rejected';
+        case 'declined':
+            return 'declined';
+        case 'onboarded':
+            return 'onboarded';
         default:
             return 'applied';
     }
 }
 
 // Get the current stage for display (prefers currentStage over status)
-export function getCurrentStage(candidate: { currentStage?: WorkflowStage; status?: string }): WorkflowStage {
+export function getCurrentStage(candidate: { currentStage?: WorkflowStage; status?: string; stage?: string }): WorkflowStage {
+    // First check if candidate has a stage field (from backend)
+    if (candidate.stage) {
+        return candidate.stage as WorkflowStage;
+    }
+    // Fallback to currentStage or status mapping
     return candidate.currentStage || mapStatusToStage(candidate.status || 'applied');
 }
 
 // Check if an action is available for a candidate
-export function isActionAvailable(candidate: { currentStage?: WorkflowStage; status?: string }, action: WorkflowAction): boolean {
+export function isActionAvailable(candidate: { currentStage?: WorkflowStage; status?: string; stage?: string }, action: WorkflowAction): boolean {
     const stage = getCurrentStage(candidate);
     return getAvailableActions(stage).includes(action);
 } 

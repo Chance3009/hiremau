@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Search, Filter, CalendarDays, Users, Star, Brain, MapPin, Building, UserCheck, VideoIcon, Bot, Mail, Phone, Plus, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Search, Filter, CalendarDays, Users, Star, Brain, MapPin, Building, UserCheck, VideoIcon, Bot, Mail, Phone, Plus, RefreshCw, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useCandidateFiltering } from '@/hooks/useCandidateFiltering';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
 import { fetchEvents } from '@/services/eventService';
+import { performCandidateAction } from '@/services/candidateService';
 import { toast } from '@/components/ui/use-toast';
 import RoomManagement from '@/components/event/RoomManagement';
 import InterviewerAvailability from '@/components/event/InterviewerAvailability';
@@ -191,6 +192,9 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedInterviewer, setSelectedInterviewer] = useState<string>('');
     const [selectedRoom, setSelectedRoom] = useState<string>('');
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
 
     // Filter available rooms based on context
     const availableRooms = rooms.filter(room => {
@@ -204,8 +208,70 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
         return room.type === 'general';
     });
 
+    const handleScheduleInterview = async () => {
+        try {
+            setIsScheduling(true);
+
+            // Prepare interview details
+            const interviewDetails = {
+                date: selectedDate,
+                time: selectedTime,
+                interviewer: selectedInterviewer,
+                room: selectedRoom,
+                scheduled_by: 'user',
+                status: 'scheduled'
+            };
+
+            // First, store the interview details in the backend
+            const storeInterviewResponse = await fetch(`http://localhost:8001/candidates/${candidate.id}/interview-details`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(interviewDetails)
+            });
+
+            if (!storeInterviewResponse.ok) {
+                console.warn('Could not store interview details, proceeding with stage transition');
+            }
+
+            // Call the backend API to transition candidate to interview stage
+            await performCandidateAction(candidate.id, 'schedule_interview', {
+                performed_by: 'user',
+                notes: `Interview scheduled for ${selectedDate} at ${selectedTime} with ${interviewers.find(i => i.id === selectedInterviewer)?.name || 'Unknown'}`,
+                interview_details: interviewDetails
+            });
+
+            toast({
+                title: "Interview Scheduled",
+                description: `Interview scheduled for ${candidate.name} on ${selectedDate} at ${selectedTime}`,
+            });
+
+            // Close dialog and refresh the page data
+            setIsOpen(false);
+
+            // Refresh the candidates list
+            if (typeof refreshCandidates === 'function') {
+                await refreshCandidates();
+            }
+
+            // Navigate to interview page to see the scheduled candidate
+            navigate('/interview');
+
+        } catch (err: any) {
+            console.error('Error scheduling interview:', err);
+            toast({
+                title: "Error",
+                description: err.message || 'Failed to schedule interview',
+                variant: "destructive",
+            });
+        } finally {
+            setIsScheduling(false);
+        }
+    };
+
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                     <CalendarDays className="h-4 w-4 mr-2" />
@@ -272,14 +338,15 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
                                     .find(i => i.id === selectedInterviewer)
                                     ?.availability
                                     .find(a => a.day === selectedDate)
-                                    ?.slots.map(time => (
+                                    ?.slots.filter(slot => slot.status === 'available')
+                                    .map((slot, index) => (
                                         <Button
-                                            key={time}
-                                            variant={selectedTime === time ? "default" : "outline"}
+                                            key={`${slot.time}-${index}`}
+                                            variant={selectedTime === slot.time ? "default" : "outline"}
                                             size="sm"
-                                            onClick={() => setSelectedTime(time)}
+                                            onClick={() => setSelectedTime(slot.time)}
                                         >
-                                            {time}
+                                            {slot.time}
                                         </Button>
                                     ))}
                             </div>
@@ -304,8 +371,12 @@ const ScheduleInterviewDialog = ({ candidate, selectedEvent = null }: { candidat
                         </div>
                     )}
 
-                    <Button className="w-full" disabled={!selectedDate || !selectedTime || !selectedInterviewer || !selectedRoom}>
-                        Confirm Schedule
+                    <Button
+                        className="w-full"
+                        disabled={!selectedDate || !selectedTime || !selectedInterviewer || !selectedRoom || isScheduling}
+                        onClick={handleScheduleInterview}
+                    >
+                        {isScheduling ? 'Scheduling...' : 'Confirm Schedule'}
                     </Button>
                 </div>
             </DialogContent>
@@ -318,6 +389,38 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
 
     const startInterview = (id: string) => {
         navigate(`/interview/${id}`);
+    };
+
+    const handleStartNow = async (candidateId: string) => {
+        try {
+            // Call the backend API to transition candidate to interview stage
+            await performCandidateAction(candidateId, 'schedule_interview', {
+                performed_by: 'user',
+                notes: 'Interview started immediately',
+                interview_details: {
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    interviewer: 'Current User',
+                    room: 'Virtual Room'
+                }
+            });
+
+            toast({
+                title: "Interview Started",
+                description: `Interview started for ${candidate.name}`,
+            });
+
+            // Navigate to interview page
+            navigate(`/interview/${candidateId}`);
+
+        } catch (err: any) {
+            console.error('Error starting interview:', err);
+            toast({
+                title: "Error",
+                description: err.message || 'Failed to start interview',
+                variant: "destructive",
+            });
+        }
     };
 
     // Handle cases where scores might be undefined
@@ -466,7 +569,7 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                                     size="sm"
                                     variant="default"
                                     className="gap-2"
-                                    onClick={() => startInterview(candidate.id)}
+                                    onClick={() => handleStartNow(candidate.id)}
                                 >
                                     <VideoIcon className="h-4 w-4" />
                                     Start Now

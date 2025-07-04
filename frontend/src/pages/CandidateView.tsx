@@ -16,7 +16,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Candidate } from '@/types';
 
 const CandidateView = () => {
-  const { candidateId } = useParams();
+  const { id: candidateId } = useParams();
   const navigate = useNavigate();
   const { setCurrentStage } = useRecruitment();
   const [activeTab, setActiveTab] = useState('resume');
@@ -27,6 +27,7 @@ const CandidateView = () => {
 
   useEffect(() => {
     if (!candidateId) {
+      console.error('No candidate ID provided in URL params');
       setError('No candidate ID provided');
       setLoading(false);
       return;
@@ -36,20 +37,57 @@ const CandidateView = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Loading candidate data for ID:', candidateId);
+
       try {
         // Fetch candidate data with evaluation
         const candidateData = await fetchCandidateById(candidateId);
+        console.log('Fetched candidate data:', candidateData);
+
         if (!candidateData) {
           throw new Error('Candidate not found');
         }
+
+        // More lenient validation - only check for ID
+        if (!candidateData.id) {
+          console.error('Invalid candidate data structure:', candidateData);
+          throw new Error('Invalid candidate data - missing ID');
+        }
+
+        // Log the candidate data structure for debugging
+        console.log('Candidate data structure:', {
+          id: candidateData.id,
+          name: candidateData.name,
+          email: candidateData.email,
+          stage: candidateData.stage,
+          hasEvaluationData: !!candidateData.evaluation_data,
+          evaluationDataLength: candidateData.evaluation_data?.length || 0,
+          keys: Object.keys(candidateData)
+        });
+
         setCandidate(candidateData);
 
         // Fetch allowed actions
-        const actions = await getCandidateActions(candidateId);
-        setAllowedActions(actions);
+        try {
+          const actions = await getCandidateActions(candidateId);
+          console.log('Fetched allowed actions:', actions);
+          setAllowedActions(actions);
+        } catch (actionError) {
+          console.warn('Could not fetch allowed actions:', actionError);
+          // Continue without actions - don't fail the whole page
+          setAllowedActions([]);
+        }
+
       } catch (err: unknown) {
         console.error('Error loading candidate:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load candidate data');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load candidate data';
+        setError(errorMessage);
+
+        // Try to still render candidate if we have partial data
+        if (candidateId) {
+          console.log('Attempting to render with minimal data due to error');
+          // We could set a minimal candidate object here if needed
+        }
       } finally {
         setLoading(false);
       }
@@ -60,27 +98,45 @@ const CandidateView = () => {
 
   // Process evaluation data from the backend
   const getEvaluationData = () => {
+    console.log('Processing evaluation data for candidate:', candidate);
+
     // Check both possible property names for evaluation data
     const evaluationData = candidate?.evaluationData || candidate?.evaluation_data;
+    console.log('Raw evaluation data:', evaluationData);
 
     if (!evaluationData || (Array.isArray(evaluationData) && evaluationData.length === 0)) {
       return {
         hasEvaluation: false,
         status: 'pending',
-        message: 'Evaluation in progress...'
+        message: 'Evaluation in progress...',
+        authenticity: { score: 0, summary: 'Pending evaluation', details: {} },
+        skillMatch: { score: 0, summary: 'Pending evaluation', details: { strengths: [], gaps: [], recommendations: [] } },
+        culturalFit: { score: 0, summary: 'Pending evaluation', details: { strengths: [], concerns: [], recommendations: [] } },
+        overallRecommendation: { summary: 'Evaluation pending', recommendation: 'Pending', nextSteps: [] }
       };
     }
 
     // Handle both array and object formats
     const evaluation = Array.isArray(evaluationData) ? evaluationData[0] : evaluationData;
+    console.log('Processed evaluation:', evaluation);
 
     if (!evaluation) {
       return {
         hasEvaluation: false,
         status: 'pending',
-        message: 'Evaluation in progress...'
+        message: 'Evaluation in progress...',
+        authenticity: { score: 0, summary: 'Pending evaluation', details: {} },
+        skillMatch: { score: 0, summary: 'Pending evaluation', details: { strengths: [], gaps: [], recommendations: [] } },
+        culturalFit: { score: 0, summary: 'Pending evaluation', details: { strengths: [], concerns: [], recommendations: [] } },
+        overallRecommendation: { summary: 'Evaluation pending', recommendation: 'Pending', nextSteps: [] }
       };
     }
+
+    // Extract strengths, gaps, and recommendations safely
+    const parseCommaSeparated = (value: string | null | undefined): string[] => {
+      if (!value || typeof value !== 'string') return [];
+      return value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    };
 
     return {
       hasEvaluation: true,
@@ -99,24 +155,24 @@ const CandidateView = () => {
         score: 88, // Could be calculated from technical skills assessment
         summary: evaluation.technical_competency_assessment || "Technical skills assessed",
         details: {
-          strengths: evaluation.strengths ? evaluation.strengths.split(',').map(s => s.trim()) : [],
-          gaps: evaluation.missing_required_skills ? evaluation.missing_required_skills.split(',').map(s => s.trim()) : [],
-          recommendations: evaluation.interview_focus_areas ? evaluation.interview_focus_areas.split(',').map(s => s.trim()) : []
+          strengths: parseCommaSeparated(evaluation.strengths),
+          gaps: parseCommaSeparated(evaluation.missing_required_skills),
+          recommendations: parseCommaSeparated(evaluation.interview_focus_areas)
         }
       },
       culturalFit: {
         score: 82, // Could be calculated from cultural fit indicators
         summary: evaluation.cultural_fit_indicators || "Cultural fit to be assessed",
         details: {
-          strengths: evaluation.standout_qualities ? evaluation.standout_qualities.split(',').map(s => s.trim()) : [],
-          concerns: evaluation.potential_concerns ? evaluation.potential_concerns.split(',').map(s => s.trim()) : [],
+          strengths: parseCommaSeparated(evaluation.standout_qualities),
+          concerns: parseCommaSeparated(evaluation.potential_concerns),
           recommendations: ["Include cultural fit assessment in interview"]
         }
       },
       overallRecommendation: {
         summary: evaluation.recommendation_reasoning || "Evaluation completed",
         recommendation: evaluation.recommendation || "Interview",
-        nextSteps: evaluation.interview_focus_areas ? evaluation.interview_focus_areas.split(',').map(s => s.trim()) : []
+        nextSteps: parseCommaSeparated(evaluation.interview_focus_areas)
       }
     };
   };
@@ -242,7 +298,9 @@ const CandidateView = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">Candidate not found</p>
+          <p className="text-muted-foreground mb-2">Candidate not found</p>
+          <p className="text-sm text-gray-500">ID: {candidateId}</p>
+          <p className="text-sm text-gray-500">Error: {error}</p>
           <Button onClick={handleGoBack} variant="outline" className="mt-4">Go Back</Button>
         </div>
       </div>

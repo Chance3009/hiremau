@@ -7,18 +7,33 @@ This agent is responsible for gathering and analyzing personal website informati
 from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioServerParameters
 import os
+from dotenv import load_dotenv
 
-# Initialize BrightData MCP tools for website scraping
-mcp_tools = MCPToolset(
-    connection_params=StdioServerParameters(
-        command='npx',
-        args=["-y", "@brightdata/mcp"],
-        env={
-            "API_TOKEN": os.getenv("API_TOKEN"),
-            "WEB_UNLOCKER_ZONE": os.getenv("WEB_UNLOCKER_ZONE")
-        }
+load_dotenv()
+
+# Check if BrightData API token is available
+api_token = os.getenv("API_TOKEN")
+if not api_token:
+    print("WARNING: API_TOKEN not found in environment variables")
+    print("Website agent will not function properly without BrightData API token")
+
+# Initialize BrightData MCP tools for website scraping with error handling
+try:
+    mcp_tools = MCPToolset(
+        connection_params=StdioServerParameters(
+            command='npx',
+            args=["-y", "@brightdata/mcp"],
+            env={
+                "API_TOKEN": api_token,
+                "WEB_UNLOCKER_ZONE": os.getenv("WEB_UNLOCKER_ZONE", "")
+            }
+        )
     )
-)
+except Exception as e:
+    print(
+        f"ERROR: Failed to initialize BrightData MCP tools for website scraping: {e}")
+    print("Website agent will not function properly")
+    mcp_tools = None
 
 # Website Information Agent
 website_agent = LlmAgent(
@@ -57,6 +72,9 @@ Return exactly: "No website URL provided - cannot extract website data"
 IF TOOL CALL FAILS:
 Return exactly: "Website data extraction failed - tool error"
 
+IF API_TOKEN NOT AVAILABLE:
+Return exactly: "Website data extraction failed - API token not configured"
+
 FORMAT ONLY REAL TOOL DATA AS:
 {
   "data_source": "scrape_as_markdown",
@@ -68,6 +86,6 @@ FORMAT ONLY REAL TOOL DATA AS:
 
 REMEMBER: NO TOOL CALL = NO DATA. FABRICATION = FORBIDDEN.""",
     description="FORCES use of BrightData MCP scraping tools - NO fabrication allowed",
-    tools=[mcp_tools],
+    tools=[mcp_tools] if mcp_tools else [],
     output_key="website_data",
 )

@@ -10,6 +10,7 @@ class RecruitmentStage(str, Enum):
     # Core workflow stages
     APPLIED = "applied"
     SCREENING = "screening"
+    SCREENED = "screened"  # Added to match database constraint
     INTERVIEW_SCHEDULED = "interview-scheduled"
     INTERVIEWING = "interviewing"
     INTERVIEW_COMPLETED = "interview-completed"
@@ -24,7 +25,6 @@ class RecruitmentStage(str, Enum):
     REJECTED = "rejected"
 
     # Backward compatibility aliases
-    SCREENED = "screening"  # Maps to SCREENING
     INTERVIEWED = "interview-completed"  # Maps to INTERVIEW_COMPLETED
     SHORTLISTED = "final-review"  # Maps to FINAL_REVIEW
 

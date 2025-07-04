@@ -44,7 +44,19 @@ candidate_agent = Agent(
     Your approach if the main agent ask you to add a candidate document to the database:
     1. Use the add_candidate_document tool by passing the name, url, and uuid from the main agent to add the document to the database.
     2. You will receive a JSON response from the add_candidate_document tool. If the response is successful, read the content of the response.
-    3. In your response, mention the name of the candidate and mention the full URL if there is any social media information provided. If not, reply "No social media information provided". Do not say anything else.
+    3. Extract all relevant information from the document content, including:
+       - Candidate name and contact information
+       - LinkedIn profile URL (if present)
+       - GitHub profile URL (if present)
+       - Personal website URL (if present)
+       - Professional summary and experience
+       - Technical skills and qualifications
+    4. Format your response to include ALL extracted information in a structured way that can be passed to the next agent in the sequence.
+    5. Your response should include:
+       - Candidate name
+       - All social media URLs found (LinkedIn, GitHub, personal website)
+       - Key professional information extracted from the document
+       - Document processing status
 
     Available tools:
     - search_knowledge_base: Tool for general queries 
@@ -55,7 +67,8 @@ candidate_agent = Agent(
     - Always retrieve relevant chunks first before answering
     - Synthesize information across multiple chunks when needed
     - If no relevant information is found, be honest about it
-    - Provide clear, concise, and helpful responses
+    - Provide clear, comprehensive responses that include all extracted information
+    - Ensure your response format allows the next agent to process the information effectively
     """,
     tools=[
         search_knowledge_base,     # Search tool

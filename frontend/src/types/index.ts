@@ -52,6 +52,7 @@ export interface AISummary {
 }
 
 export interface EvaluationData {
+  overall_score?: number;
   communication_assessment?: string;
   experience_relevance?: string;
   education_background?: string;
@@ -69,6 +70,14 @@ export interface EvaluationData {
   career_progression?: string;
   resume_summary?: string;
   weaknesses?: string;
+  growth_potential?: string;
+  years_of_experience?: number;
+  software_proficiency?: string;
+  industry_knowledge?: string;
+  soft_skills_claimed?: string;
+  certifications?: string;
+  transferable_skills?: string;
+  learning_curve_assessment?: string;
 }
 
 export interface Candidate {

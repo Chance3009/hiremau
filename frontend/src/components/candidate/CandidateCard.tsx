@@ -13,7 +13,8 @@ interface CandidateCardProps {
     name: string;
     position: string;
     status?: string;
-    currentStage?: 'applied' | 'screened' | 'interviewed' | 'final-review' | 'shortlisted';
+    stage?: string;
+    currentStage?: string;
     photo?: string;
     score?: number;
     event?: string;
@@ -26,7 +27,11 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, variant = 'com
   const navigate = useNavigate();
 
   // Get current workflow stage
-  const currentStage = getCurrentStage(candidate);
+  const currentStage = getCurrentStage({
+    currentStage: candidate.currentStage as any,
+    status: candidate.status,
+    stage: candidate.stage
+  });
   const stageLabel = getStageLabel(currentStage);
   const stageColor = getStageColor(currentStage);
   const availableActions = getAvailableActions(currentStage);
@@ -91,12 +96,12 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, variant = 'com
                   <Button
                     key={action}
                     size="sm"
-                    variant={action === 'reject' ? 'destructive' : action === 'shortlist' || action === 'make-offer' ? 'default' : 'outline'}
+                    variant={action === 'reject' ? 'destructive' : action === 'shortlist' || action === 'make_offer' ? 'default' : 'outline'}
                     onClick={() => onAction(candidate.id, action)}
                   >
                     {action === 'shortlist' && <Check className="h-4 w-4 mr-1" />}
                     {action === 'reject' && <X className="h-4 w-4 mr-1" />}
-                    {action === 'start-interview' && <MessageSquare className="h-4 w-4 mr-1" />}
+                    {action === 'schedule_interview' && <MessageSquare className="h-4 w-4 mr-1" />}
                     {getActionLabel(action)}
                   </Button>
                 ))}

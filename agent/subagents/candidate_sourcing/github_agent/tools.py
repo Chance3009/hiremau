@@ -8,6 +8,7 @@ import time
 import re
 from typing import Any, Dict, Optional
 from ..github_api import GitHubAPI
+import requests
 
 
 def get_github_info(github_url: str) -> Dict[str, Any]:
@@ -31,8 +32,28 @@ def get_github_info(github_url: str) -> Dict[str, Any]:
                 "additional_info": {"error_type": "InvalidURL"}
             }
 
-        github_api = GitHubAPI()
-        profile = github_api.get_user_profile(username)
+        # Create GitHub API instance with error handling
+        try:
+            github_api = GitHubAPI()
+            profile = github_api.get_user_profile(username)
+        except requests.exceptions.Timeout:
+            return {
+                "result": {"error": f"Request timeout when fetching GitHub profile for {username}"},
+                "stats": {"success": False},
+                "additional_info": {"error_type": "RequestTimeout"}
+            }
+        except requests.exceptions.ConnectionError:
+            return {
+                "result": {"error": f"Connection error when fetching GitHub profile for {username}"},
+                "stats": {"success": False},
+                "additional_info": {"error_type": "ConnectionError"}
+            }
+        except Exception as api_error:
+            return {
+                "result": {"error": f"GitHub API error: {str(api_error)}"},
+                "stats": {"success": False},
+                "additional_info": {"error_type": "APIError"}
+            }
 
         if not profile:
             return {
@@ -73,6 +94,18 @@ def get_github_info(github_url: str) -> Dict[str, Any]:
             },
         }
 
+    except requests.exceptions.Timeout:
+        return {
+            "result": {"error": f"Request timeout when processing GitHub URL: {github_url}"},
+            "stats": {"success": False},
+            "additional_info": {"error_type": "RequestTimeout"}
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            "result": {"error": f"Connection error when processing GitHub URL: {github_url}"},
+            "stats": {"success": False},
+            "additional_info": {"error_type": "ConnectionError"}
+        }
     except Exception as e:
         return {
             "result": {"error": f"Failed to gather GitHub information: {str(e)}"},

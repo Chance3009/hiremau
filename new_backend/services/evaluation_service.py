@@ -40,7 +40,7 @@ class EvaluationService:
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
-                    timeout=30  # Reduced timeout
+                    timeout=60 
                 )
 
                 logger.info(f"Agent response status: {response.status_code}")

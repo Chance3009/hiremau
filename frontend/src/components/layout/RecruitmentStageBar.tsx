@@ -15,7 +15,7 @@ interface StageData {
 const stageRoutes: Record<RecruitmentStage, string> = {
   'applied': '/applied',
   'screened': '/screened',
-  'interviewed': '/interviewed',
+  'interview': '/interview',
   'final-review': '/final-review',
   'shortlisted': '/shortlisted'
 };
@@ -23,7 +23,7 @@ const stageRoutes: Record<RecruitmentStage, string> = {
 export const stageLabels: Record<RecruitmentStage, string> = {
   'applied': 'Applied',
   'screened': 'Screened',
-  'interviewed': 'Interview',
+  'interview': 'Interview',
   'final-review': 'Final Review',
   'shortlisted': 'Shortlisted'
 };
@@ -32,7 +32,7 @@ export const stageLabels: Record<RecruitmentStage, string> = {
 const stageCounts: Record<RecruitmentStage, number> = {
   "applied": 24,
   "screened": 12,
-  "interviewed": 8,
+  "interview": 8,
   "final-review": 3,
   "shortlisted": 1,
 };

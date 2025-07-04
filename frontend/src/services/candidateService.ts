@@ -108,18 +108,34 @@ const transformCandidateData = (candidate: any): Candidate => {
 
 export async function fetchCandidateById(candidateId: string): Promise<Candidate | null> {
     try {
+        console.log(`Fetching candidate with ID: ${candidateId}`);
+
         // Use the simplified API endpoint
         const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}`);
 
         if (!response.ok) {
             if (response.status === 404) {
+                console.log('Candidate not found');
                 return null;
             }
+            const errorText = await response.text();
+            console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const candidate = await response.json();
-        return transformCandidateData(candidate);
+        console.log('Raw candidate data from backend:', candidate);
+
+        // Ensure we have basic required fields
+        if (!candidate || !candidate.id) {
+            console.error('Invalid candidate data received:', candidate);
+            throw new Error('Invalid candidate data received from server');
+        }
+
+        const transformedCandidate = transformCandidateData(candidate);
+        console.log('Transformed candidate data:', transformedCandidate);
+
+        return transformedCandidate;
 
     } catch (error) {
         console.error('Error fetching candidate:', error);
@@ -222,11 +238,32 @@ export async function getCandidateActions(candidateId: string): Promise<string[]
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
-
+        const actions = await response.json();
+        return actions;
     } catch (error) {
         console.error('Error fetching candidate actions:', error);
         return [];
+    }
+}
+
+// Add new function for fetching evaluation data
+export async function getCandidateEvaluation(candidateId: string): Promise<any> {
+    try {
+        console.log(`Fetching evaluation data for candidate: ${candidateId}`);
+
+        const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/evaluation`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Evaluation data received:', result);
+
+        return result;
+    } catch (error) {
+        console.error('Error fetching candidate evaluation:', error);
+        throw error;
     }
 }
 
@@ -470,5 +507,63 @@ export async function getCandidatesByStageFromSupabase(stage: string): Promise<C
     } catch (error) {
         console.error('Error in getCandidatesByStageFromSupabase:', error);
         return [];
+    }
+}
+
+export async function fetchCandidateInterviewData(candidateId: string): Promise<any> {
+    try {
+        console.log(`Fetching interview data for candidate: ${candidateId}`);
+        console.log(`API URL: ${API_BASE_URL}/candidates/${candidateId}/interview-data`);
+
+        const response = await fetch(`${API_BASE_URL}/candidates/${candidateId}/interview-data`);
+
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response ok: ${response.ok}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.log('Candidate not found');
+                return null;
+            }
+            const errorText = await response.text();
+            console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const interviewData = await response.json();
+        console.log('Interview data received:', interviewData);
+        console.log('Interview data keys:', Object.keys(interviewData));
+
+        return interviewData;
+
+    } catch (error) {
+        console.error('Error fetching candidate interview data:', error);
+        console.error('Error details:', error.message);
+        throw error;
+    }
+}
+
+export async function fetchFinalReviewCandidates(): Promise<Candidate[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/candidates/final-review`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Transform the candidates data to match the expected format
+        const candidates = result.candidates.map((candidate: any) => {
+            return {
+                ...transformCandidateData(candidate),
+                evaluationData: candidate.evaluation_data ? [candidate.evaluation_data] : [] // Wrap in array to match interface
+            };
+        });
+
+        return candidates;
+    } catch (error) {
+        console.error('Error fetching final review candidates:', error);
+        throw error;
     }
 } 
