@@ -59,22 +59,22 @@ class StorageService:
     async def upload_resume(self, file: UploadFile, candidate_id: str) -> str:
         """Upload resume file directly to resume bucket"""
         if not self.storage_enabled:
-            # Return a mock URL for testing
-            logger.warning("Storage not enabled - returning mock URL")
-            return f"https://mock-storage.com/resume/{candidate_id}_{file.filename}"
+            # Force proper error instead of mock URL
+            raise Exception(
+                "Storage service not enabled - check SUPABASE_URL and SUPABASE_KEY environment variables")
 
         try:
             # Read file content
             content = await file.read()
 
-            # Generate unique filename without subfolder
+            # Generate filename with candidate ID
             file_extension = os.path.splitext(
                 file.filename)[1] if file.filename else '.pdf'
-            unique_filename = f"{candidate_id}_{uuid.uuid4()}{file_extension}"
+            filename = f"{candidate_id}_{file.filename}"
 
-            # Upload directly to resume bucket (no subfolder)
+            # Upload directly to resume bucket
             result = self.supabase.storage.from_("resume").upload(
-                unique_filename,
+                filename,
                 content,
                 file_options={"content-type": file.content_type}
             )
@@ -85,7 +85,7 @@ class StorageService:
 
             # Get public URL
             public_url = self.supabase.storage.from_(
-                "resume").get_public_url(unique_filename)
+                "resume").get_public_url(filename)
 
             logger.info(
                 f"Resume uploaded successfully for candidate {candidate_id}: {public_url}")
@@ -93,28 +93,28 @@ class StorageService:
 
         except Exception as e:
             logger.error(f"Error uploading resume: {str(e)}")
-            # Return a mock URL as fallback
-            return f"https://mock-storage.com/resume/{candidate_id}_{file.filename}"
+            # Don't return mock URL - raise error so backend can handle properly
+            raise Exception(
+                f"Failed to upload resume to Supabase storage: {str(e)}")
 
     async def upload_supporting_doc(self, file: UploadFile, candidate_id: str) -> str:
         """Upload supporting documents to other-docs bucket"""
         if not self.storage_enabled:
-            # Return a mock URL for testing
-            logger.warning("Storage not enabled - returning mock URL")
-            return f"https://mock-storage.com/docs/{candidate_id}_{file.filename}"
+            raise Exception(
+                "Storage service not enabled - check SUPABASE_URL and SUPABASE_KEY environment variables")
 
         try:
             # Read file content
             content = await file.read()
 
-            # Generate unique filename without subfolder
+            # Generate filename with candidate ID
             file_extension = os.path.splitext(
                 file.filename)[1] if file.filename else '.pdf'
-            unique_filename = f"{candidate_id}_{uuid.uuid4()}{file_extension}"
+            filename = f"{candidate_id}_{file.filename}"
 
             # Upload directly to other-docs bucket
             result = self.supabase.storage.from_("other-docs").upload(
-                unique_filename,
+                filename,
                 content,
                 file_options={"content-type": file.content_type}
             )
@@ -125,7 +125,7 @@ class StorageService:
 
             # Get public URL
             public_url = self.supabase.storage.from_(
-                "other-docs").get_public_url(unique_filename)
+                "other-docs").get_public_url(filename)
 
             logger.info(
                 f"Document uploaded successfully for candidate {candidate_id}: {public_url}")
@@ -133,8 +133,8 @@ class StorageService:
 
         except Exception as e:
             logger.error(f"Error uploading document: {str(e)}")
-            # Return a mock URL as fallback
-            return f"https://mock-storage.com/docs/{candidate_id}_{file.filename}"
+            raise Exception(
+                f"Failed to upload document to Supabase storage: {str(e)}")
 
     async def upload_other_document(self, file: UploadFile, candidate_id: str) -> str:
         """Upload other documents to other-docs bucket"""

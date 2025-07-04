@@ -15,7 +15,8 @@ class StageManagementService:
     def __init__(self):
         # Define the stage flow and allowed transitions
         self.stage_transitions = {
-            "applied": ["screening", "rejected"],
+            # Allow direct shortlisting from applied
+            "applied": ["screening", "shortlisted", "rejected"],
             "screening": ["shortlisted", "rejected", "interview"],
             "shortlisted": ["interview", "rejected"],
             "interview": ["final_review", "rejected", "offer"],

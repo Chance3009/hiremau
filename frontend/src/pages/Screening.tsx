@@ -17,6 +17,8 @@ import { useCandidateFiltering } from '@/hooks/useCandidateFiltering';
 import { useRecruitment } from '@/contexts/RecruitmentContext';
 import { fetchEvents } from '@/services/eventService';
 import { toast } from '@/components/ui/use-toast';
+import RoomManagement from '@/components/event/RoomManagement';
+import InterviewerAvailability from '@/components/event/InterviewerAvailability';
 
 // Mock current user
 const currentUser = {
@@ -323,11 +325,32 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
     const aiMatch = candidate.aiMatch || 0;
     const isScheduled = candidate.status === 'interview-scheduled';
 
+    // Extract evaluation data
+    const evaluationData = (candidate as any).evaluationData || (candidate as any).evaluation_data;
+    const hasEvaluation = evaluationData && evaluationData.length > 0;
+    const evaluation = hasEvaluation ? (Array.isArray(evaluationData) ? evaluationData[0] : evaluationData) : null;
+
+    // Get recommendation color based on evaluation
+    const getRecommendationColor = (recommendation: string) => {
+        switch (recommendation?.toLowerCase()) {
+            case 'strong yes':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'interview':
+                return 'bg-blue-100 text-blue-800 border-blue-200';
+            case 'maybe':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'reject':
+                return 'bg-red-100 text-red-800 border-red-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
+
     return (
         <Card className="hover:bg-accent/5">
             <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0 space-y-1">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 space-y-2 flex-1">
                         <div className="flex items-center gap-2">
                             <h3 className="font-semibold truncate">{candidate.name}</h3>
                             <Badge variant={isScheduled ? 'default' : 'secondary'} className="text-xs">
@@ -338,8 +361,15 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                                     {candidate.currentCompany}
                                 </Badge>
                             )}
+                            {evaluation?.recommendation && (
+                                <Badge className={cn("text-xs", getRecommendationColor(evaluation.recommendation))}>
+                                    {evaluation.recommendation}
+                                </Badge>
+                            )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                        <p className="text-sm text-muted-foreground">{candidate.position || (candidate as any).current_position}</p>
+
+                        {/* Basic info row */}
                         <div className="flex items-center gap-4 text-sm">
                             <div className="flex items-center gap-1">
                                 <Star className="h-3 w-3 text-amber-500" />
@@ -359,6 +389,43 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Evaluation summary */}
+                        {evaluation && (
+                            <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm font-medium">AI Evaluation Complete</span>
+                                </div>
+                                {evaluation.recommendation_reasoning && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {evaluation.recommendation_reasoning.length > 120
+                                            ? `${evaluation.recommendation_reasoning.substring(0, 120)}...`
+                                            : evaluation.recommendation_reasoning}
+                                    </p>
+                                )}
+                                {evaluation.strengths && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-green-600 font-medium">Strengths:</span>
+                                        <span className="text-muted-foreground">
+                                            {evaluation.strengths.split(',').slice(0, 2).join(', ')}
+                                            {evaluation.strengths.split(',').length > 2 && '...'}
+                                        </span>
+                                    </div>
+                                )}
+                                {evaluation.interview_focus_areas && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-blue-600 font-medium">Focus Areas:</span>
+                                        <span className="text-muted-foreground">
+                                            {evaluation.interview_focus_areas.split(',').slice(0, 2).join(', ')}
+                                            {evaluation.interview_focus_areas.split(',').length > 2 && '...'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Skills */}
                         {candidate.skills && candidate.skills.length > 0 && (
                             <div className="flex items-center gap-1 mt-2">
                                 {candidate.skills.slice(0, 3).map((skill, index) => (
@@ -374,7 +441,8 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex flex-col items-end gap-2">
                         {isScheduled && candidate.scheduledInterview ? (
                             <div className="flex flex-col items-end gap-2">
                                 <div className="text-right text-sm">
@@ -405,6 +473,13 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
                                 </Button>
                             </>
                         )}
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/candidate/${candidate.id}`)}
+                        >
+                            View Details
+                        </Button>
                     </div>
                 </div>
             </CardContent>
@@ -415,7 +490,7 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
 const Screening = () => {
     const navigate = useNavigate();
     const [selectedEvent, setSelectedEvent] = useState<string>('all');
-    const [view, setView] = useState<'list' | 'calendar'>('list');
+    const [view, setView] = useState<'list' | 'calendar' | 'management'>('list');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'scheduled'>('all');
     const [events, setEvents] = useState<any[]>([]);
@@ -506,7 +581,7 @@ const Screening = () => {
                 <Tabs
                     value={view}
                     onValueChange={(v) => {
-                        setView(v as 'list' | 'calendar');
+                        setView(v as 'list' | 'calendar' | 'management');
                         if (v === 'list') {
                             setFilterStatus('all');
                         }
@@ -521,6 +596,10 @@ const Screening = () => {
                         <TabsTrigger value="calendar">
                             <Calendar className="h-4 w-4 mr-2" />
                             Schedule
+                        </TabsTrigger>
+                        <TabsTrigger value="management">
+                            <Building className="h-4 w-4 mr-2" />
+                            Interview Management
                         </TabsTrigger>
                     </TabsList>
 
@@ -644,6 +723,13 @@ const Screening = () => {
                                     </div>
                                 </CardContent>
                             </Card>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="management" className="space-y-6">
+                        <div className="grid gap-6">
+                            <InterviewerAvailability />
+                            <RoomManagement />
                         </div>
                     </TabsContent>
                 </Tabs>
