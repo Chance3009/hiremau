@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from "@/components/ui/page-header";
 import { mockCandidates, mockInterviews } from '@/mocks/interviewData';
 import { Note } from '@/types';
+import { useAudioRecorder, arrayBufferToBase64 } from '@/hooks/useAudioRecorder';
 
 // Types for suggested questions
 interface SuggestedQuestion {
@@ -32,6 +33,7 @@ interface SuggestedQuestion {
   context: string;
   tags: string[];
   aiReason: string;
+  notes?: { text: string; timestamp: string }[];
 }
 
 interface MessageAIAnalysis {
@@ -79,6 +81,98 @@ const Interview: React.FC = () => {
     })) || [];
     setMessages(initialMessages);
   }, []);
+
+    const userId = candidateId || '1'; 
+
+    useEffect(() => {
+      const eventSource = new EventSource(`http://localhost:8000/events/${userId}`);
+    
+      eventSource.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+      
+          if (parsed.type === 'ai_message' && parsed.payload) {
+            const message = parsed.payload;
+            console.log(message);
+            const timestamp = new Date().toLocaleTimeString();
+          
+            
+            if (message.speaker === "interviewee" && message.audio_transcript) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: String(prev.length + 1),
+                  type: "answer",
+                  content: message.audio_transcript,
+                  timestamp,
+                  rating: message.rating || 1,
+                  color: "#facc15",
+                  aiAnalysis: {
+                    type: message.confidence_score > 75 ? 'excellent' : 'concern',
+                    summary: message.feedback || "Spoken response",
+                    confidence: message.confidence_score,
+                    keyPoints: message.keyPoints || [],
+                    resumeMatch: message.resumeMatch,
+                  },
+                  quickLabels: message.quickLabels || [],
+                },
+              ]);
+            } else if (message.speaker === "interviewer" && message.audio_transcript) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: String(prev.length + 1),
+                  type: "question",
+                  content: message.audio_transcript,
+                  timestamp,
+                  rating: message.rating || 1,
+                  color: "#facc15",
+                  aiAnalysis: {
+                    type: message.confidence_score > 75 ? 'excellent' : 'concern',
+                    summary: message.feedback || "Spoken response",
+                    confidence: message.confidence_score,
+                    keyPoints: message.keyPoints || [],
+                    resumeMatch: message.resumeMatch,
+                  },
+                  quickLabels: message.quickLabels || [],
+                },
+              ]);
+            }
+            
+          
+            // Push interview_question as AI-suggested question
+            if (message.interview_question) {
+              setSuggestedQuestions((prev) => [
+                ...prev,
+                {
+                  id: String(prev.length + 1),
+                  question: message.interview_question,
+                  category: "AI-suggested",
+                  context: "",
+                  tags: [],
+                  aiReason: message.feedback || "AI-suggested follow-up",
+                  notes: [],
+                },
+              ]);
+            }
+          }
+          
+        } catch (err) {
+          console.error("Failed to parse SSE message", err);
+        }
+      };
+    
+      eventSource.onerror = (err) => {
+        console.error("SSE connection error:", err);
+        eventSource.close();
+      };
+    
+      return () => {
+        eventSource.close();
+      };
+    }, [userId]);
+    
+
 
   const addMessage = (content: string, type: 'question' | 'answer') => {
     const newMessage: MessageEvent = {
@@ -243,50 +337,65 @@ const Interview: React.FC = () => {
     return badges[analysis.type] || null;
   };
 
-  // Simulated real-time transcript update with realistic responses
+  // --- AUDIO RECORDING LOGIC ---
+  const audioBufferRef = React.useRef<ArrayBuffer[]>([]);
+  const bufferTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Use the audio recorder hook
+  const { start, stop } = useAudioRecorder((pcmData) => {
+    audioBufferRef.current.push(pcmData);
+    // Buffer is sent on timer
+  });
+
+  // Function to send buffered audio to backend
+  const sendBufferedAudio = React.useCallback(async () => {
+    if (audioBufferRef.current.length === 0) return;
+    let totalLength = audioBufferRef.current.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+    const combinedBuffer = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of audioBufferRef.current) {
+      combinedBuffer.set(new Uint8Array(chunk), offset);
+      offset += chunk.byteLength;
+    }
+    try {
+      await fetch(`http://localhost:8000/send/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mime_type: 'audio/pcm',
+          data: arrayBufferToBase64(combinedBuffer.buffer),
+        }),
+      });
+    } catch (err) {
+      // Optionally handle error
+    }
+    audioBufferRef.current = [];
+  }, [userId]);
+
+  // Start/stop recording and timer
   useEffect(() => {
     if (isRecording) {
-      const realisticResponses = [
-        {
-          type: 'answer',
-          content: 'We also implemented a comprehensive monitoring system using New Relic and custom metrics to ensure performance at scale.',
-          category: 'technical-process',
-          aiAnalysis: {
-            type: 'positive',
-            summary: '✓ Shows depth in operational excellence',
-            confidence: 0.94
-          }
-        },
-        {
-          type: 'answer',
-          content: 'One challenge we faced was managing state synchronization across micro-frontends. We solved this using a combination of Redux for global state and event-based communication.',
-          category: 'problem-solving',
-          aiAnalysis: {
-            type: 'positive',
-            summary: '✓ Demonstrates problem-solving and architectural thinking',
-            confidence: 0.96
-          }
-        }
-      ];
-
-      let index = 0;
-      const interval = setInterval(() => {
-        if (index < realisticResponses.length) {
-          const response = realisticResponses[index];
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            ...response,
-            timestamp: new Date().toLocaleTimeString()
-          }]);
-          index++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 5000);
-
-      return () => clearInterval(interval);
+      start();
+      bufferTimerRef.current = setInterval(sendBufferedAudio, 200);
+    } else {
+      stop();
+      if (bufferTimerRef.current) {
+        clearInterval(bufferTimerRef.current);
+        bufferTimerRef.current = null;
+      }
+      // Send any remaining audio
+      sendBufferedAudio();
     }
-  }, [isRecording]);
+    // Cleanup on unmount
+    return () => {
+      stop();
+      if (bufferTimerRef.current) {
+        clearInterval(bufferTimerRef.current);
+        bufferTimerRef.current = null;
+      }
+    };
+  }, [isRecording, start, stop, sendBufferedAudio]);
+  // --- END AUDIO RECORDING LOGIC ---
 
   return (
     <div className="h-[calc(100vh-3rem)] flex flex-col">

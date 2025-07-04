@@ -5,7 +5,7 @@ from subagents.candidate_agent import candidate_agent
 from subagents.google_search_agent import gs_agent
 from subagents.source_agent import source_agent
 from subagents.evaluation_agent import evaluation_agent
-from subagents.interview_agent import interview_agent
+from streaming_agent.root_agent import interview_agent
 
 root_agent = Agent(
     name="main_agent",
@@ -49,8 +49,5 @@ root_agent = Agent(
         AgentTool(
             evaluation_agent  # The agent that handles candidate evaluation and profile synthesis
         ),
-        AgentTool(
-            interview_agent
-        )
     ],
 )
