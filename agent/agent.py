@@ -16,6 +16,7 @@ from subagents.google_search_agent import gs_agent
 from subagents.source_agent import source_agent
 from subagents.candidate_sourcing.synthesizer_agent import synthesizer_agent
 from subagents.evaluation_agent import evaluation_agent
+from subagents.firsteva_agent import firsteva_agent
 
 load_dotenv()
 
@@ -28,7 +29,7 @@ SESSION_ID = "session_1"
 
 add_candidate_agent = SequentialAgent(
     name="add_candidate_agent",
-    sub_agents=[candidate_agent, source_agent, synthesizer_agent],
+    sub_agents=[candidate_agent, source_agent, synthesizer_agent, firsteva_agent],
 )
 
 # async def get_agent():
