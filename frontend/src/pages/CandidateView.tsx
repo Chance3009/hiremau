@@ -69,9 +69,9 @@ const CandidateView = () => {
 
         // Fetch allowed actions
         try {
-          const actions = await getCandidateActions(candidateId);
+        const actions = await getCandidateActions(candidateId);
           console.log('Fetched allowed actions:', actions);
-          setAllowedActions(actions);
+        setAllowedActions(actions);
         } catch (actionError) {
           console.warn('Could not fetch allowed actions:', actionError);
           // Continue without actions - don't fail the whole page

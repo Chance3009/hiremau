@@ -13,6 +13,8 @@ import logging
 from supabase import Client
 from supabase_client import supabase
 import uuid
+import requests
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,190 @@ class CandidateService(BaseService):
     def __init__(self):
         super().__init__()
         self.db = supabase
-        logger.info("CandidateService initialized with Supabase client")
+        self.agent_url = "http://localhost:8000"  # Agent service endpoint
+        logger.info(
+            "CandidateService initialized with Supabase client and agent integration")
+
+    async def create_candidate_with_processing(self, candidate_info: Dict[str, Any], files: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create candidate and process documents through agent"""
+        try:
+            # Ensure candidate has an ID
+            if "id" not in candidate_info:
+                candidate_info["id"] = str(uuid.uuid4())
+
+            candidate_id = candidate_info["id"]
+
+            # Create candidate using the existing create_candidate method
+            created_id = await self.create_candidate(candidate_info)
+
+            if not created_id:
+                raise Exception("Failed to create candidate")
+
+            logger.info(f"Created candidate: {candidate_id}")
+
+            # Create job application if job_id is provided
+            if candidate_info.get("job_id"):
+                try:
+                    await self._create_job_application(candidate_id, candidate_info)
+                except Exception as e:
+                    logger.error(
+                        f"Error creating job application for candidate {candidate_id}: {e}")
+
+            # Process files through agent if any
+            if files:
+                for file_info in files:
+                    try:
+                        # Call agent to process file
+                        await self._process_file_with_agent(candidate_id, file_info)
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing file {file_info['name']}: {e}")
+
+            return {
+                "success": True,
+                "candidate_id": candidate_id,
+                "message": "Candidate created successfully",
+                "id": candidate_id  # Add this for frontend compatibility
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating candidate: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    async def _create_job_application(self, candidate_id: str, candidate_info: Dict[str, Any]) -> bool:
+        """Create job application for candidate"""
+        try:
+            job_app_data = {
+                "candidate_id": candidate_id,
+                "job_id": candidate_info["job_id"],
+                "event_id": candidate_info.get("event_id"),
+                "status": "applied",
+                "applied_at": datetime.utcnow().isoformat()
+            }
+
+            # Remove None values
+            job_app_data = {k: v for k,
+                            v in job_app_data.items() if v is not None}
+
+            app_response = self.db.table(
+                "job_applications").insert(job_app_data).execute()
+
+            if app_response.data:
+                logger.info(
+                    f"Created job application for candidate {candidate_id} -> job {candidate_info['job_id']}")
+                return True
+            else:
+                logger.warning(
+                    f"Failed to create job application for candidate {candidate_id}")
+                return False
+
+        except Exception as e:
+            logger.error(
+                f"Error creating job application for candidate {candidate_id}: {e}")
+            return False
+
+    async def _process_file_with_agent(self, candidate_id: str, file_info: Dict[str, Any]) -> bool:
+        """Process a candidate file through the agent service"""
+        try:
+            # Prepare the document data for the agent
+            agent_payload = {
+                "name": file_info.get("name", "resume.pdf"),
+                "url": file_info.get("url", ""),
+                "uuid": candidate_id,
+                "candidate_id": candidate_id,
+                "file_type": file_info.get("type", "resume")
+            }
+
+            logger.info(f"Sending file to agent: {agent_payload}")
+
+            # Call the agent service
+            response = requests.post(
+                f"{self.agent_url}/add-doc",
+                json=agent_payload,
+                timeout=30,
+                headers={"Content-Type": "application/json"}
+            )
+
+            if response.status_code == 200:
+                agent_response = response.json()
+                logger.info(f"Agent processing successful: {agent_response}")
+
+                # Store the agent response if needed
+                if agent_response.get("response"):
+                    await self._store_agent_analysis(candidate_id, agent_response["response"])
+
+                return True
+            else:
+                logger.error(
+                    f"Agent processing failed: {response.status_code} - {response.text}")
+                return False
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling agent service: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error processing file with agent: {e}")
+            return False
+
+    async def _store_agent_analysis(self, candidate_id: str, analysis: str) -> bool:
+        """Store agent analysis results in the database"""
+        try:
+            # Store in candidate_ai_analysis table
+            analysis_data = {
+                "candidate_id": candidate_id,
+                "analysis_json": {"agent_response": analysis},
+                "model_version": "agent_v1",
+                "created_at": datetime.utcnow().isoformat()
+            }
+
+            result = self.db.table("candidate_ai_analysis").insert(
+                analysis_data).execute()
+
+            if result.data:
+                logger.info(
+                    f"Stored agent analysis for candidate {candidate_id}")
+                return True
+            else:
+                logger.error(f"Failed to store agent analysis: {result}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error storing agent analysis: {e}")
+            return False
+
+    async def get_agent_health(self) -> Dict[str, Any]:
+        """Check if the agent service is healthy"""
+        try:
+            response = requests.get(f"{self.agent_url}/health", timeout=5)
+            if response.status_code == 200:
+                return {"status": "healthy", "agent_available": True}
+            else:
+                return {"status": "unhealthy", "agent_available": False}
+        except Exception as e:
+            logger.error(f"Agent health check failed: {e}")
+            return {"status": "error", "agent_available": False, "error": str(e)}
+
+    async def search_candidates(self, query: str, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Search candidates with filters"""
+        try:
+            # Build query
+            supabase_query = self.db.table("candidates").select("*")
+
+            # Apply filters
+            for key, value in filters.items():
+                if value:
+                    supabase_query = supabase_query.eq(key, value)
+
+            # Execute query
+            response = supabase_query.execute()
+            return response.data or []
+
+        except Exception as e:
+            logger.error(f"Error searching candidates: {e}")
+            return []
 
     async def create_candidate(self, candidate_data: Dict[str, Any]) -> str:
         """Create a new candidate in the database"""
@@ -314,8 +499,8 @@ class CandidateService(BaseService):
             logger.error(f"Error deleting candidate {candidate_id}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    def get_candidates_by_stage(self, stage: RecruitmentStage) -> List[Dict[str, Any]]:
-        """Get all candidates in a specific stage"""
+    def get_candidates_by_stage_enum(self, stage: RecruitmentStage) -> List[Dict[str, Any]]:
+        """Get all candidates in a specific stage using enum"""
         try:
             result = self.db.table("candidates").select(
                 "*").eq("stage", stage.value).execute()

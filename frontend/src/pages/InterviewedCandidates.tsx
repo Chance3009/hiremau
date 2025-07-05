@@ -169,9 +169,9 @@ const InterviewedCandidates = () => {
                         };
                         
                         return (
-                            <Card key={candidate.id} className="cursor-pointer hover:bg-accent/5">
+                        <Card key={candidate.id} className="cursor-pointer hover:bg-accent/5">
                                 <CardHeader className="pb-3">
-                                    <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <CardTitle className="text-lg truncate">{candidate.name}</CardTitle>
@@ -201,9 +201,9 @@ const InterviewedCandidates = () => {
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
                                     <div className="space-y-3">
                                         {/* Contact Information */}
                                         <div className="flex items-center justify-between text-sm">
@@ -253,7 +253,7 @@ const InterviewedCandidates = () => {
                                                         </span>
                                                     </div>
                                                 )}
-                                            </div>
+                                    </div>
                                         )}
                                         
                                         {/* Action Buttons */}
@@ -276,17 +276,17 @@ const InterviewedCandidates = () => {
                                                 <FileText className="h-4 w-4 mr-2" />
                                                 Complete Interview
                                             </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                                 onClick={() => navigate(`/candidate/${candidate.id}`)}
-                                            >
+                                    >
                                                 <ChevronRight className="h-4 w-4" />
-                                            </Button>
+                                    </Button>
                                         </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </CardContent>
+                        </Card>
                         );
                     })}
                 </div>
