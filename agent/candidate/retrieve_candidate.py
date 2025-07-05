@@ -3,8 +3,9 @@ from typing import List
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import logging
-from langchain_ollama import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores.supabase import SupabaseVectorStore
+from langchain_ollama import OllamaEmbeddings
 
 load_dotenv()
 
@@ -22,15 +23,18 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+transformer_model = "Qwen/Qwen3-Embedding-0.6B"
+
 # Use the same embedding model as in company_rag.py
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
+# embeddings = HuggingFaceEmbeddings(model_name=transformer_model)
 
 # Instantiate SupabaseVectorStore for similarity search
 vector_store = SupabaseVectorStore(
     embedding=embeddings,
     client=supabase,
-    table_name="candidate_table",
-    query_name="match_candidate_documents",
+    table_name="candidate_rag",
+    query_name="match_candidate_rag",
 )
 
 

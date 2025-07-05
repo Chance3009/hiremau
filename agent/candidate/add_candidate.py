@@ -258,6 +258,7 @@ def save_evaluation_to_supabase(
     Returns:
         dict: Result of the operation with status and any error messages
     """
+    logger.info(f"Saving evaluation to Supabase for candidate: {candidate_name}")
     try:
         # Create the evaluation data dictionary from individual arguments
         evaluation_data = {
@@ -310,26 +311,25 @@ def save_evaluation_to_supabase(
         }
 
 
-def save_evaluation_to_rag(content: str, candidate_name: str):
+def save_evaluation_to_rag(content: str, candidate_id: str, candidate_name: str):
     # Add metadata (timestamp, source, etc.)
     metadata = {
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "source": "evaluation",
-        "candidate_name": candidate_name
+        "candidate_name": candidate_name,
+        "candidate_id": candidate_id
     }
     doc = Document(page_content=content, metadata=metadata)
 
-    try:
-        # Store in Supabase candidate_rag table
-        vector_store = SupabaseVectorStore.from_documents(
-            [doc],
-            embedding,
-            client=supabase,
-            table_name="candidate_rag",
-            query_name="match_documents",
-            chunk_size=500,
-        )
-        logger.info("Saved evaluation to candidate_rag table.")
-    except Exception as e:
-        logger.error(f"Error saving evaluation to RAG: {e}")
-        raise e
+    # Store in Supabase candidate_rag table
+    vector_store = SupabaseVectorStore.from_documents(
+        [doc],
+        embedding,
+        client=supabase,
+        table_name="candidate_rag",
+        query_name="match_candidate_rag",
+        chunk_size=500,
+        candidate_id=candidate_id,
+        name=candidate_name
+    )
+    logger.info("Saved evaluation to candidate_rag table.")
