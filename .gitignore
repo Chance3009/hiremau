@@ -52,11 +52,18 @@ backend/venv/
 backend/env/
 backend/ENV/
 backend/.venv/
+new_backend/venv/
+new_backend/env/
+new_backend/ENV/
+new_backend/.venv/
 
 # Environment variables
 backend/.env
 backend/.env.local
 backend/.env.production
+new_backend/.env
+new_backend/.env.local
+new_backend/.env.production
 
 # Distribution / packaging
 backend/.Python
@@ -123,6 +130,9 @@ agent/*$py.class
 agent/venv/
 agent/env/
 agent/.venv/
+
+# Node modules
+agent/node_modules/
 
 # Environment variables
 agent/.env
@@ -277,3 +287,49 @@ docs/.doctrees/
 TODO.md
 NOTES.md
 .scratch/
+
+# ===============================================
+# 🗂️ TEMPORARY & REFERENCE DIRECTORIES
+# ===============================================
+
+# Temporary reference directory (backup/development)
+temp_reference/
+
+# Test directory (separate project)
+test/
+
+# Backup directories
+backup/
+old/
+archive/
+
+# ===============================================
+# 🔧 ADDITIONAL PYTHON ENVIRONMENTS
+# ===============================================
+
+# All possible venv directory names
+venv/
+env/
+ENV/
+.venv/
+.env/
+virtualenv/
+.virtualenv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ===============================================
+# 🎨 NODE.JS ADDITIONAL
+# ===============================================
+
+# Node modules in any directory
+**/node_modules/
+
+# Package lock files for temp directories
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/bun.lockb
