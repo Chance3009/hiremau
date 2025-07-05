@@ -361,7 +361,7 @@ const Interview: React.FC = () => {
       offset += chunk.byteLength;
     }
     try {
-      await fetch(`http://localhost:8010/send/${userId}`, {
+      await fetch(`http://localhost:8000/send/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

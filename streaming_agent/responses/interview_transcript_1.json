@@ -822,6 +822,7 @@
     "feedback": null,
     "interview_question": null,
     "confidence_score": 60
+<<<<<<< HEAD
 >>>>>>> 8fedff61 (database parsing done)
   },
   {
@@ -834,12 +835,33 @@
   {
     "speaker": "interviewer",
     "audio_transcript": "Tell me about your experience.",
+=======
+  },
+  {
+    "speaker": "interviewee",
+    "audio_transcript": "\u0e42\u0e2d\u0e49 \u0e42\u0e2d\u0e49",
+    "feedback": null,
+    "interview_question": null,
+    "confidence_score": 60
+  },
+  {
+    "speaker": "interviewee",
+    "audio_transcript": "Hello, I'm a software engineer, and I've applied for the front-end engineer position.",
+    "feedback": null,
+    "interview_question": null,
+    "confidence_score": 100
+  },
+  {
+    "speaker": "interviewer",
+    "audio_transcript": "\u0e40\u0e23\u0e34\u0e48\u0e21\u0e40\u0e25\u0e22\u0e40\u0e19\u0e32\u0e30 \u0e42\u0e2d\u0e40\u0e04 \u0e07\u0e31\u0e49\u0e19\u0e40\u0e14\u0e35\u0e4b\u0e22\u0e27\u0e40\u0e23\u0e32\u0e21\u0e32\u0e2a\u0e31\u0e21\u0e20\u0e32\u0e29\u0e13\u0e4c",
+>>>>>>> 21fa82cc (fix agent error)
     "feedback": null,
     "interview_question": null,
     "confidence_score": 100
   },
   {
     "speaker": "interviewee",
+<<<<<<< HEAD
     "audio_transcript": "So, yeah...",
     "feedback": null,
     "interview_question": null,
@@ -851,5 +873,32 @@
     "feedback": null,
     "interview_question": "Can you tell me more about your interest in frontend development?",
     "confidence_score": 95
+=======
+    "audio_transcript": "How about your experience?",
+    "feedback": null,
+    "interview_question": null,
+    "confidence_score": 95
+  },
+  {
+    "speaker": "interviewee",
+    "audio_transcript": "Tell me about your experiences.",
+    "feedback": null,
+    "interview_question": null,
+    "confidence_score": 100
+  },
+  {
+    "speaker": "interviewee",
+    "audio_transcript": "About my experience. Yeah, um...",
+    "feedback": null,
+    "interview_question": null,
+    "confidence_score": 60
+  },
+  {
+    "speaker": "interviewee",
+    "audio_transcript": "I've been doing a lot of Python work.",
+    "feedback": null,
+    "interview_question": "Could you describe a specific Python project you're particularly proud of?",
+    "confidence_score": 70
+>>>>>>> 21fa82cc (fix agent error)
   }
 ]
